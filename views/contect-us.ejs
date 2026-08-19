@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دوق | اتصل بنا - Dhouq</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary": "#005875",
+                        "surface-variant": "#f7ddd9",
+                        "surface-container-low": "#fff0ee",
+                        "on-tertiary-container": "#d3eeff",
+                        "on-primary-container": "#ffe5e1",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#ffedea",
+                        "tertiary-container": "#007296",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#5c2000",
+                        "surface-bright": "#fff8f6",
+                        "error-container": "#ffdad6",
+                        "surface": "#fff8f6",
+                        "primary-fixed": "#ffdad5",
+                        "background": "#fff8f6",
+                        "primary-container": "#c0392b",
+                        "on-surface": "#261816",
+                        "primary": "#9e2016",
+                        "on-tertiary-fixed-variant": "#004d66",
+                        "outline-variant": "#e1bfb9",
+                        "on-secondary-fixed": "#351000",
+                        "on-secondary-fixed-variant": "#7c2e00",
+                        "on-primary-fixed-variant": "#8e130c",
+                        "inverse-primary": "#ffb4a9",
+                        "on-background": "#261816",
+                        "primary-fixed-dim": "#ffb4a9",
+                        "on-tertiary-fixed": "#001e2b",
+                        "secondary-fixed-dim": "#ffb595",
+                        "secondary-fixed": "#ffdbcd",
+                        "tertiary-fixed": "#c0e8ff",
+                        "error": "#ba1a1a",
+                        "surface-dim": "#eed4d1",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#a23f00",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#ffe9e6",
+                        "on-error-container": "#93000a",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#fce2de",
+                        "secondary-container": "#fc7127",
+                        "on-primary-fixed": "#410000",
+                        "outline": "#8d706c",
+                        "surface-container-highest": "#f7ddd9",
+                        "tertiary-fixed-dim": "#80d0f8",
+                        "surface-tint": "#b02d21",
+                        "inverse-surface": "#3c2d2a",
+                        "on-surface-variant": "#59413d"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    },
+                    spacing: {
+                        gutter: "24px",
+                        xs: "4px",
+                        sm: "12px",
+                        md: "24px",
+                        base: "8px",
+                        "container-max": "1280px",
+                        xl: "80px",
+                        lg: "48px"
+                    },
+                    fontFamily: {
+                        "body-lg": ["Tajawal", "sans-serif"],
+                        "display-lg-mobile": ["Tajawal", "sans-serif"],
+                        "headline-md": ["Tajawal", "sans-serif"],
+                        "body-md": ["Tajawal", "sans-serif"],
+                        "label-sm": ["Tajawal", "sans-serif"],
+                        "display-lg": ["Tajawal", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .hero-gradient {
+            background: linear-gradient(135deg, #9e2016 0%, #c0392b 50%, #fc7127 100%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(225, 191, 185, 0.3);
+        }
+        .form-input-focus {
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .form-input-focus:focus {
+            border-color: #9e2016;
+            box-shadow: 0 0 0 4px rgba(158, 32, 22, 0.1);
+            outline: none;
+            background: white;
+        }
+        .form-input-focus::placeholder {
+            color: #8d706c;
+            opacity: 0.7;
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-on-surface bg-background">
+
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md shadow-[0px_4px_20px_rgba(192,57,43,0.06)]">
+    <div class="flex flex-row-reverse justify-between items-center w-full px-md md:px-xl py-sm max-w-container-max mx-auto">
+        <div class="flex items-center gap-base">
+            <span class="text-headline-md font-headline-md text-secondary font-bold">دوق</span>
+        </div>
+        <nav class="hidden md:flex flex-row-reverse items-center gap-md font-body-md text-body-md">
+            <a href="/" class="text-on-surface-variant hover:text-secondary transition-colors">الرئيسية</a>
+            <a href="/all-portfolios" class="text-on-surface-variant hover:text-secondary transition-colors">تصفح المطابخ</a>
+            <a href="/auth" class="text-on-surface-variant hover:text-secondary transition-colors">انضم كطباخ</a>
+            <a href="/about" class="text-on-surface-variant hover:text-secondary transition-colors">من نحن</a>
+            <a href="/faqs" class="text-on-surface-variant hover:text-secondary transition-colors">الأسئلة الشائعة</a>
+            <a href="/contact" class="text-secondary font-bold border-b-2 border-secondary pb-1">اتصل بنا</a>
+        </nav>
+        <div>
+            <% if (locals.currentUser) { %>
+                <a href="/vendor-dashboard" class="bg-primary text-on-primary px-lg py-xs rounded-full font-label-sm hover:scale-[1.02] transition-transform active:scale-95">
+                    لوحة التحكم
+                </a>
+            <% } else { %>
+                <a href="/auth" class="bg-primary text-on-primary px-lg py-xs rounded-full font-label-sm hover:scale-[1.02] transition-transform active:scale-95">
+                    تسجيل الدخول
+                </a>
+            <% } %>
+        </div>
+    </div>
+</header>
+
+<main class="pt-24 pb-xl">
+
+    <!-- Hero Section -->
+    <section class="relative w-full overflow-hidden mb-lg">
+        <div class="hero-gradient px-md py-xl md:py-24 text-center text-on-primary">
+            <h1 class="font-display-lg text-display-lg-mobile md:text-display-lg mb-sm">تواصل مع دوق</h1>
+            <p class="font-body-lg text-body-lg max-w-2xl mx-auto opacity-90">
+                نحن هنا لمساعدتك والاستماع إليك. فريق دوق ينتظر رسالتك بفارغ الصبر.
+            </p>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent"></div>
+    </section>
+
+    <div class="max-w-container-max mx-auto px-md md:px-xl">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+
+            <!-- Right Side: Sidebar & Contact Info -->
+            <aside class="lg:col-span-4 space-y-md">
+                
+                <!-- Welcome Message -->
+                <div class="bg-surface-container-low p-lg rounded-xl border border-outline-variant/30">
+                    <h2 class="text-headline-md font-headline-md text-primary mb-sm">يسعدنا سماع صوتك!</h2>
+                    <p class="font-body-md text-on-surface-variant leading-relaxed">
+                        في دوق، نؤمن أن التجربة الرائعة تبدأ بالتواصل الفعال. سواء كنت متذوقاً يبحث عن طبق مميز، أو طباخاً موهوباً يرغب في مشاركة فنونه، نحن هنا لتقديم كل الدعم اللازم.
+                    </p>
+                </div>
+
+                <!-- Contact Cards -->
+                <div class="grid grid-cols-1 gap-sm">
+                    <!-- WhatsApp -->
+                    <div class="glass-card p-md rounded-xl flex items-start gap-md hover:shadow-lg transition-shadow duration-300">
+                        <div class="bg-secondary-container/10 p-sm rounded-lg text-secondary">
+                            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">chat</span>
+                        </div>
+                        <div>
+                            <h3 class="font-headline-md text-body-md font-bold mb-xs">الدعم عبر واتساب</h3>
+                            <p class="text-on-surface-variant font-body-md" dir="ltr">0100 123 4567</p>
+                        </div>
+                    </div>
+
+                    <!-- Email Support -->
+                    <div class="glass-card p-md rounded-xl flex items-start gap-md hover:shadow-lg transition-shadow duration-300">
+                        <div class="bg-primary-container/10 p-sm rounded-lg text-primary">
+                            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">mail</span>
+                        </div>
+                        <div>
+                            <h3 class="font-headline-md text-body-md font-bold mb-xs">البريد الإلكتروني العام</h3>
+                            <p class="text-on-surface-variant font-body-md">support@dhouq.com</p>
+                        </div>
+                    </div>
+
+                    <!-- Commercial -->
+                    <div class="glass-card p-md rounded-xl flex items-start gap-md hover:shadow-lg transition-shadow duration-300">
+                        <div class="bg-tertiary-container/10 p-sm rounded-lg text-tertiary">
+                            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">handshake</span>
+                        </div>
+                        <div>
+                            <h3 class="font-headline-md text-body-md font-bold mb-xs">شراكات الطهاة</h3>
+                            <p class="text-on-surface-variant font-body-md">commercial@dhouq.com</p>
+                        </div>
+                    </div>
+
+                    <!-- Working Hours -->
+                    <div class="glass-card p-md rounded-xl flex items-start gap-md">
+                        <div class="bg-outline-variant/20 p-sm rounded-lg text-on-surface-variant">
+                            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">schedule</span>
+                        </div>
+                        <div>
+                            <h3 class="font-headline-md text-body-md font-bold mb-xs">أوقات العمل</h3>
+                            <p class="text-on-surface-variant font-body-md">السبت - الخميس، 10 صباحاً - 10 مساءً</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Social Links -->
+                <div class="pt-md">
+                    <h4 class="font-label-sm text-on-surface-variant mb-sm uppercase tracking-wider">تابعنا على</h4>
+                    <div class="flex gap-sm flex-wrap">
+                        <a href="https://wa.me/201001234567" target="_blank" class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-secondary hover:bg-secondary hover:text-on-secondary transition-all duration-300 shadow-sm">
+                            <span class="material-symbols-outlined">chat</span>
+                        </a>
+                        <a href="https://t.me/dhouq" target="_blank" class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-secondary hover:bg-secondary hover:text-on-secondary transition-all duration-300 shadow-sm">
+                            <span class="material-symbols-outlined">send</span>
+                        </a>
+                        <a href="https://facebook.com/dhouq" target="_blank" class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-secondary hover:bg-secondary hover:text-on-secondary transition-all duration-300 shadow-sm">
+                            <span class="material-symbols-outlined">public</span>
+                        </a>
+                        <a href="https://instagram.com/dhouq" target="_blank" class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-secondary hover:bg-secondary hover:text-on-secondary transition-all duration-300 shadow-sm">
+                            <span class="material-symbols-outlined">photo_camera</span>
+                        </a>
+                        <a href="https://youtube.com/dhouq" target="_blank" class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-secondary hover:bg-secondary hover:text-on-secondary transition-all duration-300 shadow-sm">
+                            <span class="material-symbols-outlined">video_library</span>
+                        </a>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Left Side: Contact Form -->
+            <section class="lg:col-span-8">
+                <div class="bg-white p-lg md:p-xl rounded-2xl shadow-[0px_4px_20px_rgba(192,57,43,0.06)] border border-outline-variant/20">
+                    
+                    <!-- Form Header -->
+                    <div class="mb-md text-right">
+                        <h3 class="text-headline-md font-headline-md text-on-surface mb-xs">نحب أن نسمع منك!</h3>
+                        <p class="text-on-surface-variant font-body-md">املأ النموذج التالي وسنرد عليك في أقرب وقت ممكن.</p>
+                    </div>
+
+                    <form id="contactForm" class="space-y-md">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+                            <div class="space-y-xs">
+                                <label for="name" class="font-label-sm text-on-surface-variant mr-xs">الاسم بالكامل</label>
+                                <input type="text" id="name" required class="w-full bg-surface-bright border-outline-variant/30 rounded-xl px-md py-sm form-input-focus transition-all text-body-md" placeholder="أدخل اسمك الكريم">
+                            </div>
+                            <div class="space-y-xs">
+                                <label for="email" class="font-label-sm text-on-surface-variant mr-xs">البريد الإلكتروني</label>
+                                <input type="email" id="email" required class="w-full bg-surface-bright border-outline-variant/30 rounded-xl px-md py-sm form-input-focus transition-all text-body-md" placeholder="name@example.com">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+                            <div class="space-y-xs">
+                                <label for="phone" class="font-label-sm text-on-surface-variant mr-xs">رقم الهاتف</label>
+                                <input type="tel" id="phone" required class="w-full bg-surface-bright border-outline-variant/30 rounded-xl px-md py-sm form-input-focus transition-all text-body-md text-right" dir="rtl" placeholder="01012345678">
+                            </div>
+                            <div class="space-y-xs">
+                                <label for="subject" class="font-label-sm text-on-surface-variant mr-xs">موضوع الرسالة</label>
+                                <select id="subject" required class="w-full bg-surface-bright border-outline-variant/30 rounded-xl px-md py-sm form-input-focus transition-all text-body-md appearance-none">
+                                    <option value="" disabled selected>اختر الموضوع</option>
+                                    <option value="general">استفسار عام</option>
+                                    <option value="complaint">تقديم شكوى</option>
+                                    <option value="chef">انضمام كطباخ</option>
+                                    <option value="order">مشكلة في طلب</option>
+                                    <option value="other">أخرى</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="space-y-xs">
+                            <label for="message" class="font-label-sm text-on-surface-variant mr-xs">الرسالة</label>
+                            <textarea id="message" rows="5" required class="w-full bg-surface-bright border-outline-variant/30 rounded-xl px-md py-sm form-input-focus transition-all text-body-md" placeholder="كيف يمكننا مساعدتك اليوم؟"></textarea>
+                        </div>
+
+                        <div id="formFeedback" class="hidden rounded-lg p-sm text-center font-label-sm"></div>
+
+                        <button type="submit" class="w-full bg-primary text-on-primary py-md rounded-xl font-headline-md text-body-lg hover:scale-[1.01] active:scale-[0.98] transition-all shadow-md shadow-primary/20">
+                            أرسل رسالتك الآن
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Map Placeholder -->
+                <div class="mt-lg relative rounded-2xl overflow-hidden p-lg md:p-xl bg-gradient-to-br from-primary to-secondary-container text-on-primary shadow-lg border border-outline-variant/20">
+                    <div class="relative z-10 flex flex-col items-center text-center space-y-sm">
+                        <div class="bg-white/20 p-sm rounded-full backdrop-blur-sm mb-xs">
+                            <span class="material-symbols-outlined text-display-lg-mobile">devices</span>
+                        </div>
+                        <h3 class="font-headline-md text-headline-md">دوق منصة رقمية بالكامل.. نصلك أينما كنت</h3>
+                        <p class="font-body-md opacity-90 max-w-md">
+                            لا نحتاج لمقر تقليدي لنكون بجانبك. خدماتنا مصممة لتصل إليك في أي مكان وفي أي وقت عبر تطبيقنا وموقعنا الإلكتروني.
+                        </p>
+                    </div>
+                    <div class="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                    <div class="absolute bottom-0 left-0 -mb-8 -ml-8 w-32 h-32 bg-black/10 rounded-full blur-2xl"></div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="max-w-container-max mx-auto px-md md:px-xl mt-xl text-center">
+        <a href="/" class="inline-flex items-center gap-xs text-on-surface-variant hover:text-primary transition-colors font-body-md group">
+            <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
+            <span>العودة للرئيسية</span>
+        </a>
+    </div>
+
+</main>
+
+<!-- Footer -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant/30 w-full py-lg mt-xl">
+    <div class="flex flex-col md:flex-row-reverse justify-between items-center px-md md:px-xl max-w-container-max mx-auto gap-sm">
+        <div class="flex items-center gap-base">
+            <span class="text-headline-md font-headline-md text-secondary font-bold">دوق</span>
+        </div>
+        <div class="flex gap-md font-label-sm text-on-surface-variant flex-wrap justify-center">
+            <a href="#" class="hover:text-secondary transition-colors">سياسة الخصوصية</a>
+            <a href="#" class="hover:text-secondary transition-colors">شروط الاستخدام</a>
+            <a href="/contact" class="hover:text-secondary transition-colors">اتصل بنا</a>
+            <a href="/faqs" class="hover:text-secondary transition-colors">الأسئلة الشائعة</a>
+        </div>
+        <p class="font-label-sm text-on-surface-variant">
+            © 2026 دوق. جميع الحقوق محفوظة.
+        </p>
+    </div>
+</footer>
+
+<script>
+    // ============================================
+    // Form Submission Handler
+    // ============================================
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const feedback = document.getElementById('formFeedback');
+        const btn = e.target.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        
+        // Loading state
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> جاري الإرسال...';
+        
+        // Simple validation
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const message = document.getElementById('message').value.trim();
+        
+        setTimeout(() => {
+            if (name && email.includes('@') && phone && message) {
+                feedback.textContent = '✅ تم إرسال رسالتك بنجاح! سيتواصل معك فريقنا قريباً.';
+                feedback.className = 'block bg-green-50 text-green-700 border border-green-200 rounded-lg p-sm text-center font-label-sm mb-md';
+                e.target.reset();
+            } else {
+                let errorMsg = 'عذراً، يرجى التأكد من صحة البيانات المدخلة.';
+                if (!name) errorMsg = '⚠️ يرجى إدخال الاسم بالكامل.';
+                else if (!email.includes('@')) errorMsg = '⚠️ يرجى إدخال بريد إلكتروني صحيح.';
+                else if (!phone) errorMsg = '⚠️ يرجى إدخال رقم الهاتف.';
+                else if (!message) errorMsg = '⚠️ يرجى كتابة الرسالة.';
+                
+                feedback.textContent = errorMsg;
+                feedback.className = 'block bg-error-container text-error border border-error/20 rounded-lg p-sm text-center font-label-sm mb-md';
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            
+            // Clear feedback after 5 seconds
+            setTimeout(() => {
+                feedback.classList.add('hidden');
+            }, 5000);
+        }, 1200);
+    });
+
+    // ============================================
+    // Input Focus Effects
+    // ============================================
+    const inputs = document.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        input.addEventListener('focus', () => {
+            const label = input.parentElement.querySelector('label');
+            if (label) label.classList.add('text-primary');
+        });
+        input.addEventListener('blur', () => {
+            const label = input.parentElement.querySelector('label');
+            if (label) label.classList.remove('text-primary');
+        });
+    });
+</script>
+
+</body>
+</html>

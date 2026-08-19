@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دوق | لوحة تحكم الأدمن</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary": "#ffffff",
+                        "on-surface-variant": "#59413d",
+                        "on-surface": "#261816",
+                        "background": "#fff8f6",
+                        "surface-container-high": "#fce2de",
+                        "secondary": "#a23f00",
+                        "primary-fixed-dim": "#ffb4a9",
+                        "surface-container-highest": "#f7ddd9",
+                        "inverse-on-surface": "#ffedea",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#fc7127",
+                        "surface-bright": "#fff8f6",
+                        "secondary-fixed-dim": "#ffb595",
+                        "tertiary-fixed-dim": "#80d0f8",
+                        "on-tertiary-fixed-variant": "#004d66",
+                        "surface-container-low": "#fff0ee",
+                        "primary-container": "#c0392b",
+                        "surface": "#fff8f6",
+                        "surface-dim": "#eed4d1",
+                        "on-secondary-fixed": "#351000",
+                        "surface-tint": "#b02d21",
+                        "on-primary-container": "#ffe5e1",
+                        "on-tertiary-container": "#d3eeff",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-background": "#261816",
+                        "inverse-surface": "#3c2d2a",
+                        "surface-container": "#ffe9e6",
+                        "outline": "#8d706c",
+                        "inverse-primary": "#ffb4a9",
+                        "tertiary": "#005875",
+                        "on-secondary-container": "#5c2000",
+                        "on-primary-fixed": "#410000",
+                        "on-primary-fixed-variant": "#8e130c",
+                        "secondary-fixed": "#ffdbcd",
+                        "on-secondary-fixed-variant": "#7c2e00",
+                        "on-secondary": "#ffffff",
+                        "primary": "#9e2016",
+                        "on-tertiary-fixed": "#001e2b",
+                        "on-error": "#ffffff",
+                        "outline-variant": "#e1bfb9",
+                        "tertiary-container": "#007296",
+                        "tertiary-fixed": "#c0e8ff",
+                        "surface-variant": "#f7ddd9",
+                        "primary-fixed": "#ffdad5"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "xs": "4px",
+                        "container-max": "1280px",
+                        "base": "8px",
+                        "sm": "12px",
+                        "md": "24px",
+                        "lg": "48px",
+                        "gutter": "24px",
+                        "xl": "80px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Tajawal", "sans-serif"],
+                        "label-sm": ["Tajawal", "sans-serif"],
+                        "headline-md": ["Tajawal", "sans-serif"],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .glass-nav {
+            background: rgba(255, 248, 246, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .role-admin {
+            background: #dc3545;
+            color: white;
+        }
+        .role-chef {
+            background: #fd7e14;
+            color: white;
+        }
+        .role-customer {
+            background: #0d6efd;
+            color: white;
+        }
+        .fade-out {
+            animation: fadeOut 0.5s ease-in-out forwards;
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(20px); height: 0; padding: 0; margin: 0; overflow: hidden; }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .slide-in-from-right {
+            animation: slideInRight 0.3s ease-out forwards;
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .zoom-in {
+            animation: zoomIn 0.2s ease-out forwards;
+        }
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        tr.deleted-row {
+            background-color: #f8d7da !important;
+            transition: all 0.5s ease;
+        }
+        tr.deleted-row td {
+            color: #721c24 !important;
+        }
+        tr.deleted-row .role-admin,
+        tr.deleted-row .role-chef,
+        tr.deleted-row .role-customer {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-background">
+
+    <!-- Top Navigation Bar -->
+    <header class="fixed top-0 w-full z-50 glass-nav shadow-[0px_4px_20px_rgba(192,57,43,0.06)]">
+        <div class="flex flex-row-reverse justify-between items-center w-full px-md md:px-xl py-sm max-w-container-max mx-auto">
+            <div class="flex items-center gap-md">
+                <span class="text-headline-md font-bold text-secondary">دوق</span>
+                <nav class="hidden md:flex gap-md">
+                    <a href="/user/dashboard" class="text-secondary font-bold border-b-2 border-secondary pb-1 font-body-md">المستخدمين</a>
+                    <a href="#" class="text-on-surface-variant hover:text-secondary transition-colors font-body-md">الطلبات</a>
+                    <a href="#" class="text-on-surface-variant hover:text-secondary transition-colors font-body-md">الأطباق</a>
+                    <a href="#" class="text-on-surface-variant hover:text-secondary transition-colors font-body-md">الإحصائيات</a>
+                </nav>
+            </div>
+            <div class="flex items-center gap-sm">
+                <a href="/auth/logout" class="px-lg py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary-container transition-all active:scale-95 text-sm">
+                    تسجيل خروج
+                </a>
+                <div class="flex items-center gap-xs">
+                    <div class="text-left hidden sm:block">
+                        <p class="text-label-sm font-bold leading-none"><%= currentUser ? currentUser.first_name + ' ' + currentUser.last_name : 'أدمن' %></p>
+                        <p class="text-[10px] text-outline leading-none mt-1">مسؤول النظام</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold">
+                        <%= currentUser ? currentUser.first_name.charAt(0) : 'A' %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="pt-24 pb-12 px-md md:px-xl max-w-container-max mx-auto">
+        <div class="flex flex-col lg:flex-row gap-gutter">
+            
+            <!-- Right Side (60%): Users Table -->
+            <div class="w-full lg:w-3/5 space-y-md">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-sm">
+                    <h1 class="text-headline-md font-bold flex items-center gap-xs">
+                        <span class="material-symbols-outlined text-primary">group</span>
+                        إدارة المستخدمين
+                    </h1>
+                    <span class="text-label-sm text-outline bg-surface-container-low px-lg py-1 rounded-full">
+                        <span id="totalUsersCount"><%= users ? users.length : 0 %></span> مستخدم
+                    </span>
+                </div>
+
+                <!-- Filters -->
+                <div class="bg-white rounded-xl p-md shadow-[0px_4px_20px_rgba(192,57,43,0.06)] border border-outline-variant/30 flex flex-col md:flex-row gap-sm items-end">
+                    <div class="flex-1 w-full space-y-1">
+                        <label class="text-label-sm font-medium mr-1 text-on-surface-variant">البحث السريع</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+                            <input type="text" id="searchInput" placeholder="ابحث بالاسم، البريد، أو الهاتف..." class="w-full pr-10 pl-4 py-2 bg-surface-container-low border-transparent focus:border-primary focus:ring-0 rounded-lg text-body-md transition-all">
+                        </div>
+                    </div>
+                    <div class="w-full md:w-40 space-y-1">
+                        <label class="text-label-sm font-medium mr-1 text-on-surface-variant">نوع الدور</label>
+                        <select id="roleFilter" class="w-full py-2 bg-surface-container-low border-transparent focus:border-primary focus:ring-0 rounded-lg text-body-md">
+                            <option value="all">الكل</option>
+                            <option value="customer">عميل</option>
+                            <option value="chef">طباخ</option>
+                            <option value="admin">مسؤول</option>
+                        </select>
+                    </div>
+                    <button id="searchBtn" class="w-full md:w-auto px-lg py-2 bg-primary text-white rounded-lg hover:bg-primary-container transition-all active:scale-95 flex items-center justify-center gap-xs">
+                        <span class="material-symbols-outlined text-[18px]">search</span>
+                        بحث
+                    </button>
+                </div>
+
+                <!-- Table Container -->
+                <div class="bg-white rounded-xl shadow-[0px_4px_20px_rgba(192,57,43,0.06)] border border-outline-variant/30 overflow-hidden">
+                    <div class="overflow-x-auto min-h-[400px]">
+                        <table class="w-full text-right">
+                            <thead class="bg-surface-container-low border-b border-outline-variant/30">
+                                <tr>
+                                    <th class="px-md py-sm text-label-sm font-bold text-outline">#</th>
+                                    <th class="px-md py-sm text-label-sm font-bold text-outline">الاسم</th>
+                                    <th class="px-md py-sm text-label-sm font-bold text-outline">البريد الإلكتروني</th>
+                                    <th class="px-md py-sm text-label-sm font-bold text-outline">الهاتف</th>
+                                    <th class="px-md py-sm text-label-sm font-bold text-outline">الدور</th>
+                                    <th class="px-md py-sm text-label-sm font-bold text-outline">تاريخ التسجيل</th>
+                                    <th class="px-md py-sm text-label-sm font-bold text-outline text-center">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                                <% if (users && users.length > 0) { %>
+                                    <% users.forEach(function(user) { %>
+                                        <tr class="border-b border-outline-variant/10 hover:bg-surface-container-lowest transition-colors cursor-pointer user-row" 
+                                            data-user-id="<%= user.id %>"
+                                            onclick="loadUser(<%= user.id %>)">
+                                            <td class="px-md py-md text-body-md"><%= user.id %></td>
+                                            <td class="px-md py-md text-body-md font-bold text-secondary">
+                                                <%= user.first_name %> <%= user.last_name %>
+                                            </td>
+                                            <td class="px-md py-md text-body-md text-on-surface-variant"><%= user.email %></td>
+                                            <td class="px-md py-md text-body-md"><%= user.phone_number %></td>
+                                            <td class="px-md py-md">
+                                                <span class="px-3 py-1 rounded-full text-[12px] font-bold role-<%= user.roles %>">
+                                                    <% if (user.roles === 'admin') { %>مسؤول<% } 
+                                                       else if (user.roles === 'chef') { %>طباخ<% } 
+                                                       else { %>عميل<% } %>
+                                                </span>
+                                            </td>
+                                            <td class="px-md py-md text-body-md text-outline">
+                                                <%= new Date(user.created_at).toLocaleDateString('ar-EG') %>
+                                            </td>
+                                            <td class="px-md py-md text-center">
+                                                <button onclick="confirmDelete(event, <%= user.id %>)" 
+                                                        class="delete-btn w-8 h-8 rounded-lg flex items-center justify-center text-error hover:bg-error-container/20 transition-all">
+                                                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="7" class="text-center py-xl text-outline">
+                                            <span class="material-symbols-outlined text-[64px] block mx-auto mb-xs">inventory_2</span>
+                                            📭 لا يوجد مستخدمين حالياً
+                                        </td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="px-md py-md flex flex-col sm:flex-row justify-between items-center gap-sm bg-surface-container-low/50">
+                        <span class="text-label-sm text-outline">
+                            عرض <span id="startCount">1</span>-<span id="endCount"><%= users ? Math.min(10, users.length) : 0 %></span> من أصل <span id="totalCount"><%= users ? users.length : 0 %></span> مستخدم
+                        </span>
+                        <div class="flex items-center gap-xs">
+                            <button id="prevPage" class="px-4 py-2 rounded-lg border border-outline-variant text-label-sm hover:bg-white transition-all disabled:opacity-50">السابق</button>
+                            <span id="currentPageDisplay" class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-label-sm font-bold">1</span>
+                            <button id="nextPage" class="px-4 py-2 rounded-lg border border-outline-variant text-label-sm hover:bg-white transition-all">التالي</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Left Side (40%): User Edit Form -->
+            <div class="w-full lg:w-2/5">
+                <div class="bg-white rounded-xl shadow-[0px_12px_40px_rgba(44,62,80,0.12)] border border-outline-variant/30 sticky top-24 overflow-hidden">
+                    <div class="bg-surface-container px-md py-lg text-center relative overflow-hidden">
+                        <div class="absolute inset-0 opacity-10 pointer-events-none">
+                            <div class="w-full h-full bg-[radial-gradient(circle,rgba(162,63,0,0.2)_1px,transparent_1px)] bg-[length:20px_20px]"></div>
+                        </div>
+                        <div id="formLoading" class="hidden absolute inset-0 bg-white/80 z-20 flex items-center justify-center">
+                            <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                        <div id="userAvatar" class="w-24 h-24 rounded-full bg-secondary-container text-white text-[36px] font-bold flex items-center justify-center mx-auto mb-sm shadow-lg ring-4 ring-white">
+                            ?
+                        </div>
+                        <h2 class="text-headline-md font-bold text-on-surface" id="formUserNameHeader">اختر مستخدم من الجدول</h2>
+                        <p class="text-label-sm text-outline" id="formRegistrationDate">انضم في: --</p>
+                    </div>
+
+                    <form id="editUserForm" class="p-md space-y-md">
+                        <input type="hidden" id="editUserId" value="">
+                        
+                        <div class="grid grid-cols-2 gap-sm">
+                            <div class="space-y-1">
+                                <label class="text-label-sm font-medium text-on-surface-variant">الاسم الأول</label>
+                                <input type="text" id="firstName" class="w-full px-4 py-2 rounded-lg border-outline-variant/50 focus:border-primary focus:ring-0 text-body-md">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-label-sm font-medium text-on-surface-variant">اسم العائلة</label>
+                                <input type="text" id="lastName" class="w-full px-4 py-2 rounded-lg border-outline-variant/50 focus:border-primary focus:ring-0 text-body-md">
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-label-sm font-medium text-on-surface-variant">رقم الهاتف</label>
+                            <input type="tel" id="phone" class="w-full px-4 py-2 rounded-lg border-outline-variant/50 focus:border-primary focus:ring-0 text-body-md text-left" dir="ltr">
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-label-sm font-medium text-on-surface-variant">الدور</label>
+                            <select id="userRole" class="w-full px-4 py-2 rounded-lg border-outline-variant/50 focus:border-primary focus:ring-0 text-body-md">
+                                <option value="customer">عميل</option>
+                                <option value="chef">طباخ</option>
+                                <option value="admin">مسؤول</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-sm">
+                            <div class="space-y-1">
+                                <label class="text-label-sm font-medium text-on-surface-variant opacity-60">البريد (للقراءة فقط)</label>
+                                <input type="email" id="email" disabled class="w-full px-4 py-2 rounded-lg bg-surface-container-low border-transparent text-body-md opacity-70 cursor-not-allowed">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-label-sm font-medium text-on-surface-variant opacity-60">رمز التحقق</label>
+                                <input type="text" id="verifyCode" disabled class="w-full px-4 py-2 rounded-lg bg-surface-container-low border-transparent text-body-md opacity-70 cursor-not-allowed text-center">
+                            </div>
+                        </div>
+
+                        <div class="pt-md flex flex-col gap-sm">
+                            <button type="submit" id="saveBtn" class="w-full py-3 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-xs hover:bg-primary-container transition-all shadow-lg active:scale-[0.98]">
+                                <span class="material-symbols-outlined">save</span>
+                                💾 حفظ التغييرات
+                            </button>
+                            <button type="button" id="resetBtn" class="w-full py-2 text-on-surface-variant font-medium hover:bg-surface-container rounded-xl transition-all">
+                                إلغاء التعديلات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-8 right-8 z-[100] flex flex-col gap-sm"></div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirmModal" class="fixed inset-0 z-[110] bg-black/40 hidden items-center justify-center p-md">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-lg text-center shadow-2xl zoom-in">
+            <span class="material-symbols-outlined text-[48px] text-error mb-md block">warning</span>
+            <h3 class="text-headline-md font-bold mb-xs">هل أنت متأكد؟</h3>
+            <p class="text-on-surface-variant mb-lg">هذا الإجراء سيقوم بحذف المستخدم نهائياً من النظام.</p>
+            <div class="flex flex-col gap-sm">
+                <button id="confirmDeleteBtn" class="w-full py-3 bg-error text-white rounded-xl font-bold hover:bg-red-700 transition-all">نعم، حذف المستخدم</button>
+                <button onclick="closeModal()" class="w-full py-3 bg-surface-container text-on-surface rounded-xl font-bold hover:bg-surface-container-high transition-all">تراجع</button>
+            </div>
+        </div>
+    </div>
+<script>
+        // ============================================
+        // State - Safe JSON parsing
+        // ============================================
+        let currentEditingId = null;
+        let idToDelete = null;
+        let deleteEvent = null;
+        let usersData = [];
+        
+        // Load users data from server (بدون تغيير)
+        <%- 
+            (function() {
+                if (users && users.length > 0) {
+                    return 'usersData = ' + JSON.stringify(users) + ';';
+                }
+                return '';
+            })() 
+        %>
+
+        // ============================================
+        // Toast Notification
+        // ============================================
+        function showToast(message, type) {
+            type = type || 'success';
+            var container = document.getElementById('toastContainer');
+            var toast = document.createElement('div');
+            var bgColor = type === 'success' ? 'bg-[#059669]' : type === 'error' ? 'bg-[#dc2626]' : 'bg-[#0d6efd]';
+            var icon = type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info';
+            
+            toast.className = bgColor + ' text-white px-md py-sm rounded-xl shadow-xl flex items-center gap-xs slide-in-from-right';
+            toast.innerHTML = '\n                <span class="material-symbols-outlined">' + icon + '</span>\n                <span class="font-bold">' + message + '</span>\n            ';
+            container.appendChild(toast);
+            
+            setTimeout(function() {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(50px)';
+                toast.style.transition = 'all 0.5s ease';
+                setTimeout(function() { toast.remove(); }, 500);
+            }, 3000);
+        }
+
+        // ============================================
+        // Load User Data
+        // ============================================
+        function loadUser(id) {
+            var loader = document.getElementById('formLoading');
+            loader.classList.remove('hidden');
+            
+            document.querySelectorAll('.user-row').forEach(function(row) {
+                row.classList.remove('bg-primary/5', 'border-r-4', 'border-primary');
+            });
+            var selectedRow = document.querySelector('.user-row[data-user-id="' + id + '"]');
+            if (selectedRow) {
+                selectedRow.classList.add('bg-primary/5', 'border-r-4', 'border-primary');
+            }
+            
+            setTimeout(function() {
+                var user = usersData.find(u => u.id === id);
+                if (user) {
+                    currentEditingId = id;
+                    document.getElementById('editUserId').value = id;
+                    document.getElementById('formUserNameHeader').textContent = 'بيانات المستخدم: ' + user.first_name + ' ' + user.last_name;
+                    document.getElementById('formRegistrationDate').textContent = 'انضم في: ' + new Date(user.created_at).toLocaleDateString('ar-EG');
+                    document.getElementById('firstName').value = user.first_name;
+                    document.getElementById('lastName').value = user.last_name;
+                    document.getElementById('phone').value = user.phone_number;
+                    document.getElementById('userRole').value = user.roles;
+                    document.getElementById('email').value = user.email;
+                    document.getElementById('verifyCode').value = user.code || '----';
+                    document.getElementById('userAvatar').textContent = user.first_name.charAt(0);
+                }
+                loader.classList.add('hidden');
+            }, 200);
+        }
+
+        // ============================================
+        // Confirm Delete
+        // ============================================
+        function confirmDelete(e, id) {
+            e.stopPropagation();
+            idToDelete = id;
+            deleteEvent = e;
+            document.getElementById('confirmModal').classList.remove('hidden');
+            document.getElementById('confirmModal').classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+            document.getElementById('confirmModal').classList.remove('flex');
+        }
+
+        // ============================================
+        // Delete User (Real API Call)
+        // ============================================
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+            var btn = this;
+            var originalText = btn.textContent;
+            btn.textContent = 'جاري الحذف...';
+            btn.disabled = true;
+            
+            try {
+                // الاتصال الحقيقي بمسار الحذف في الـ Backend
+                // ملاحظة: افترضت أن الـ router الخاص بك يعمل على مسار /users
+                const response = await fetch('/user/' + idToDelete, {
+                    method: 'DELETE',
+                });
+                
+                const data = await response.json();
+
+                if (response.ok && data.status === 'successful') {
+                    var row = document.querySelector('.user-row[data-user-id="' + idToDelete + '"]');
+                    if (row) {
+                        row.classList.add('deleted-row');
+                        usersData = usersData.filter(u => u.id !== idToDelete);
+                        document.getElementById('totalUsersCount').textContent = usersData.length;
+                        
+                        showToast(data.message, 'success');
+                        
+                        setTimeout(function() {
+                            row.remove();
+                            if (usersData.length === 0) location.reload();
+                        }, 800);
+                    }
+                } else {
+                    showToast(data.message || 'حدث خطأ أثناء الحذف', 'error');
+                }
+            } catch (error) {
+                showToast('خطأ في الاتصال بالخادم', 'error');
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+                closeModal();
+            }
+        });
+
+        // ============================================
+        // Update User (Real API Call)
+        // ============================================
+        document.getElementById('editUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            var btn = document.getElementById('saveBtn');
+            var originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> جاري الحفظ...';
+
+            var id = document.getElementById('editUserId').value;
+            var firstName = document.getElementById('firstName').value.trim();
+            var lastName = document.getElementById('lastName').value.trim();
+            var phone = document.getElementById('phone').value.trim();
+            var role = document.getElementById('userRole').value;
+
+            if (!id) {
+                showToast('⚠️ يرجى اختيار مستخدم أولاً', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                return;
+            }
+
+            try {
+                // الاتصال الحقيقي بمسار التعديل في الـ Backend
+                const response = await fetch('/user/' + id, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        first_name: firstName,
+                        last_name: lastName,
+                        phone_number: phone,
+                        roles: role
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status === 'success') {
+                    // Update local data
+                    var userIndex = usersData.findIndex(u => u.id === parseInt(id));
+                    if (userIndex !== -1) {
+                        usersData[userIndex].first_name = firstName;
+                        usersData[userIndex].last_name = lastName;
+                        usersData[userIndex].phone_number = phone;
+                        usersData[userIndex].roles = role;
+                    }
+
+                    // Update table row UI
+                    var row = document.querySelector('.user-row[data-user-id="' + id + '"]');
+                    if (row) {
+                        var cells = row.querySelectorAll('td');
+                        cells[1].textContent = firstName + ' ' + lastName;
+                        cells[3].textContent = phone;
+                        var roleSpan = cells[4].querySelector('span');
+                        roleSpan.className = 'px-3 py-1 rounded-full text-[12px] font-bold role-' + role;
+                        var roleNames = { admin: 'مسؤول', chef: 'طباخ', customer: 'عميل' };
+                        roleSpan.textContent = roleNames[role] || role;
+                    }
+
+                    document.getElementById('formUserNameHeader').textContent = 'بيانات المستخدم: ' + firstName + ' ' + lastName;
+                    document.getElementById('userAvatar').textContent = firstName.charAt(0);
+
+                    showToast(data.message, 'success');
+                } else {
+                    showToast(data.message || 'حدث خطأ أثناء التحديث', 'error');
+                }
+            } catch (error) {
+                showToast('خطأ في الاتصال بالخادم', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        });
+
+        // ============================================
+        // Reset Form & Filters & Load Init
+        // ============================================
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            if (currentEditingId) {
+                loadUser(currentEditingId);
+                showToast('🔄 تم إعادة تعيين النموذج', 'info');
+            }
+        });
+
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            var query = document.getElementById('searchInput').value.trim().toLowerCase();
+            var role = document.getElementById('roleFilter').value;
+            
+            var filteredUsers = usersData.filter(user => {
+                var matchesQuery = query ? (user.first_name + ' ' + user.last_name + ' ' + user.email + ' ' + user.phone_number).toLowerCase().includes(query) : true;
+                var matchesRole = role !== 'all' ? user.roles === role : true;
+                return matchesQuery && matchesRole;
+            });
+            
+            var tableBody = document.getElementById('userTableBody');
+            if (filteredUsers.length > 0) {
+                tableBody.innerHTML = '';
+                filteredUsers.forEach(user => {
+                    var roleNames = { admin: 'مسؤول', chef: 'طباخ', customer: 'عميل' };
+                    var tr = document.createElement('tr');
+                    tr.className = 'border-b border-outline-variant/10 hover:bg-surface-container-lowest transition-colors cursor-pointer user-row';
+                    tr.setAttribute('data-user-id', user.id);
+                    tr.onclick = () => loadUser(user.id);
+                    
+                    tr.innerHTML = `
+                        <td class="px-md py-md text-body-md">${user.id}</td>
+                        <td class="px-md py-md text-body-md font-bold text-secondary">${user.first_name} ${user.last_name}</td>
+                        <td class="px-md py-md text-body-md text-on-surface-variant">${user.email}</td>
+                        <td class="px-md py-md text-body-md">${user.phone_number}</td>
+                        <td class="px-md py-md">
+                            <span class="px-3 py-1 rounded-full text-[12px] font-bold role-${user.roles}">${roleNames[user.roles] || user.roles}</span>
+                        </td>
+                        <td class="px-md py-md text-body-md text-outline">${new Date(user.created_at).toLocaleDateString('ar-EG')}</td>
+                        <td class="px-md py-md text-center">
+                            <button onclick="confirmDelete(event, ${user.id})" class="delete-btn w-8 h-8 rounded-lg flex items-center justify-center text-error hover:bg-error-container/20 transition-all">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+                document.getElementById('totalUsersCount').textContent = filteredUsers.length;
+            } else {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-xl text-outline">
+                            <span class="material-symbols-outlined text-[64px] block mx-auto mb-xs">inventory_2</span>
+                            📭 لا يوجد نتائج مطابقة للبحث
+                        </td>
+                    </tr>
+                `;
+            }
+        });
+
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') document.getElementById('searchBtn').click();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (usersData && usersData.length > 0) loadUser(usersData[0].id);
+        });
+    </script>
+
+</body>
+</html>

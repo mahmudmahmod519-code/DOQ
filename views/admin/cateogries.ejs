@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة التصنيفات - دوق</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#9e2016",
+                        secondary: "#fc7127",
+                        "on-surface": "#261816",
+                        "on-surface-variant": "#59413d",
+                        background: "#fff8f6",
+                        surface: "#fff8f6",
+                        "surface-container-low": "#fff0ee",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#e1bfb9"
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface">
+
+    <!-- Navbar -->
+    <nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md shadow-sm px-6 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <span class="text-2xl font-bold text-primary">دوق</span>
+            <div class="flex items-center gap-4">
+                <a href="/user/dashboard" class="text-on-surface-variant hover:text-primary transition-colors">المستخدمين</a>
+                <a href="/categories/dashboard" class="text-primary border-b-2 border-primary pb-1">التصنيفات</a>
+                <a href="/auth/logout" class="text-error hover:text-red-700 transition-colors">تسجيل خروج</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-24 pb-12 px-6 max-w-7xl mx-auto">
+
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-on-surface">إدارة التصنيفات</h1>
+                <p class="text-on-surface-variant">إدارة تصنيفات الأطباق في المنصة</p>
+            </div>
+            <button onclick="openAddModal()" class="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold hover:scale-105 transition-all">
+                <span class="material-symbols-outlined">add</span>
+                إضافة تصنيف جديد
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-white rounded-2xl shadow-sm border border-outline-variant/20 overflow-hidden">
+            <table class="w-full text-right">
+                <thead class="bg-surface-container-low border-b border-outline-variant/20">
+                    <tr>
+                        <th class="px-6 py-4 text-sm font-bold text-on-surface-variant">#</th>
+                        <th class="px-6 py-4 text-sm font-bold text-on-surface-variant">اسم التصنيف</th>
+                        <th class="px-6 py-4 text-sm font-bold text-on-surface-variant">الوصف</th>
+                        <th class="px-6 py-4 text-sm font-bold text-on-surface-variant">عدد الأطباق</th>
+                        <th class="px-6 py-4 text-sm font-bold text-on-surface-variant">تاريخ الإنشاء</th>
+                        <th class="px-6 py-4 text-sm font-bold text-on-surface-variant text-center">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="categoriesTableBody">
+                    <% if (categories && categories.length > 0) { %>
+                        <% categories.forEach(function(cat, index) { %>
+                            <tr class="border-b border-outline-variant/10 hover:bg-surface-container-low/30 transition-colors">
+                                <td class="px-6 py-4"><%= index + 1 %></td>
+                                <td class="px-6 py-4 font-bold text-on-surface"><%= cat.name %></td>
+                                <td class="px-6 py-4 text-on-surface-variant"><%= cat.description || '—' %></td>
+                                <td class="px-6 py-4 text-center">
+                                    <span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold">
+                                        <%= cat.dishes_count || 0 %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-on-surface-variant text-sm">
+                                    <%= new Date(cat.created_at).toLocaleDateString('ar-EG') %>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button onclick="openEditModal(<%= cat.id %>)" 
+                                                class="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all">
+                                            <span class="material-symbols-outlined text-[20px]">edit</span>
+                                        </button>
+                                        <button onclick="deleteCategory(<%= cat.id %>)" 
+                                                class="p-2 rounded-lg bg-error/10 text-error hover:bg-error/20 transition-all">
+                                            <span class="material-symbols-outlined text-[20px]">delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" class="text-center py-12 text-on-surface-variant">
+                                <span class="material-symbols-outlined text-6xl block mx-auto mb-4">category</span>
+                                لا توجد تصنيفات حالياً
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- ============================================ -->
+    <!-- Modal: إضافة تصنيف جديد -->
+    <!-- ============================================ -->
+    <div id="addModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h2 class="text-2xl font-bold text-on-surface mb-2">إضافة تصنيف جديد</h2>
+            <p class="text-on-surface-variant text-sm mb-6">أدخل بيانات التصنيف الجديد</p>
+            
+            <form id="addForm" onsubmit="submitAddForm(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-on-surface-variant mb-1">اسم التصنيف *</label>
+                    <input id="addName" type="text" placeholder="مثال: أكلات مصرية" 
+                           class="w-full px-4 py-3 rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-on-surface-variant mb-1">الوصف</label>
+                    <textarea id="addDescription" rows="3" placeholder="وصف مختصر للتصنيف..." 
+                              class="w-full px-4 py-3 rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"></textarea>
+                </div>
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:opacity-90 transition-all">
+                        إضافة التصنيف
+                    </button>
+                    <button type="button" onclick="closeModal('addModal')" 
+                            class="flex-1 bg-surface-container-low text-on-surface-variant py-3 rounded-xl font-bold hover:bg-surface-container-high transition-all">
+                        إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- Modal: تعديل تصنيف -->
+    <!-- ============================================ -->
+    <div id="editModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h2 class="text-2xl font-bold text-on-surface mb-2">تعديل التصنيف</h2>
+            <p class="text-on-surface-variant text-sm mb-6">قم بتعديل بيانات التصنيف</p>
+            
+            <form id="editForm" onsubmit="submitEditForm(event)">
+                <input type="hidden" id="editId">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-on-surface-variant mb-1">اسم التصنيف *</label>
+                    <input id="editName" type="text" placeholder="مثال: أكلات مصرية" 
+                           class="w-full px-4 py-3 rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-on-surface-variant mb-1">الوصف</label>
+                    <textarea id="editDescription" rows="3" placeholder="وصف مختصر للتصنيف..." 
+                              class="w-full px-4 py-3 rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"></textarea>
+                </div>
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:opacity-90 transition-all">
+                        حفظ التغييرات
+                    </button>
+                    <button type="button" onclick="closeModal('editModal')" 
+                            class="flex-1 bg-surface-container-low text-on-surface-variant py-3 rounded-xl font-bold hover:bg-surface-container-high transition-all">
+                        إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // Toast Notification
+        // ============================================
+        function showToast(message, type) {
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            };
+            const icons = {
+                success: 'check_circle',
+                error: 'error',
+                warning: 'warning',
+                info: 'info'
+            };
+            
+            const container = document.createElement('div');
+            container.className = `fixed top-24 right-6 z-[100] ${colors[type] || 'bg-gray-500'} text-white px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 slide-in-from-right`;
+            container.innerHTML = `
+                <span class="material-symbols-outlined">${icons[type] || 'info'}</span>
+                <span class="font-bold">${message}</span>
+            `;
+            document.body.appendChild(container);
+            
+            setTimeout(() => {
+                container.style.opacity = '0';
+                container.style.transform = 'translateX(50px)';
+                container.style.transition = 'all 0.5s ease';
+                setTimeout(() => container.remove(), 500);
+            }, 4000);
+        }
+
+        // ============================================
+        // Open/Close Modal
+        // ============================================
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            document.getElementById(id).classList.add('flex');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            document.getElementById(id).classList.remove('flex');
+        }
+
+        // ============================================
+        // Open Add Modal
+        // ============================================
+        function openAddModal() {
+            document.getElementById('addForm').reset();
+            openModal('addModal');
+        }
+
+        // ============================================
+        // Open Edit Modal
+        // ============================================
+        function openEditModal(id) {
+            fetch('/categories/' + id, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('editId').value = data.data.id;
+                    document.getElementById('editName').value = data.data.name;
+                    document.getElementById('editDescription').value = data.data.description || '';
+                    openModal('editModal');
+                } else {
+                    showToast(data.message || 'حدث خطأ', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('حدث خطأ في الاتصال بالخادم', 'error');
+            });
+        }
+
+        // ============================================
+        // Submit Add Form - POST /categories
+        // ============================================
+        function submitAddForm(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('addName').value.trim();
+            const description = document.getElementById('addDescription').value.trim();
+            
+            if (!name) {
+                showToast('يرجى إدخال اسم التصنيف', 'warning');
+                return;
+            }
+            
+            fetch('/categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('✅ ' + data.message, 'success');
+                    closeModal('addModal');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast('❌ ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('حدث خطأ في الاتصال بالخادم', 'error');
+            });
+        }
+
+        // ============================================
+        // Submit Edit Form - PUT /categories/:id
+        // ============================================
+        function submitEditForm(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('editId').value;
+            const name = document.getElementById('editName').value.trim();
+            const description = document.getElementById('editDescription').value.trim();
+            
+            if (!name) {
+                showToast('يرجى إدخال اسم التصنيف', 'warning');
+                return;
+            }
+            
+            fetch('/categories/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('✅ ' + data.message, 'success');
+                    closeModal('editModal');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast('❌ ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('حدث خطأ في الاتصال بالخادم', 'error');
+            });
+        }
+
+        // ============================================
+        // Delete Category - DELETE /categories/:id
+        // ============================================
+        function deleteCategory(id) {
+            Swal.fire({
+                title: 'هل أنت متأكد؟',
+                text: 'سيتم حذف هذا التصنيف نهائياً. لا يمكن التراجع عن هذا الإجراء.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'نعم، حذف',
+                cancelButtonText: 'إلغاء'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('/categories/' + id, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            showToast('✅ ' + data.message, 'success');
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            showToast('❌ ' + data.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showToast('حدث خطأ في الاتصال بالخادم', 'error');
+                    });
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

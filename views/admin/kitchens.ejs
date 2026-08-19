@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جميع المطابخ - دوق</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-high": "#fce2de",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#d3eeff",
+                        "surface-variant": "#f7ddd9",
+                        "inverse-primary": "#ffb4a9",
+                        "inverse-surface": "#3c2d2a",
+                        "tertiary-fixed": "#c0e8ff",
+                        "on-primary-fixed-variant": "#8e130c",
+                        "surface-bright": "#fff8f6",
+                        "secondary-container": "#fc7127",
+                        "outline-variant": "#e1bfb9",
+                        "on-surface": "#261816",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#fff0ee",
+                        "inverse-on-surface": "#ffedea",
+                        "tertiary": "#005875",
+                        "primary": "#9e2016",
+                        "on-primary-fixed": "#410000",
+                        "secondary-fixed": "#ffdbcd",
+                        "secondary": "#a23f00",
+                        "secondary-fixed-dim": "#ffb595",
+                        "on-surface-variant": "#59413d",
+                        "on-primary-container": "#ffe5e1",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#eed4d1",
+                        "on-background": "#261816",
+                        "on-secondary-fixed": "#351000",
+                        "on-tertiary-fixed-variant": "#004d66",
+                        "surface-container-highest": "#f7ddd9",
+                        "background": "#fff8f6",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#001e2b",
+                        "surface": "#fff8f6",
+                        "on-secondary-container": "#5c2000",
+                        "surface-tint": "#b02d21",
+                        "primary-container": "#c0392b",
+                        "primary-fixed-dim": "#ffb4a9",
+                        "primary-fixed": "#ffdad5",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#ffe9e6",
+                        "outline": "#8d706c",
+                        "tertiary-container": "#007296",
+                        "on-secondary-fixed-variant": "#7c2e00",
+                        "error-container": "#ffdad6"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "sm": "12px",
+                        "xs": "4px",
+                        "gutter": "24px",
+                        "lg": "48px",
+                        "base": "8px",
+                        "container-max": "1280px",
+                        "md": "24px",
+                        "xl": "80px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Tajawal", "sans-serif"],
+                        "headline-md": ["Tajawal", "sans-serif"],
+                        "display-lg": ["Tajawal", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .kitchen-card-shadow {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            transition: all 0.3s ease;
+        }
+        .kitchen-card-shadow:hover {
+            box-shadow: 0 12px 40px rgba(158, 32, 22, 0.1);
+        }
+        .fade-out {
+            animation: fadeOut 0.4s ease-in-out forwards;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.95); height: 0; padding: 0; margin: 0; overflow: hidden; }
+        }
+        .slide-in-right {
+            animation: slideInRight 0.3s ease-out forwards;
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .sidebar-enter {
+            animation: sidebarEnter 0.3s ease-out forwards;
+        }
+        @keyframes sidebarEnter {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background overflow-x-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="fixed right-0 top-0 h-full flex flex-col border-l border-outline-variant z-40 bg-surface shadow-md w-64">
+        <div class="p-gutter">
+            <h1 class="text-headline-md font-bold text-primary mb-2">دوق Admin</h1>
+            <p class="text-on-surface-variant font-body-md text-sm">مدير النظام</p>
+        </div>
+        
+        <nav class="flex-1 px-4 space-y-2 mt-4">
+            <a href="/admin/dashboard" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high hover:scale-[1.02] transition-transform duration-300 rounded-lg">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span>لوحة التحكم</span>
+            </a>
+            <a href="/kitchens/dashboard" class="flex items-center gap-3 px-4 py-3 bg-secondary-container text-on-secondary-container rounded-lg font-bold">
+                <span class="material-symbols-outlined">restaurant</span>
+                <span>المطابخ</span>
+            </a>
+            <a href="/users/dashboard" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high hover:scale-[1.02] transition-transform duration-300 rounded-lg">
+                <span class="material-symbols-outlined">group</span>
+                <span>المستخدمين</span>
+            </a>
+            <a href="/categories/dashboard" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high hover:scale-[1.02] transition-transform duration-300 rounded-lg">
+                <span class="material-symbols-outlined">category</span>
+                <span>التصنيفات</span>
+            </a>
+        </nav>
+
+        <div class="p-4 mt-auto border-t border-outline-variant">
+            <a href="/auth/logout" class="flex items-center gap-3 px-4 py-3 text-error hover:bg-error-container/20 rounded-lg transition-all">
+                <span class="material-symbols-outlined">logout</span>
+                <span>تسجيل الخروج</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Top AppBar -->
+    <header class="fixed top-0 left-0 right-64 h-16 flex items-center justify-between px-gutter z-30 bg-surface/80 backdrop-blur-md shadow-sm">
+        <div class="flex items-center gap-4 flex-1">
+            <div class="relative w-full max-w-md">
+                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+                <input type="text" id="globalSearch" placeholder="ابحث باسم المطبخ أو الشيف أو المدينة..." 
+                       class="w-full pr-10 pl-4 py-2 bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary text-on-surface outline-none">
+            </div>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3 border-r pr-6 border-outline-variant">
+                <span class="text-sm font-medium text-on-surface hidden md:block">
+                    أهلاً، <%= currentUser ? currentUser.first_name + ' ' + currentUser.last_name : 'أدمن' %>
+                </span>
+                <span class="material-symbols-outlined text-4xl text-primary">account_circle</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="mr-64 pt-20 p-gutter min-h-screen">
+        
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-xl gap-4">
+            <div>
+                <h2 class="text-display-lg font-bold text-primary mb-2 flex items-center gap-3">
+                    🏪 جميع المطابخ
+                </h2>
+                <div class="flex items-center gap-2 text-on-surface-variant">
+                    <span class="material-symbols-outlined text-secondary">counter_1</span>
+                    <span id="kitchen-count" class="font-bold">0</span>
+                    <span>مطبخ مسجل في المنصة</span>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap items-center gap-sm">
+                <select id="cityFilter" class="bg-white border-outline-variant rounded-xl text-sm focus:ring-primary focus:border-primary px-4 py-2 min-w-[150px] outline-none">
+                    <option value="">جميع المدن</option>
+                    <% 
+                        const cities = [];
+                        if (kitchens && kitchens.length > 0) {
+                            kitchens.forEach(function(k) {
+                                if (k.city && !cities.includes(k.city)) {
+                                    cities.push(k.city);
+                                }
+                            });
+                        }
+                        cities.forEach(function(city) {
+                    %>
+                        <option value="<%= city %>"><%= city %></option>
+                    <% }); %>
+                </select>
+            </div>
+        </div>
+
+        <!-- Toast Container -->
+        <div id="toastContainer" class="fixed top-24 left-6 z-[100] flex flex-col gap-2"></div>
+
+        <!-- Kitchen Grid -->
+        <div id="kitchen-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
+            <% if (kitchens && kitchens.length > 0) { %>
+                <% kitchens.forEach(function(kitchen) { %>
+                    <div id="kitchen-<%= kitchen.id %>" class="bg-white rounded-2xl overflow-hidden kitchen-card-shadow transition-all duration-300 hover:scale-[1.02] cursor-pointer group flex flex-col">
+                        <div class="relative h-48 overflow-hidden">
+                            <img src="<%= kitchen.image_url || 'https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=600&q=80' %>" 
+                                 alt="<%= kitchen.title %>" 
+                                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                 onclick="showDetails(<%= kitchen.id %>)">
+                            <div class="absolute top-3 left-3 flex gap-2">
+                                <button class="delete-btn bg-white/90 hover:bg-error hover:text-white text-error p-2 rounded-full shadow-lg transition-all" 
+                                        data-id="<%= kitchen.id %>"
+                                        onclick="event.stopPropagation(); requestDelete(<%= kitchen.id %>)">
+                                    <span class="material-symbols-outlined text-sm">delete</span>
+                                </button>
+                            </div>
+                            <div class="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-secondary flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+                                <%= kitchen.avg_rating ? Number(kitchen.avg_rating).toFixed(1) : 'جديد' %>
+                            </div>
+                        </div>
+                        <div class="p-4 flex-1 flex flex-col">
+                            <h4 class="font-bold text-on-surface text-lg mb-1"><%= kitchen.title %></h4>
+                            <div class="flex items-center gap-1 text-on-surface-variant text-sm mb-3">
+                                <span class="material-symbols-outlined text-sm">person</span>
+                                <%= kitchen.first_name || '' %> <%= kitchen.last_name || '' %>
+                            </div>
+                            <div class="mt-auto flex justify-between items-center border-t border-outline-variant/30 pt-4">
+                                <div class="flex items-center gap-1 text-xs text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">
+                                    <span class="material-symbols-outlined text-xs">location_on</span>
+                                    <%= kitchen.city || 'غير محدد' %>
+                                </div>
+                                <div class="text-xs font-bold text-primary">
+                                    <%= kitchen.dishes_count || 0 %> طبق
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div id="empty-state" class="col-span-full flex flex-col items-center justify-center py-20 text-center">
+                    <div class="text-6xl mb-6">📭</div>
+                    <h3 class="text-headline-md font-bold text-on-surface mb-2">لا توجد مطابخ مسجلة حالياً</h3>
+                    <p class="text-on-surface-variant max-w-md">لم نتمكن من العثور على أي مطابخ في قاعدة البيانات.</p>
+                </div>
+            <% } %>
+        </div>
+
+    </main>
+
+    <!-- Details Sidebar -->
+    <div id="detailsSidebar" class="fixed inset-0 z-50 invisible opacity-0 transition-all duration-300">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeDetails()"></div>
+        <div class="absolute left-0 top-0 h-full w-full max-w-md bg-surface shadow-2xl translate-x-[-100%] transition-transform duration-300 flex flex-col" id="sidebarContent">
+            <div class="relative h-56">
+                <div id="sidebarImage" class="w-full h-full bg-cover bg-center"></div>
+                <button onclick="closeDetails()" class="absolute top-4 right-4 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full backdrop-blur-md transition-all">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <div class="p-gutter flex-1 overflow-y-auto">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h3 id="sidebarTitle" class="text-headline-md font-bold text-primary mb-1">اسم المطبخ</h3>
+                        <p id="sidebarChef" class="text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">person</span>
+                            الطاهي: <span>...</span>
+                        </p>
+                    </div>
+                    <div id="sidebarRating" class="flex items-center gap-1 bg-secondary-container/20 text-secondary px-3 py-1 rounded-full font-bold text-sm">
+                        <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                        <span>4.8</span>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <section>
+                        <h4 class="font-bold text-on-surface mb-3 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">info</span>
+                            عن المطبخ
+                        </h4>
+                        <p id="sidebarDesc" class="text-on-surface-variant leading-relaxed">...</p>
+                    </section>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-surface-container-low p-4 rounded-xl">
+                            <p class="text-xs text-on-surface-variant mb-1">عدد الأطباق</p>
+                            <p id="sidebarDishCount" class="font-bold text-lg text-primary">0 طبق</p>
+                        </div>
+                        <div class="bg-surface-container-low p-4 rounded-xl">
+                            <p class="text-xs text-on-surface-variant mb-1">المدينة</p>
+                            <p id="sidebarCity" class="font-bold text-lg text-secondary">...</p>
+                        </div>
+                    </div>
+
+                    <section>
+                        <h4 class="font-bold text-on-surface mb-3 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">contact_page</span>
+                            معلومات التواصل
+                        </h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3 p-3 bg-white rounded-lg border border-outline-variant">
+                                <span class="material-symbols-outlined text-on-surface-variant">phone</span>
+                                <span id="sidebarPhone">...</span>
+                            </div>
+                            <div class="flex items-center gap-3 p-3 bg-white rounded-lg border border-outline-variant">
+                                <span class="material-symbols-outlined text-on-surface-variant">mail</span>
+                                <span id="sidebarEmail">...</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="p-gutter border-t border-outline-variant flex gap-4">
+                <button id="sidebarDeleteBtn" class="flex-1 bg-error-container text-on-error-container py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-error hover:text-white transition-all">
+                    <span class="material-symbols-outlined">delete</span>
+                    حذف المطبخ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // State
+        // ============================================
+        var currentKitchens = [];
+        var selectedKitchenId = null;
+        var kitchenData = [];
+        
+        // Load data from server
+        <% if (kitchens && kitchens.length > 0) { %>
+            kitchenData = JSON.parse('<%- JSON.stringify(kitchens).replace(/'/g, "\\'") %>');
+            currentKitchens = kitchenData;
+        <% } %>
+
+        // ============================================
+        // Toast Notification
+        // ============================================
+        function showToast(message, type) {
+            type = type || 'success';
+            var container = document.getElementById('toastContainer');
+            var toast = document.createElement('div');
+            var bgColor = type === 'success' ? 'bg-[#059669]' : type === 'error' ? 'bg-[#dc2626]' : 'bg-[#0d6efd]';
+            var icon = type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info';
+            
+            toast.className = bgColor + ' text-white px-md py-sm rounded-xl shadow-xl flex items-center gap-3 slide-in-right';
+            toast.innerHTML = '<span class="material-symbols-outlined">' + icon + '</span><span class="font-bold">' + message + '</span>';
+            container.appendChild(toast);
+            
+            setTimeout(function() {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(50px)';
+                toast.style.transition = 'all 0.5s ease';
+                setTimeout(function() { toast.remove(); }, 500);
+            }, 4000);
+        }
+
+        // ============================================
+        // Show Details
+        // ============================================
+        function showDetails(id) {
+            var kitchen = null;
+            for (var i = 0; i < currentKitchens.length; i++) {
+                if (currentKitchens[i].id === id) {
+                    kitchen = currentKitchens[i];
+                    break;
+                }
+            }
+            
+            if (!kitchen) return;
+            
+            selectedKitchenId = id;
+            document.getElementById('sidebarTitle').textContent = kitchen.title || 'مطبخ';
+            document.getElementById('sidebarChef').querySelector('span:last-child').textContent = (kitchen.first_name || '') + ' ' + (kitchen.last_name || '');
+            document.getElementById('sidebarCity').textContent = kitchen.city || 'غير محدد';
+            document.getElementById('sidebarDishCount').textContent = (kitchen.dishes_count || 0) + ' طبق';
+            document.getElementById('sidebarRating').querySelector('span:last-child').textContent = kitchen.avg_rating ? Number(kitchen.avg_rating).toFixed(1) : 'جديد';
+            document.getElementById('sidebarDesc').textContent = kitchen.description || 'لا يوجد وصف';
+            document.getElementById('sidebarEmail').textContent = kitchen.email || 'غير متوفر';
+            document.getElementById('sidebarPhone').textContent = kitchen.phone_number || 'غير متوفر';
+            document.getElementById('sidebarImage').style.backgroundImage = 'url(' + (kitchen.image_url || 'https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=600&q=80') + ')';
+            
+            document.getElementById('sidebarDeleteBtn').onclick = function() {
+                requestDelete(kitchen.id);
+            };
+            
+            var sidebar = document.getElementById('detailsSidebar');
+            var content = document.getElementById('sidebarContent');
+            sidebar.classList.remove('invisible', 'opacity-0');
+            content.classList.remove('translate-x-[-100%]');
+        }
+
+        function closeDetails() {
+            var sidebar = document.getElementById('detailsSidebar');
+            var content = document.getElementById('sidebarContent');
+            sidebar.classList.add('opacity-0');
+            content.classList.add('translate-x-[-100%]');
+            setTimeout(function() {
+                sidebar.classList.add('invisible');
+            }, 300);
+        }
+
+        // ============================================
+        // Delete - Request
+        // ============================================
+        function requestDelete(id) {
+            selectedKitchenId = id;
+            Swal.fire({
+                title: 'هل أنت متأكد؟',
+                text: 'سيتم حذف هذا المطبخ وجميع البيانات المرتبطة به نهائياً',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'نعم، حذف',
+                cancelButtonText: 'إلغاء'
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    confirmDelete(id);
+                }
+            });
+        }
+
+        // ============================================
+        // Delete - Confirm
+        // ============================================
+        function confirmDelete(id) {
+            // REAL API call: DELETE /kitchens/:id
+            fetch('/kitchens/api/v1/' + id, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.status === 'success') {
+                    // Remove from DOM
+                    var card = document.getElementById('kitchen-' + id);
+                    if (card) {
+                        card.classList.add('fade-out');
+                        setTimeout(function() {
+                            card.remove();
+                        }, 400);
+                    }
+                    
+                    // Remove from data
+                    var newKitchens = [];
+                    for (var i = 0; i < currentKitchens.length; i++) {
+                        if (currentKitchens[i].id !== id) {
+                            newKitchens.push(currentKitchens[i]);
+                        }
+                    }
+                    currentKitchens = newKitchens;
+                    
+                    // Update count
+                    document.getElementById('kitchen-count').textContent = currentKitchens.length;
+                    
+                    // Close sidebar
+                    closeDetails();
+                    
+                    showToast('✅ ' + (data.message || 'تم حذف المطبخ بنجاح'), 'success');
+                } else {
+                    showToast('❌ ' + (data.message || 'حدث خطأ أثناء الحذف'), 'error');
+                }
+            })
+            .catch(function(error) {
+                console.error('Delete Error:', error);
+                showToast('❌ حدث خطأ في الاتصال بالخادم', 'error');
+            });
+        }
+
+        // ============================================
+        // Search
+        // ============================================
+        document.getElementById('globalSearch').addEventListener('input', function() {
+            var term = this.value.toLowerCase().trim();
+            var filtered = [];
+            
+            if (!term) {
+                filtered = kitchenData;
+            } else {
+                for (var i = 0; i < kitchenData.length; i++) {
+                    var k = kitchenData[i];
+                    var searchText = (k.title || '') + ' ' + (k.first_name || '') + ' ' + (k.last_name || '') + ' ' + (k.city || '');
+                    if (searchText.toLowerCase().indexOf(term) !== -1) {
+                        filtered.push(k);
+                    }
+                }
+            }
+            
+            currentKitchens = filtered;
+            renderKitchens(filtered);
+        });
+
+        // ============================================
+        // Filter by City
+        // ============================================
+        document.getElementById('cityFilter').addEventListener('change', function() {
+            var city = this.value;
+            var filtered = [];
+            
+            if (!city) {
+                filtered = kitchenData;
+            } else {
+                for (var i = 0; i < kitchenData.length; i++) {
+                    if (kitchenData[i].city === city) {
+                        filtered.push(kitchenData[i]);
+                    }
+                }
+            }
+            
+            currentKitchens = filtered;
+            renderKitchens(filtered);
+        });
+
+        // ============================================
+        // Render Kitchens
+        // ============================================
+        function renderKitchens(kitchens) {
+            var grid = document.getElementById('kitchen-grid');
+            var countLabel = document.getElementById('kitchen-count');
+            countLabel.textContent = kitchens.length;
+            
+            // Find empty state
+            var emptyState = document.getElementById('empty-state');
+            
+            if (kitchens.length === 0) {
+                // If no kitchens, show empty state
+                grid.innerHTML = '';
+                grid.appendChild(emptyState);
+                emptyState.style.display = 'flex';
+                return;
+            }
+            
+            // Remove empty state if exists
+            if (emptyState) {
+                emptyState.style.display = 'none';
+            }
+            
+            grid.innerHTML = '';
+            
+            for (var i = 0; i < kitchens.length; i++) {
+                var kitchen = kitchens[i];
+                var card = document.createElement('div');
+                card.id = 'kitchen-' + kitchen.id;
+                card.className = 'bg-white rounded-2xl overflow-hidden kitchen-card-shadow transition-all duration-300 hover:scale-[1.02] cursor-pointer group flex flex-col';
+                
+                var imageUrl = kitchen.image_url || 'https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=600&q=80';
+                var rating = kitchen.avg_rating ? Number(kitchen.avg_rating).toFixed(1) : 'جديد';
+                var chefName = (kitchen.first_name || '') + ' ' + (kitchen.last_name || '');
+                var city = kitchen.city || 'غير محدد';
+                var dishesCount = kitchen.dishes_count || 0;
+                
+                card.innerHTML = 
+                    '<div class="relative h-48 overflow-hidden">' +
+                        '<img src="' + imageUrl + '" alt="' + kitchen.title + '" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" onclick="showDetails(' + kitchen.id + ')">' +
+                        '<div class="absolute top-3 left-3 flex gap-2">' +
+                            '<button class="delete-btn bg-white/90 hover:bg-error hover:text-white text-error p-2 rounded-full shadow-lg transition-all" data-id="' + kitchen.id + '" onclick="event.stopPropagation(); requestDelete(' + kitchen.id + ')">' +
+                                '<span class="material-symbols-outlined text-sm">delete</span>' +
+                            '</button>' +
+                        '</div>' +
+                        '<div class="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-secondary flex items-center gap-1">' +
+                            '<span class="material-symbols-outlined text-xs" style="font-variation-settings: \'FILL\' 1;">star</span>' +
+                            rating +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="p-4 flex-1 flex flex-col">' +
+                        '<h4 class="font-bold text-on-surface text-lg mb-1">' + kitchen.title + '</h4>' +
+                        '<div class="flex items-center gap-1 text-on-surface-variant text-sm mb-3">' +
+                            '<span class="material-symbols-outlined text-sm">person</span>' +
+                            chefName +
+                        '</div>' +
+                        '<div class="mt-auto flex justify-between items-center border-t border-outline-variant/30 pt-4">' +
+                            '<div class="flex items-center gap-1 text-xs text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">' +
+                                '<span class="material-symbols-outlined text-xs">location_on</span>' +
+                                city +
+                            '</div>' +
+                            '<div class="text-xs font-bold text-primary">' + dishesCount + ' طبق</div>' +
+                        '</div>' +
+                    '</div>';
+                
+                grid.appendChild(card);
+            }
+        }
+
+        // ============================================
+        // Initialize
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            if (kitchenData.length > 0) {
+                currentKitchens = kitchenData;
+                renderKitchens(kitchenData);
+                document.getElementById('kitchen-count').textContent = kitchenData.length;
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ملفي الشخصي - دوق</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#ffb4a9",
+                        "surface-container-highest": "#f7ddd9",
+                        "tertiary": "#005875",
+                        "on-primary-fixed": "#410000",
+                        "on-primary-container": "#ffe5e1",
+                        "surface-container-high": "#fce2de",
+                        "surface-container": "#ffe9e6",
+                        "on-surface-variant": "#59413d",
+                        "inverse-on-surface": "#ffedea",
+                        "on-secondary-fixed-variant": "#7c2e00",
+                        "tertiary-fixed-dim": "#80d0f8",
+                        "inverse-primary": "#ffb4a9",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed": "#001e2b",
+                        "on-background": "#261816",
+                        "outline-variant": "#e1bfb9",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#f7ddd9",
+                        "surface-dim": "#eed4d1",
+                        "primary": "#9e2016",
+                        "surface": "#fff8f6",
+                        "inverse-surface": "#3c2d2a",
+                        "primary-container": "#c0392b",
+                        "tertiary-fixed": "#c0e8ff",
+                        "surface-container-low": "#fff0ee",
+                        "secondary-fixed": "#ffdbcd",
+                        "secondary": "#a23f00",
+                        "on-primary-fixed-variant": "#8e130c",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#ffb595",
+                        "on-surface": "#261816",
+                        "tertiary-container": "#007296",
+                        "on-tertiary-fixed-variant": "#004d66",
+                        "secondary-container": "#fc7127",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#ffdad5",
+                        "background": "#fff8f6",
+                        "on-tertiary-container": "#d3eeff",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#fff8f6",
+                        "outline": "#8d706c",
+                        "surface-tint": "#b02d21",
+                        "on-secondary-fixed": "#351000",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#5c2000"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "gutter": "24px",
+                        "xs": "4px",
+                        "lg": "48px",
+                        "base": "8px",
+                        "sm": "12px",
+                        "xl": "80px",
+                        "container-max": "1280px",
+                        "md": "24px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Tajawal", "sans-serif"],
+                        "label-sm": ["Tajawal", "sans-serif"],
+                        "body-lg": ["Tajawal", "sans-serif"],
+                        "headline-md": ["Tajawal", "sans-serif"],
+                        "display-lg": ["Tajawal", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .action-card:hover {
+            border-color: #9e2016;
+            transform: translateX(-4px);
+            box-shadow: 0 4px 15px rgba(158, 32, 22, 0.08);
+        }
+        .role-admin { background: #dc3545; color: white; }
+        .role-chef { background: #fd7e14; color: white; }
+        .role-customer { background: #0d6efd; color: white; }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .slide-in-from-right {
+            animation: slideInRight 0.3s ease-out forwards;
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+
+    
+<!-- Top Navigation Bar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md shadow-[0px_4px_20px_rgba(192,57,43,0.06)] px-gutter py-4">
+    <div class="max-w-container-max mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-8">
+            <span class="font-display-lg text-[32px] text-primary font-extrabold tracking-tight">دوق</span>
+            <div class="hidden md:flex gap-6">
+                <a href="/" class="text-primary border-b-2 border-primary pb-1 font-body-md">الرئيسية</a>
+                <a href="/all-portfolios" class="text-on-surface-variant hover:text-primary transition-colors font-body-md">استكشف</a>
+                <a href="/about" class="text-on-surface-variant hover:text-primary transition-colors font-body-md">عن دوق</a>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <% if (user && user.roles === 'admin') { %>
+                <a href="/users/dashboard" class="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-all font-label-sm">
+                    <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                    لوحة التحكم
+                </a>
+            <% } %>
+            <a href="/auth/logout" class="flex items-center gap-2 px-4 py-2 bg-error/10 text-error rounded-full hover:bg-error/20 transition-all font-label-sm">
+                <span class="material-symbols-outlined text-[20px]">logout</span>
+                تسجيل الخروج
+            </a>
+        </div>
+    </div>
+</nav>
+
+<main class="pt-[80px]">
+
+    <!-- Hero Header Section -->
+    <div class="relative h-[300px] w-full" style="background-image: url('https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=1920&q=80'); background-size: cover; background-position: center;">
+        <div class="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
+    </div>
+
+    <!-- Profile Intro Section -->
+    <div class="max-w-container-max mx-auto px-gutter -mt-24 relative z-10">
+        <div class="bg-surface-container-lowest rounded-3xl p-8 shadow-[0px_4px_20px_rgba(192,57,43,0.06)] border border-outline-variant/20 flex flex-col md:flex-row items-center md:items-end gap-6">
+            
+            <!-- Circular Avatar -->
+            <div id="userAvatarContainer" class="w-[120px] h-[120px] rounded-full bg-primary flex items-center justify-center text-white text-[48px] font-bold border-4 border-surface shadow-xl">
+                <span><%= user ? user.first_name.charAt(0).toUpperCase() : '?' %></span>
+            </div>
+
+            <div class="flex-1 text-center md:text-right">
+                <div class="flex flex-col md:flex-row md:items-center gap-3">
+                    <h1 class="text-headline-md text-on-surface font-extrabold">
+                        <%= user ? user.first_name + ' ' + user.last_name : 'مستخدم' %>
+                    </h1>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-bold role-<%= user ? user.roles : 'customer' %>">
+                        <span class="material-symbols-outlined text-[16px] ml-1">verified</span>
+                        <% if (user && user.roles === 'admin') { %>مسؤول النظام<% } 
+                           else if (user && user.roles === 'chef') { %>طباخ محترف<% } 
+                           else { %>عميل مميز<% } %>
+                    </span>
+                </div>
+                <div class="flex flex-wrap justify-center md:justify-start gap-4 mt-3 text-on-surface-variant font-label-sm">
+                    <div class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[18px]">mail</span>
+                        <span><%= user ? user.email : '' %></span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[18px]">call</span>
+                        <span><%= user ? user.phone_number : '' %></span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                        <span>انضم في <%= user ? new Date(user.created_at).toLocaleDateString('ar-EG') : '' %></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats -->
+            <div class="bg-surface-container-low px-8 py-4 rounded-2xl text-center border border-outline-variant/10">
+                <span class="block text-display-lg-mobile text-primary font-bold"><%= reviews ? reviews.length : 0 %></span>
+                <span class="text-label-sm text-on-surface-variant">إجمالي التقييمات</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions & Content Grid -->
+    <div class="max-w-container-max mx-auto px-gutter mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8 pb-xl">
+        
+        <!-- Left Column: Actions & Form -->
+        <div class="lg:col-span-1 space-y-8">
+            
+            <!-- Quick Actions -->
+            <section class="bg-surface-container rounded-3xl p-6">
+                <h2 class="font-headline-md text-on-surface mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary">bolt</span>
+                    إجراءات سريعة
+                </h2>
+                <div class="grid grid-cols-1 gap-3">
+                    <a class="action-card flex items-center justify-between p-4 bg-surface rounded-2xl border border-outline-variant/30 transition-all" href="/all-portfolios">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary">restaurant</span>
+                            <span class="font-body-md font-bold">استكشف المطابخ</span>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant">chevron_left</span>
+                    </a>
+                    <a class="action-card flex items-center justify-between p-4 bg-surface rounded-2xl border border-outline-variant/30 transition-all" href="/all-portfolios?tab=dishes">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary">flatware</span>
+                            <span class="font-body-md font-bold">تصفح الأطباق</span>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant">chevron_left</span>
+                    </a>
+                    <a class="action-card flex items-center justify-between p-4 bg-surface rounded-2xl border border-outline-variant/30 transition-all" href="/top-kitchens">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary">stars</span>
+                            <span class="font-body-md font-bold">أشهر المطابخ</span>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant">chevron_left</span>
+                    </a>
+                    <% if (user && user.roles === 'chef') { %>
+                        <a class="action-card flex items-center justify-between p-4 bg-surface rounded-2xl border border-outline-variant/30 transition-all" href="/vendor-dashboard">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-primary">kitchen</span>
+                                <span class="font-body-md font-bold">إدارة مطبخي</span>
+                            </div>
+                            <span class="material-symbols-outlined text-on-surface-variant">chevron_left</span>
+                        </a>
+                    <% } %>
+                </div>
+            </section>
+
+            <!-- Edit Profile Form -->
+            <section class="bg-white rounded-3xl p-8 shadow-sm border border-outline-variant/10">
+                <h2 class="font-headline-md text-on-surface mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">edit_square</span>
+                    تعديل الحساب
+                </h2>
+                <form id="editProfileForm" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-label-sm font-bold text-on-surface-variant">الاسم الأول</label>
+                            <input id="first_name" class="bg-surface border-outline-variant/20 focus:border-primary focus:ring-primary rounded-xl p-3 font-body-md" type="text" value="<%= user ? user.first_name : '' %>">
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-label-sm font-bold text-on-surface-variant">اسم العائلة</label>
+                            <input id="last_name" class="bg-surface border-outline-variant/20 focus:border-primary focus:ring-primary rounded-xl p-3 font-body-md" type="text" value="<%= user ? user.last_name : '' %>">
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-label-sm font-bold text-on-surface-variant">رقم الجوال</label>
+                        <input id="phone_number" class="bg-surface border-outline-variant/20 focus:border-primary focus:ring-primary rounded-xl p-3 font-body-md" type="tel" value="<%= user ? user.phone_number : '' %>">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-label-sm font-bold text-on-surface-variant">البريد الإلكتروني (للقراءة فقط)</label>
+                        <input id="email" class="bg-surface-container-low border-outline-variant/10 text-on-surface-variant rounded-xl p-3 font-body-md cursor-not-allowed" readonly type="email" value="<%= user ? user.email : '' %>">
+                    </div>
+                    <% if (user && user.roles === 'admin') { %>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-label-sm font-bold text-on-surface-variant">الدور</label>
+                            <select id="roles" class="bg-surface border-outline-variant/20 focus:border-primary focus:ring-primary rounded-xl p-3 font-body-md">
+                                <option value="customer" <%= user.roles === 'customer' ? 'selected' : '' %>>عميل</option>
+                                <option value="chef" <%= user.roles === 'chef' ? 'selected' : '' %>>طباخ</option>
+                                <option value="admin" <%= user.roles === 'admin' ? 'selected' : '' %>>مسؤول</option>
+                            </select>
+                        </div>
+                    <% } %>
+                    <div id="alertContainer" class="hidden p-3 rounded-xl text-sm font-semibold"></div>
+                    <div class="flex flex-col gap-3 pt-4">
+                        <button id="saveBtn" class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-md" type="submit">
+                            💾 حفظ التغييرات
+                        </button>
+                        <button class="w-full bg-surface-container-high text-on-surface-variant py-3 rounded-xl font-bold hover:bg-surface-variant transition-colors" type="reset">
+                            إلغاء التعديلات
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+        <!-- Right Column: Reviews List -->
+        <div class="lg:col-span-2">
+            <section class="bg-surface-container-lowest rounded-3xl p-8 border border-outline-variant/10 min-h-[600px]">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="font-headline-md text-on-surface flex items-center gap-2">
+                        <span>⭐</span>
+                        تقييماتي على الأطباق
+                    </h2>
+                    <div class="text-label-sm text-primary font-bold"><%= reviews ? reviews.length : 0 %> تقييم</div>
+                </div>
+
+                <!-- Reviews List -->
+                <div class="space-y-6" id="reviewsContainer">
+                    <% if (reviews && reviews.length > 0) { %>
+                        <% reviews.forEach(function(review) { %>
+                            <div class="group bg-surface rounded-2xl p-6 border border-outline-variant/10 hover:border-primary/30 transition-all flex flex-col md:flex-row gap-6">
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h3 class="font-headline-md text-[18px] text-on-surface mb-1"><%= review.dish_name || 'طبق' %></h3>
+                                            <p class="text-label-sm text-secondary font-bold"><%= review.kitchen_name || 'مطبخ' %></p>
+                                        </div>
+                                        <span class="text-label-sm text-on-surface-variant"><%= new Date(review.created_at).toLocaleDateString('ar-EG') %></span>
+                                    </div>
+                                    <div class="flex items-center gap-1 my-2">
+                                        <% for (var i = 0; i < 5; i++) { %>
+                                            <span class="material-symbols-outlined <%= i < review.rating ? 'text-secondary' : 'text-outline' %>" style=`<%= i < review.rating ? 'font-variation-settings: \"FILL\" 1;' : '' %>`>star</span>
+                                        <% } %>
+                                    </div>
+                                    <p class="text-body-md text-on-surface-variant italic">"<%= review.comment || 'لا يوجد تعليق' %>"</p>
+                                </div>
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="flex flex-col items-center justify-center py-20 text-center">
+                            <div class="text-[64px] mb-4">📭</div>
+                            <h3 class="text-headline-md text-on-surface-variant">لم تقم بتقييم أي طبق بعد</h3>
+                            <p class="text-body-md text-outline mt-2">ابدأ رحلة التذوق وشاركنا رأيك في الأطباق المفضلة لديك!</p>
+                            <a href="/all-portfolios" class="mt-6 px-8 py-3 bg-primary text-white rounded-full font-bold hover:scale-105 transition-all">
+                                استكشف الأطباق الآن
+                            </a>
+                        </div>
+                    <% } %>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant/30 py-lg mt-8">
+    <div class="max-w-container-max mx-auto px-gutter">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex flex-col items-center md:items-start gap-2">
+                <span class="font-headline-md text-primary font-extrabold">دوق</span>
+                <p class="text-label-sm text-on-surface-variant">© 2026 دوق. فن التذوق المنزلي.</p>
+            </div>
+            <div class="flex gap-8 flex-wrap justify-center">
+                <a class="text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">سياسة الخصوصية</a>
+                <a class="text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">شروط الخدمة</a>
+                <a class="text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="/contact">تواصل معنا</a>
+                <a class="text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="/faqs">مركز المساعدة</a>
+            </div>
+            <div class="flex gap-4">
+                <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center hover:bg-primary/10 transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined text-primary text-[20px]">public</span>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center hover:bg-primary/10 transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined text-primary text-[20px]">share</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // ============================================
+    // Toast Notification
+    // ============================================
+    function showAlert(message, type) {
+        var container = document.getElementById('alertContainer');
+        container.classList.remove('hidden');
+        var bgColor = type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-800 border-red-200';
+        container.className = 'p-3 rounded-xl text-sm font-semibold ' + bgColor + ' border';
+        container.textContent = message;
+        
+        setTimeout(function() {
+            container.classList.add('hidden');
+        }, 5000);
+    }
+
+    // ============================================
+    // Update Profile - PUT /users/
+    // ============================================
+    document.getElementById('editProfileForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        var btn = document.getElementById('saveBtn');
+        var originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></div> جاري الحفظ...';
+
+        var data = {
+            first_name: document.getElementById('first_name').value.trim(),
+            last_name: document.getElementById('last_name').value.trim(),
+            phone_number: document.getElementById('phone_number').value.trim()
+        };
+
+        var rolesSelect = document.getElementById('roles');
+        if (rolesSelect) {
+            data.roles = rolesSelect.value;
+        }
+
+        fetch('/users', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(result) {
+            if (result.status === 'success') {
+                showAlert('✅ ' + (result.message || 'تم تحديث البيانات بنجاح'), 'success');
+                // Update avatar and name in header
+                var avatar = document.getElementById('userAvatarContainer');
+                if (avatar) {
+                    var avatarSpan = avatar.querySelector('span');
+                    if (avatarSpan) {
+                        avatarSpan.textContent = data.first_name.charAt(0).toUpperCase();
+                    }
+                }
+                var nameHeader = document.querySelector('.text-headline-md.text-on-surface');
+                if (nameHeader) {
+                    nameHeader.textContent = data.first_name + ' ' + data.last_name;
+                }
+            } else {
+                showAlert('❌ ' + (result.message || 'حدث خطأ أثناء التحديث'), 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        })
+        .catch(function(error) {
+            console.error('Update Error:', error);
+            showAlert('❌ حدث خطأ في الاتصال بالخادم', 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    });
+
+    // ============================================
+    // Reset Form
+    // ============================================
+    document.querySelector('button[type="reset"]').addEventListener('click', function() {
+        document.getElementById('first_name').value = '<%= user ? user.first_name : "" %>';
+        document.getElementById('last_name').value = '<%= user ? user.last_name : "" %>';
+        document.getElementById('phone_number').value = '<%= user ? user.phone_number : "" %>';
+        var rolesSelect = document.getElementById('roles');
+        if (rolesSelect) {
+            rolesSelect.value = '<%= user ? user.roles : "customer" %>';
+        }
+        showAlert('🔄 تم إعادة تعيين النموذج', 'success');
+    });
+
+    // ============================================
+    // Floating Navbar Effect
+    // ============================================
+    window.addEventListener('scroll', function() {
+        var nav = document.querySelector('nav');
+        if (window.scrollY > 20) {
+            nav.classList.add('shadow-md');
+        } else {
+            nav.classList.remove('shadow-md');
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دوق | الأسئلة الشائعة - Dhouq</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary-container": "#ffe5e1",
+                        "error": "#ba1a1a",
+                        "on-background": "#261816",
+                        "secondary-container": "#fc7127",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#fce2de",
+                        "tertiary-fixed-dim": "#80d0f8",
+                        "inverse-primary": "#ffb4a9",
+                        "on-tertiary": "#ffffff",
+                        "primary": "#9e2016",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#007296",
+                        "primary-fixed": "#ffdad5",
+                        "tertiary": "#005875",
+                        "surface": "#fff8f6",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#ffb595",
+                        "tertiary-fixed": "#c0e8ff",
+                        "on-secondary": "#ffffff",
+                        "surface-tint": "#b02d21",
+                        "on-secondary-fixed": "#351000",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#d3eeff",
+                        "inverse-on-surface": "#ffedea",
+                        "surface-dim": "#eed4d1",
+                        "primary-container": "#c0392b",
+                        "on-tertiary-fixed": "#001e2b",
+                        "surface-container": "#ffe9e6",
+                        "on-secondary-fixed-variant": "#7c2e00",
+                        "on-tertiary-fixed-variant": "#004d66",
+                        "inverse-surface": "#3c2d2a",
+                        "surface-container-low": "#fff0ee",
+                        "secondary-fixed": "#ffdbcd",
+                        "on-surface-variant": "#59413d",
+                        "on-primary-fixed-variant": "#8e130c",
+                        "background": "#fff8f6",
+                        "outline-variant": "#e1bfb9",
+                        "primary-fixed-dim": "#ffb4a9",
+                        "on-surface": "#261816",
+                        "on-primary-fixed": "#410000",
+                        "surface-variant": "#f7ddd9",
+                        "surface-container-highest": "#f7ddd9",
+                        "secondary": "#a23f00",
+                        "outline": "#8d706c",
+                        "on-secondary-container": "#5c2000",
+                        "surface-bright": "#fff8f6",
+                        "on-error-container": "#93000a"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    },
+                    spacing: {
+                        base: "8px",
+                        md: "24px",
+                        xl: "80px",
+                        gutter: "24px",
+                        xs: "4px",
+                        sm: "12px",
+                        lg: "48px",
+                        "container-max": "1280px"
+                    },
+                    fontFamily: {
+                        sans: ["Tajawal", "sans-serif"],
+                        "headline-md": ["Tajawal", "sans-serif"],
+                        "display-lg-mobile": ["Tajawal", "sans-serif"],
+                        "label-sm": ["Tajawal", "sans-serif"],
+                        "body-lg": ["Tajawal", "sans-serif"],
+                        "body-md": ["Tajawal", "sans-serif"],
+                        "display-lg": ["Tajawal", "sans-serif"]
+                    },
+                    fontSize: {
+                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "700" }],
+                        "display-lg-mobile": ["32px", { lineHeight: "40px", fontWeight: "800" }],
+                        "label-sm": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "500" }],
+                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "display-lg": ["48px", { lineHeight: "60px", letterSpacing: "-0.02em", fontWeight: "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .accordion-item .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease;
+            opacity: 0;
+        }
+        .accordion-item.active .accordion-content {
+            max-height: 500px;
+            opacity: 1;
+        }
+        .accordion-item .chevron {
+            transition: transform 0.3s ease;
+        }
+        .accordion-item.active .chevron {
+            transform: rotate(180deg);
+        }
+        .active-tab {
+            box-shadow: 0 8px 25px rgba(158, 32, 22, 0.25);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background">
+
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/20 shadow-sm">
+    <nav class="flex flex-row-reverse justify-between items-center px-lg py-md max-w-container-max mx-auto h-20">
+        <!-- Brand Logo -->
+        <div class="flex items-center gap-sm">
+            <span class="text-headline-md font-bold text-primary">دوق</span>
+        </div>
+        
+        <!-- Navigation Links -->
+        <div class="hidden md:flex items-center gap-lg">
+            <a class="text-on-surface-variant hover:text-primary transition-colors" href="/">الرئيسية</a>
+            <a class="text-on-surface-variant hover:text-primary transition-colors" href="/all-portfolios">تصفح المطابخ</a>
+            <a class="text-on-surface-variant hover:text-primary transition-colors" href="/auth">انضم كطباخ</a>
+            <a class="text-on-surface-variant hover:text-primary transition-colors" href="/about">من نحن</a>
+            <a class="text-primary border-b-2 border-primary pb-1 font-semibold" href="/faqs">الأسئلة الشائعة</a>
+        </div>
+        
+        <!-- Trailing Actions -->
+        <div class="flex items-center gap-md">
+            <% if (locals.currentUser) { %>
+                <a href="/vendor-dashboard" class="bg-primary text-on-primary px-lg py-2 rounded-full font-bold hover:scale-105 active:scale-95 transition-all duration-300">
+                    لوحة التحكم
+                </a>
+            <% } else { %>
+                <a href="/auth" class="bg-primary text-on-primary px-lg py-2 rounded-full font-bold hover:scale-105 active:scale-95 transition-all duration-300">
+                    تسجيل الدخول
+                </a>
+            <% } %>
+        </div>
+    </nav>
+</header>
+
+<!-- Hero Section -->
+<section class="pt-32 pb-xl px-md relative overflow-hidden">
+    <div class="max-w-container-max mx-auto text-center relative z-10">
+        <h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-primary mb-sm">الأسئلة الشائعة</h1>
+        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
+            كل ما تود معرفته عن تجربة "دوق" الفريدة، سواء كنت تبحث عن وجبة منزلية فاخرة أو ترغب في مشاركة مهاراتك كشيف محترف.
+        </p>
+    </div>
+    <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+    <div class="absolute bottom-0 left-0 w-96 h-96 bg-secondary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+</section>
+
+<!-- Main Content -->
+<main class="max-w-4xl mx-auto px-md mb-xl">
+
+    <!-- Tab Selection -->
+    <div class="flex justify-center mb-lg gap-sm">
+        <button onclick="switchTab('customers')" id="tab-customers" class="flex items-center gap-sm px-lg py-sm rounded-xl transition-all duration-300 bg-primary text-white shadow-xl active-tab">
+            <span class="material-symbols-outlined">person</span>
+            <span class="font-headline-md text-[18px]">العملاء</span>
+        </button>
+        <button onclick="switchTab('chefs')" id="tab-chefs" class="flex items-center gap-sm px-lg py-sm rounded-xl transition-all duration-300 bg-white text-on-surface-variant hover:bg-surface-container-high active:scale-95 border border-outline-variant/30">
+            <span class="material-symbols-outlined">restaurant_menu</span>
+            <span class="font-headline-md text-[18px]">الشيفات</span>
+        </button>
+    </div>
+
+    <!-- Customer Section -->
+    <div id="section-customers" class="space-y-sm">
+        <div class="bg-white rounded-2xl p-md shadow-[0px_4px_20px_rgba(192,57,43,0.06)] border border-outline-variant/20">
+            
+            <!-- FAQ 1: ما هي منصة دوق وكيف يمكنني الطلب؟ -->
+            <div class="accordion-item">
+                <button class="w-full flex items-center justify-between py-md text-right focus:outline-none transition-colors duration-300 group" onclick="toggleAccordion(this)">
+                    <div class="flex items-center gap-md">
+                        <span class="material-symbols-outlined text-secondary-container">shopping_cart</span>
+                        <span class="font-headline-md text-[20px] question-header">ما هي منصة دوق وكيف يمكنني الطلب؟</span>
+                    </div>
+                    <span class="material-symbols-outlined chevron">expand_more</span>
+                </button>
+                <div class="accordion-content">
+                    <p class="font-body-md text-on-surface-variant leading-relaxed">
+                        منصة دوق هي وجهتك الأولى للأكل المنزلي الفاخر، حيث نربطك بأشهر الطهاة المنزليين في منطقتك. للطلب، كل ما عليك فعله هو تصفح المطابخ المتاحة في صفحة "المطابخ"، اختيار الأكلة التي تشتهيها من قائمة الطعام الخاصة بكل مطبخ، ثم الضغط على زر "اطلب الآن عبر الواتساب" للتواصل المباشر مع الشيف وتأكيد طلبك.
+                    </p>
+                </div>
+            </div>
+
+            <!-- FAQ 2: كيف تضمنون نظافة وجودة الأكل المنزلي؟ -->
+            <div class="accordion-item">
+                <button class="w-full flex items-center justify-between py-md text-right focus:outline-none transition-colors duration-300 group" onclick="toggleAccordion(this)">
+                    <div class="flex items-center gap-md">
+                        <span class="material-symbols-outlined text-secondary-container">verified_user</span>
+                        <span class="font-headline-md text-[20px] question-header">كيف تضمنون نظافة وجودة الأكل المنزلي؟</span>
+                    </div>
+                    <span class="material-symbols-outlined chevron">expand_more</span>
+                </button>
+                <div class="accordion-content">
+                    <p class="font-body-md text-on-surface-variant leading-relaxed">
+                        نحن نضع صحتك وسلامتك فوق كل اعتبار. جميع المطابخ المنزلية المسجلة في دوق تخضع لعملية تدقيق صارمة تشمل فحص بيئة الطهي، التأكد من مصادر المكونات المستخدمة، والتزام الشيف بمعايير النظافة المعتمدة. كما نعتمد على تقييمات العملاء السابقين لضمان جودة مستمرة.
+                    </p>
+                </div>
+            </div>
+
+            <!-- FAQ 3: كم يستغرق وقت تحضير وتوصيل الطلب؟ -->
+            <div class="accordion-item">
+                <button class="w-full flex items-center justify-between py-md text-right focus:outline-none transition-colors duration-300 group" onclick="toggleAccordion(this)">
+                    <div class="flex items-center gap-md">
+                        <span class="material-symbols-outlined text-secondary-container">schedule</span>
+                        <span class="font-headline-md text-[20px] question-header">كم يستغرق وقت تحضير وتوصيل الطلب؟</span>
+                    </div>
+                    <span class="material-symbols-outlined chevron">expand_more</span>
+                </button>
+                <div class="accordion-content">
+                    <p class="font-body-md text-on-surface-variant leading-relaxed">
+                        نحن نؤمن بأن الأكل الطازج يستحق الانتظار. جميع الأكلات تُطهى عند الطلب (Made to Order) لضمان وصولها إليك طازجة وساخنة. وقت التحضير يتراوح بين ساعة إلى ٣ ساعات حسب نوع الأكلة وتعقيدها، ويختلف وقت التوصيل حسب موقعك وموقع المطبخ.
+                    </p>
+                </div>
+            </div>
+
+            <!-- FAQ 4: ما هي طرق الدفع المتاحة؟ -->
+            <div class="accordion-item border-none">
+                <button class="w-full flex items-center justify-between py-md text-right focus:outline-none transition-colors duration-300 group" onclick="toggleAccordion(this)">
+                    <div class="flex items-center gap-md">
+                        <span class="material-symbols-outlined text-secondary-container">payments</span>
+                        <span class="font-headline-md text-[20px] question-header">ما هي طرق الدفع المتاحة؟</span>
+                    </div>
+                    <span class="material-symbols-outlined chevron">expand_more</span>
+                </button>
+                <div class="accordion-content">
+                    <p class="font-body-md text-on-surface-variant leading-relaxed">
+                        نوفر لك عدة خيارات دفع مرنة لتتناسب مع راحتك: الدفع نقداً عند الاستلام (Cash on Delivery)، التحويل البنكي المباشر، أو عبر تطبيقات المحافظ الإلكترونية مثل إنستا باي (InstaPay). الدفع يتم مباشرة مع الشيف أو المطبخ.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Chef Section (Hidden by default) -->
+    <div id="section-chefs" class="hidden space-y-sm">
+        <div class="bg-white rounded-2xl p-md shadow-[0px_4px_20px_rgba(192,57,43,0.06)] border border-outline-variant/20">
+            
+            <!-- FAQ 5: كيف يمكنني الانضمام كشيف؟ -->
+            <div class="accordion-item">
+                <button class="w-full flex items-center justify-between py-md text-right focus:outline-none transition-colors duration-300 group" onclick="toggleAccordion(this)">
+                    <div class="flex items-center gap-md">
+                        <span class="material-symbols-outlined text-secondary-container">skillet</span>
+                        <span class="font-headline-md text-[20px] question-header">كيف يمكنني الانضمام كشيف في منصة دوق؟</span>
+                    </div>
+                    <span class="material-symbols-outlined chevron">expand_more</span>
+                </button>
+                <div class="accordion-content">
+                    <p class="font-body-md text-on-surface-variant leading-relaxed">
+                        الانضمام إلى عائلة دوق سهل ومباشر. كل ما عليك فعله هو:
+                        <br>- التسجيل من خلال صفحة "إنشاء حساب جديد" واختيار دور "شيف".
+                        <br>- إدخال "الرمز التعريفي" الخاص بك (والذي تحصل عليه من إدارة المنصة).
+                        <br>- تعبئة بيانات مطبخك، وتحديد منطقتك، وإضافة قائمة الأكلات التي تقدمها.
+                        <br>- انتظار موافقة الإدارة بعد مراجعة بياناتك.
+                    </p>
+                </div>
+            </div>
+
+            <!-- FAQ 6: ما هو الرمز التعريفي / Code الخاص بالشيف؟ -->
+            <div class="accordion-item">
+                <button class="w-full flex items-center justify-between py-md text-right focus:outline-none transition-colors duration-300 group" onclick="toggleAccordion(this)">
+                    <div class="flex items-center gap-md">
+                        <span class="material-symbols-outlined text-secondary-container">key</span>
+                        <span class="font-headline-md text-[20px] question-header">ما هو 'الرمز التعريفي / Code' الخاص بالشيف وما أهميته؟</span>
+                    </div>
+                    <span class="material-symbols-outlined chevron">expand_more</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="bg-surface-container-low p-sm rounded-xl border-r-4 border-primary mb-sm">
+                        <p class="font-body-md text-on-surface-variant leading-relaxed">
+                            الرمز التعريفي هو رقم سري للغاية (مكون من 6 أرقام) يتم تعيينه لكل شيف بواسطة إدارة المنصة. يعتبر هذا الرمز بمثابة "بصمة تعريفية" فريدة لحسابك، ولا يمكن لأي شخص آخر إنشاء حساب كشيف بدونه.
+                        </p>
+                        <p class="font-body-md text-primary font-bold mt-sm">
+                            ⚠️ تحذير مهم: هذا الرقم هو مفتاح هويتك في النظام، ولا يجب مشاركته مع أي شخص آخر للحفاظ على أمان حسابك.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ 7: هل توجد شروط صحية معينة لقبول المطابخ المنزلية؟ -->
+            <div class="accordion-item border-none">
+                <button class="w-full flex items-center justify-between py-md text-right focus:outline-none transition-colors duration-300 group" onclick="toggleAccordion(this)">
+                    <div class="flex items-center gap-md">
+                        <span class="material-symbols-outlined text-secondary-container">health_and_safety</span>
+                        <span class="font-headline-md text-[20px] question-header">هل توجد شروط صحية معينة لقبول المطابخ المنزلية؟</span>
+                    </div>
+                    <span class="material-symbols-outlined chevron">expand_more</span>
+                </button>
+                <div class="accordion-content">
+                    <p class="font-body-md text-on-surface-variant leading-relaxed">
+                        نعم، لضمان أعلى مستويات الجودة والسلامة، نطلب من جميع المطابخ المنزلية الالتزام بالشروط التالية:
+                        <br>- الحصول على شهادة صحية سارية (أو ما يعادلها).
+                        <br>- الالتزام بمعايير النظافة العامة في مكان الطهي.
+                        <br>- استخدام مكونات طازجة وموثوقة المصدر.
+                        <br>- الالتزام بمواعيد التوصيل المحددة.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</main>
+
+<!-- Support Banner -->
+<section class="max-w-container-max mx-auto px-md mb-xl">
+    <div class="bg-primary-container rounded-[2rem] p-lg md:p-xl flex flex-col md:flex-row items-center justify-between gap-lg relative overflow-hidden">
+        <div class="relative z-10 text-center md:text-right">
+            <h2 class="font-display-lg text-display-lg-mobile text-white mb-sm">لم تجد إجابتك؟</h2>
+            <p class="font-body-lg text-on-primary-container mb-lg">فريق دعم دوق متاح دائماً لمساعدتك في أي استفسار.</p>
+            <a href="/contact" class="inline-block bg-secondary-container text-white px-xl py-md rounded-full font-headline-md text-[18px] hover:scale-105 transition-all shadow-lg active:scale-95">
+                تواصل معنا الآن
+            </a>
+        </div>
+        <div class="w-full md:w-1/3 aspect-square rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center relative z-10 group overflow-hidden">
+            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" 
+                 style="background-image: url('https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=400&q=80');">
+            </div>
+            <div class="absolute inset-0 bg-primary/20"></div>
+            <span class="material-symbols-outlined text-white text-[64px] relative z-20">support_agent</span>
+        </div>
+        <div class="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="w-full mt-xl bg-surface-container border-t border-outline-variant/20">
+    <div class="flex flex-col md:flex-row justify-between items-center py-lg px-xl max-w-container-max mx-auto">
+        <div class="flex flex-col gap-xs items-center md:items-start mb-md md:mb-0">
+            <span class="font-headline-md text-headline-md text-primary font-bold">دوق</span>
+            <p class="font-label-sm text-label-sm text-on-surface-variant/70">© 2026 دوق. جميع الحقوق محفوظة.</p>
+        </div>
+        <div class="flex gap-lg flex-wrap justify-center">
+            <a class="font-label-sm text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors" href="#">سياسة الخصوصية</a>
+            <a class="font-label-sm text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors" href="#">شروط الخدمة</a>
+            <a class="font-label-sm text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors" href="/contact">اتصل بنا</a>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // ============================================
+    // Toggle Accordion
+    // ============================================
+    function toggleAccordion(button) {
+        const item = button.parentElement;
+        const isActive = item.classList.contains('active');
+        
+        // Close all other items in the same section
+        const section = item.closest('[id^="section-"]');
+        section.querySelectorAll('.accordion-item').forEach(otherItem => {
+            if (otherItem !== item) {
+                otherItem.classList.remove('active');
+            }
+        });
+
+        // Toggle current item
+        item.classList.toggle('active');
+    }
+
+    // ============================================
+    // Switch Tab
+    // ============================================
+    function switchTab(tab) {
+        const customerBtn = document.getElementById('tab-customers');
+        const chefBtn = document.getElementById('tab-chefs');
+        const customerSection = document.getElementById('section-customers');
+        const chefSection = document.getElementById('section-chefs');
+
+        if (tab === 'customers') {
+            customerBtn.classList.add('bg-primary', 'text-white', 'shadow-xl');
+            customerBtn.classList.remove('bg-white', 'text-on-surface-variant', 'border');
+            chefBtn.classList.remove('bg-primary', 'text-white', 'shadow-xl');
+            chefBtn.classList.add('bg-white', 'text-on-surface-variant', 'border');
+            
+            customerSection.classList.remove('hidden');
+            chefSection.classList.add('hidden');
+        } else {
+            chefBtn.classList.add('bg-primary', 'text-white', 'shadow-xl');
+            chefBtn.classList.remove('bg-white', 'text-on-surface-variant', 'border');
+            customerBtn.classList.remove('bg-primary', 'text-white', 'shadow-xl');
+            customerBtn.classList.add('bg-white', 'text-on-surface-variant', 'border');
+            
+            chefSection.classList.remove('hidden');
+            customerSection.classList.add('hidden');
+        }
+
+        // Close all accordions when switching tabs
+        document.querySelectorAll('.accordion-item').forEach(item => item.classList.remove('active'));
+    }
+
+    // ============================================
+    // Initialize: open the first accordion of the active tab
+    // ============================================
+    window.onload = () => {
+        const firstItem = document.querySelector('#section-customers .accordion-item');
+        if (firstItem) firstItem.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

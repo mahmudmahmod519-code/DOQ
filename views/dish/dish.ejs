@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title><%= dish ? dish.name : 'الوجبة' %> | دوق</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { font-family: 'Cairo', 'beVietnamPro', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-effect {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .custom-shadow {
+            box-shadow: 0px 4px 20px rgba(192, 57, 43, 0.06);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e1bfb9; border-radius: 10px; }
+        .rating-star {
+            color: #fc7127;
+        }
+        .rating-star-empty {
+            color: #e1bfb9;
+        }
+        .shimmer {
+            background: linear-gradient(90deg, #f7ddd9 25%, #ffe9e6 50%, #f7ddd9 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#eed4d1",
+                        "surface-tint": "#b02d21",
+                        "secondary": "#a23f00",
+                        "on-primary-fixed": "#410000",
+                        "error": "#ba1a1a",
+                        "surface-container-low": "#fff0ee",
+                        "on-surface-variant": "#59413d",
+                        "secondary-fixed-dim": "#ffb595",
+                        "surface-container-highest": "#f7ddd9",
+                        "on-secondary-container": "#5c2000",
+                        "background": "#fff8f6",
+                        "outline": "#8d706c",
+                        "on-background": "#261816",
+                        "inverse-surface": "#3c2d2a",
+                        "primary-container": "#c0392b",
+                        "inverse-primary": "#ffb4a9",
+                        "surface": "#fff8f6",
+                        "secondary-container": "#fc7127",
+                        "on-secondary-fixed-variant": "#7c2e00",
+                        "surface-container-high": "#fce2de",
+                        "on-tertiary-fixed": "#001e2b",
+                        "tertiary-fixed-dim": "#80d0f8",
+                        "on-tertiary-container": "#d3eeff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#ffe9e6",
+                        "primary-fixed-dim": "#ffb4a9",
+                        "tertiary-container": "#007296",
+                        "secondary-fixed": "#ffdbcd",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-primary-container": "#ffe5e1",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#f7ddd9",
+                        "primary-fixed": "#ffdad5",
+                        "outline-variant": "#e1bfb9",
+                        "surface-bright": "#fff8f6",
+                        "on-primary-fixed-variant": "#8e130c",
+                        "primary": "#9e2016",
+                        "tertiary-fixed": "#c0e8ff",
+                        "on-tertiary-fixed-variant": "#004d66",
+                        "on-secondary-fixed": "#351000",
+                        "on-secondary": "#ffffff",
+                        "on-surface": "#261816",
+                        "tertiary": "#005875",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#ffedea"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "container-max": "1280px",
+                        "xs": "4px",
+                        "sm": "12px",
+                        "gutter": "24px",
+                        "xl": "80px",
+                        "base": "8px",
+                        "md": "24px",
+                        "lg": "48px"
+                    },
+                    fontFamily: {
+                        "headline-md": ["Cairo", "sans-serif"],
+                        "display-lg": ["Cairo", "sans-serif"],
+                        "body-md": ["Cairo", "sans-serif"],
+                        "body-lg": ["Cairo", "sans-serif"],
+                        "label-sm": ["Cairo", "sans-serif"]
+                    },
+                    fontSize: {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "display-lg": ["32px", {"lineHeight": "40px", "fontWeight": "800"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "label-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+
+    <!-- Header / TopAppBar -->
+    <header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md flex flex-row-reverse justify-between items-center px-md py-sm">
+        <div class="font-headline-md text-headline-md text-primary">دوق</div>
+        <button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-high text-primary hover:scale-105 transition-transform" onclick="window.history.back()">
+            <span class="material-symbols-outlined">arrow_forward</span>
+        </button>
+    </header>
+
+    <main class="pb-32 pt-20">
+
+        <% if (dish) { 
+            var kitchenPhone = dish.phone_number || '';
+            var kitchenName = dish.title || '';
+            var chefName = (dish.first_name || '') + ' ' + (dish.last_name || '');
+            var imageUrl = dish.image_url || 'https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=1920&q=80';
+            var price = dish.price || 0;
+            var rating = dish.avg_rating || 0;
+            var reviewsCount = dish.reviews_count || 0;
+            var description = dish.description || 'لا يوجد وصف';
+            var ingredients = dish.ingredients || ['لا توجد مكونات'];
+        %>
+
+        <!-- 1. Hero Section -->
+        <section class="relative w-full h-[50vh] md:h-[60vh] overflow-hidden">
+            <div class="absolute inset-0 w-full h-full bg-cover bg-center" style="background-image: url('<%= imageUrl %>');"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+            
+            <!-- Floating Badge (تحضير سريع) -->
+            <div class="absolute bottom-10 right-6 flex items-center gap-2 bg-secondary-container text-on-secondary-container px-4 py-2 rounded-full font-bold shadow-lg animate-bounce">
+                <span class="material-symbols-outlined text-sm">schedule</span>
+                <span class="text-sm">جاهز خلال ٣ ساعات</span>
+            </div>
+        </section>
+
+        <div class="container-max mx-auto px-md -mt-12 relative z-10">
+
+            <!-- 2. Meal Info Card -->
+            <div class="bg-surface rounded-3xl p-md custom-shadow flex flex-col gap-md">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="font-display-lg text-display-lg text-primary mb-2"><%= dish.name %></h1>
+                        <div class="flex items-center gap-2 text-on-surface-variant">
+                            <span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="font-bold" id="avgRatingDisplay"><%= rating %></span>
+                            <span class="" id="reviewsCountDisplay">(<%= reviewsCount %> تقييم)</span>
+                        </div>
+                    </div>
+                    <div class="text-left">
+                        <span class="text-secondary font-extrabold text-3xl"><%= price %></span>
+                        <span class="text-secondary text-sm block">ج.م</span>
+                    </div>
+                </div>
+
+                <hr class="border-outline-variant opacity-30">
+
+                <!-- Mini Chef Card -->
+                <a href="/kitchens/<%= dish.kitchen_id %>" class="flex items-center justify-between bg-surface-container-low p-sm rounded-2xl border border-outline-variant/20 transition-all hover:bg-surface-container-high cursor-pointer">
+                    <div class="flex items-center gap-sm">
+                        <div class="w-14 h-14 rounded-full overflow-hidden border-2 border-secondary p-0.5 bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xl">
+                            <%= chefName ? chefName.charAt(0).toUpperCase() : 'ش' %>
+                        </div>
+                        <div>
+                            <p class="font-bold text-on-surface text-lg"><%= chefName || 'شيف' %></p>
+                            <p class="text-on-surface-variant text-sm flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs">restaurant</span>
+                                <%= kitchenName %>
+                            </p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-outline">chevron_left</span>
+                </a>
+            </div>
+
+            <!-- 3. Details Section -->
+            <section class="mt-lg">
+                <h2 class="font-headline-md text-headline-md text-on-surface mb-md flex items-center gap-2">
+                    <span class="w-2 h-8 bg-primary rounded-full"></span>
+                    المكونات والتفاصيل
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+                    <div class="bg-surface-container rounded-2xl p-md">
+                        <p class="text-body-lg text-on-surface-variant leading-relaxed"><%= description %></p>
+                    </div>
+                    <div class="flex flex-wrap gap-sm">
+                        <!-- Ingredient Pills -->
+                        <% ingredients.forEach(function(ing) { %>
+                            <div class="flex items-center gap-2 bg-white border border-outline-variant px-4 py-2 rounded-full custom-shadow">
+                                <span class="material-symbols-outlined text-primary text-sm">check_circle</span>
+                                <span class="text-sm font-medium"><%= ing %></span>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. Reviews Section -->
+            <section class="mt-lg">
+                <div class="flex justify-between items-end mb-md">
+                    <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+                        <span class="w-2 h-8 bg-primary rounded-full"></span>
+                        آراء الأكيلة والتقييمات
+                    </h2>
+                    <button class="text-primary font-bold text-sm underline" onclick="loadMoreReviews()">عرض الكل</button>
+                </div>
+
+                <!-- Reviews Container -->
+                <div id="reviewsContainer" class="space-y-sm">
+                    <!-- سيتم تعبئتها بواسطة JavaScript -->
+                    <div class="text-center text-on-surface-variant py-8">جاري تحميل التقييمات...</div>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- 5. Action Bar (Sticky Footer) -->
+        <div class="fixed bottom-0 left-0 right-0 p-md glass-effect bg-white/70 z-50 border-t border-outline-variant/10">
+            <div class="container-max mx-auto flex items-center gap-sm">
+                <!-- WhatsApp Button -->
+                <a href="https://wa.me/2<%= kitchenPhone %>?text=مرحباً%20أريد%20طلب%20<%= encodeURIComponent(dish.name) %>%20من%20مطبخ%20<%= encodeURIComponent(kitchenName) %>" 
+                   target="_blank" 
+                   class="flex-1 bg-[#25D366] text-white py-4 px-6 rounded-2xl font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217s.231.001.332.005c.109.004.258-.041.404.314.159.386.541 1.32.588 1.417.047.097.078.21.014.339-.063.129-.096.21-.188.319l-.282.33c-.093.102-.191.214-.081.403.11.189.488.804.1.478 1.24.474 2.286.735 2.612.87.326.134.518.111.713-.111.195-.222.845-.985.938-1.321.093-.336.186-.282.313-.235.127.047.804.38.943.449.139.069.231.104.265.161.035.056.035.328-.11.733z"/>
+                        <path d="M12 1c-6.075 0-11 4.925-11 11s4.925 11 11 11 11-4.925 11-11-4.925-11-11-11zm0 18.25c-1.512 0-2.934-.396-4.168-1.089l-4.169 1.093 1.112-4.062c-.759-1.28-1.2-2.775-1.2-4.367 0-4.631 3.769-8.4 8.425-8.4s8.425 3.769 8.425 8.4-3.769 8.4-8.425 8.4z"/>
+                    </svg>
+                    اطلب الآن عبر الواتساب
+                </a>
+
+                <!-- Share Button -->
+                <button onclick="shareDish()" class="w-14 h-14 rounded-2xl bg-surface-container-high text-primary flex items-center justify-center custom-shadow hover:bg-surface-container-highest transition-colors">
+                    <span class="material-symbols-outlined">ios_share</span>
+                </button>
+            </div>
+        </div>
+
+        <% } else { %>
+            <!-- Dish Not Found -->
+            <div class="container-max mx-auto px-md py-20 text-center">
+                <span class="material-symbols-outlined text-6xl text-outline-variant">restaurant</span>
+                <h2 class="text-2xl font-bold text-on-surface mt-4">الطبق غير موجود</h2>
+                <p class="text-on-surface-variant">عذراً، لم نتمكن من العثور على هذا الطبق.</p>
+                <a href="/dishes" class="mt-4 inline-block text-primary hover:underline">العودة إلى الأطباق</a>
+            </div>
+        <% } %>
+
+    </main>
+
+    <script>
+        // ============================================
+        // جلب التقييمات الخاصة بالطبق
+        // ============================================
+        const dishId = '<%= dish ? dish.id : '' %>';
+
+        async function fetchReviews() {
+            const container = document.getElementById('reviewsContainer');
+            if (!dishId) {
+                container.innerHTML = '<div class="text-center text-on-surface-variant py-8">لا توجد تقييمات</div>';
+                return;
+            }
+
+            try {
+                const res = await fetch('/reviews/dish/' + dishId);
+                const data = await res.json();
+
+                if (data.status === 'success' && data.data && data.data.length > 0) {
+                    const reviews = data.data;
+                    let html = '';
+                    reviews.forEach(r => {
+                        const name = (r.first_name || '') + ' ' + (r.last_name || '');
+                        const stars = getStarsHtml(r.rating);
+                        const date = new Date(r.created_at).toLocaleDateString('ar-EG');
+                        html += `
+                            <div class="bg-surface rounded-2xl p-md border border-outline-variant/10 custom-shadow">
+                                <div class="flex justify-between mb-2">
+                                    <div class="flex items-center gap-sm">
+                                        <div class="w-10 h-10 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-bold">${name ? name.charAt(0) : 'م'}</div>
+                                        <div>
+                                            <p class="font-bold text-sm">${name || 'مستخدم'}</p>
+                                            <p class="text-[10px] text-on-surface-variant">${date}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex text-secondary scale-75">${stars}</div>
+                                </div>
+                                <p class="text-body-md text-on-surface-variant">${r.comment || 'لا يوجد تعليق'}</p>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+
+                    // تحديث عدد التقييمات ومتوسط التقييم
+                    const avg = calculateAverage(reviews);
+                    document.getElementById('avgRatingDisplay').textContent = avg.toFixed(1);
+                    document.getElementById('reviewsCountDisplay').textContent = `(${reviews.length} تقييم)`;
+                } else {
+                    container.innerHTML = '<div class="text-center text-on-surface-variant py-8">لا توجد تقييمات لهذا الطبق بعد</div>';
+                }
+            } catch (err) {
+                console.error('Error fetching reviews:', err);
+                container.innerHTML = '<div class="text-center text-on-surface-variant py-8">حدث خطأ في تحميل التقييمات</div>';
+            }
+        }
+
+        // ============================================
+        // دوال مساعدة
+        // ============================================
+        function getStarsHtml(rating) {
+            let html = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= rating) {
+                    html += `<span class="material-symbols-outlined rating-star" style="font-variation-settings: 'FILL' 1;">star</span>`;
+                } else {
+                    html += `<span class="material-symbols-outlined rating-star-empty">star</span>`;
+                }
+            }
+            return html;
+        }
+
+        function calculateAverage(reviews) {
+            if (!reviews.length) return 0;
+            const total = reviews.reduce((sum, r) => sum + r.rating, 0);
+            return total / reviews.length;
+        }
+
+        // ============================================
+        // مشاركة الطبق
+        // ============================================
+        function shareDish() {
+            const url = window.location.href;
+            if (navigator.share) {
+                navigator.share({
+                    title: '<%= dish ? dish.name : '' %>',
+                    text: 'اكتشف طبق <%= dish ? dish.name : '' %> على دوق!',
+                    url: url
+                }).catch(() => {});
+            } else {
+                // نسخ الرابط للحالات التي لا تدعم Web Share API
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('تم نسخ رابط الطبق!');
+                }).catch(() => {
+                    prompt('انسخ الرابط:', url);
+                });
+            }
+        }
+
+        // ============================================
+        // تحميل التقييمات عند تحميل الصفحة
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchReviews();
+        });
+
+        // ============================================
+        // تأثيرات بسيطة
+        // ============================================
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', () => {
+                btn.style.transform = 'scale(0.95)';
+            });
+            btn.addEventListener('mouseup', () => {
+                btn.style.transform = 'scale(1)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = 'scale(1)';
+            });
+        });
+
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 50) {
+                header.classList.add('shadow-md');
+            } else {
+                header.classList.remove('shadow-md');
+            }
+        });
+    </script>
+
+</body>
+</html>

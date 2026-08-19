@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Dhouq | بوابة الانضمام والوصول</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#9e2016",
+                        "primary-container": "#c0392b",
+                        "on-primary-container": "#ffe5e1",
+                        "secondary": "#a23f00",
+                        "on-surface": "#261816",
+                        "on-surface-variant": "#59413d",
+                        "surface-container-low": "#fff0ee",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#e1bfb9"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
+        body { font-family: 'Tajawal', sans-serif; background-color: #fff8f6; }
+        .hidden-form { display: none; opacity: 0; transform: translateY(10px); }
+        .visible-form { display: block; opacity: 1; transform: translateY(0); transition: opacity 0.4s ease, transform 0.4s ease; }
+        .alert { padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-weight: 600; text-align: right; }
+        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    </style>
+</head>
+<body class="antialiased overflow-x-hidden">
+<main class="min-h-screen flex flex-col md:flex-row">
+    
+    <!-- Left Panel -->
+    <section class="hidden md:flex md:w-1/2 relative bg-[#2C3E50] overflow-hidden items-center justify-center p-12">
+        <div class="absolute inset-0 z-0 bg-cover bg-center opacity-40 mix-blend-overlay" style="background-image: url('https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=1000&q=80');"></div>
+        <div class="absolute inset-0 z-10 bg-gradient-to-br from-[#2C3E50] via-[#2C3E50]/80 to-secondary/30"></div>
+        <div class="relative z-20 text-center flex flex-col items-center max-w-lg">
+            <h1 class="text-4xl font-bold text-white mb-6 leading-tight">دوق طعم البيوت، من أيدي أشهر الطهاة المحترفين حولك.</h1>
+            <div class="w-24 h-1 bg-secondary rounded-full mb-6"></div>
+            <p class="text-lg text-white/80">رحلة تذوق استثنائية تبدأ من قلب المطابخ المنزلية الأكثر تميزاً.</p>
+        </div>
+    </section>
+
+    <!-- Right Panel -->
+    <section class="w-full md:w-1/2 flex flex-col items-center justify-center p-6 md:p-12 bg-surface relative">
+        <div class="w-full max-w-md">
+
+            <div id="alert-container"></div>
+
+            <div class="bg-white rounded-2xl shadow-xl p-6 border border-slate-100 overflow-hidden">
+                
+                <!-- Tabs -->
+                <div class="flex p-1 bg-surface-container-low rounded-xl mb-6">
+                    <button class="flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 bg-primary-container text-on-primary-container shadow-sm" id="btn-login-tab" onclick="switchForm('login')">تسجيل الدخول</button>
+                    <button class="flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 text-on-surface-variant hover:bg-slate-100" id="btn-reg-tab" onclick="switchForm('register')">حساب جديد</button>
+                </div>
+
+                <!-- Login Form -->
+                <div class="space-y-6 visible-form" id="login-form-container">
+                    <div class="text-right">
+                        <h2 class="text-xl font-bold text-on-surface mb-1">مرحباً بك مجدداً في دوق</h2>
+                        <p class="text-sm text-on-surface-variant">سجل دخولك لتصفح المطابخ أو إدارة مطبخك</p>
+                    </div>
+                    <form class="space-y-4" id="login-form">
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">person</span>
+                            <input class="w-full pr-10 pl-3 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-right" id="login-username" name="username" placeholder="اسم المستخدم أو البريد الإلكتروني" type="text" required>
+                        </div>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">lock</span>
+                            <input class="w-full pr-10 pl-10 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-right" id="doq-login-pass" name="password" placeholder="كلمة المرور" type="password" required>
+                            <button class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface" onclick="togglePass('doq-login-pass', this)" type="button">
+                                <span class="material-symbols-outlined text-md">visibility</span>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <label class="flex items-center gap-1 cursor-pointer text-on-surface-variant">
+                                <input class="rounded border-outline-variant text-primary focus:ring-primary" name="remember" type="checkbox"> تذكرني
+                            </label>
+                            <a class="text-primary hover:underline" href="/auth/forgetpassword">نسيت كلمة المرور؟</a>
+                        </div>
+                        <button type="submit" id="login-btn" class="w-full py-2.5 bg-primary-container text-on-primary-container rounded-xl font-bold hover:opacity-90 transition-all shadow-md">تسجيل الدخول</button>
+                    </form>
+                </div>
+
+                <!-- Register Form -->
+                <div class="space-y-6 hidden-form" id="register-form-container">
+                    <div class="text-right">
+                        <h2 class="text-xl font-bold text-on-surface mb-1">إنشاء حساب جديد</h2>
+                        <p class="text-sm text-on-surface-variant">استمتع بأشهى المأكولات المنزلية الطازجة حولك</p>
+                    </div>
+                    <form class="space-y-4" id="register-form">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="relative group">
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">badge</span>
+                                <input class="w-full pr-9 pl-3 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all text-right" id="reg-firstname" name="first_name" placeholder="الاسم الأول" type="text" required>
+                            </div>
+                            <div class="relative group">
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">badge</span>
+                                <input class="w-full pr-9 pl-3 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all text-right" id="reg-lastname" name="last_name" placeholder="الاسم الأخير" type="text" required>
+                            </div>
+                        </div>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">call</span>
+                            <input class="w-full pr-10 pl-3 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all text-right" id="reg-phone" name="phone_number" placeholder="رقم الهاتف (مثال: 01012345678)" type="tel" required>
+                        </div>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">mail</span>
+                            <input class="w-full pr-10 pl-3 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all text-right" id="reg-email" name="email" placeholder="البريد الإلكتروني" type="email" required>
+                        </div>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">lock</span>
+                            <input class="w-full pr-10 pl-10 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all text-right" id="doq-reg-pass" name="password" placeholder="كلمة المرور" type="password" required>
+                            <button class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface" onclick="togglePass('doq-reg-pass', this)" type="button">
+                                <span class="material-symbols-outlined text-md">visibility</span>
+                            </button>
+                        </div>
+                        <div class="relative group">
+                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">key</span>
+                            <input class="w-full pr-10 pl-10 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all text-right" id="doq-reg-pass-conf" name="password_confirmation" placeholder="تأكيد كلمة المرور" type="password" required>
+                            <button class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface" onclick="togglePass('doq-reg-pass-conf', this)" type="button">
+                                <span class="material-symbols-outlined text-md">visibility</span>
+                            </button>
+                        </div>
+                        <div class="block border-t border-dashed border-outline-variant/60 pt-3 mt-3 text-right">
+                            <label class="block text-xs font-bold text-red-700 mb-1 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[16px]">security</span>
+                                الرمز التعريفي:
+                            </label>
+                            <div class="relative group">
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">pin</span>
+                                <input class="w-full pr-10 pl-3 py-2.5 rounded-xl border border-red-200 bg-red-50/30 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-right font-mono" id="reg-code" name="code" placeholder="أدخل 6 أرقام سرية" type="text" maxlength="6" required>
+                            </div>
+                        </div>
+                        <% if (locals.currentUser && currentUser.role === 'admin') { %>
+                            <div class="block pt-2 text-right">
+                                <label class="block text-xs font-bold text-secondary mb-1.5 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
+                                    صلاحية الحساب:
+                                </label>
+                                <select name="roles" id="reg-roles" class="w-full py-2.5 pr-3 pl-10 rounded-xl border border-outline-variant bg-surface-container-low text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all font-medium text-on-surface text-right">
+                                    <option value="customer" selected>عميل</option>
+                                    <option value="chef">شيف</option>
+                                    <option value="admin">مدير</option>
+                                </select>
+                            </div>
+                        <% } else { %>
+                            <input type="hidden" name="roles" id="reg-roles" value="customer">
+                        <% } %>
+                        <button type="submit" id="register-btn" class="w-full py-2.5 bg-secondary text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-md mt-2">إنشاء الحساب</button>
+                    </form>
+                </div>
+
+            </div>
+
+            <footer class="mt-6 text-center space-y-2">
+                <p class="text-xs text-on-surface-variant">© 2026 دوق. جميع الحقوق محفوظة</p>
+            </footer>
+        </div>
+    </section>
+</main>
+<script>
+// ============================================
+// Toggle Forms
+// ============================================
+function switchForm(type) {
+    const loginForm = document.getElementById('login-form-container');
+    const regForm = document.getElementById('register-form-container');
+    const loginTab = document.getElementById('btn-login-tab');
+    const regTab = document.getElementById('btn-reg-tab');
+    document.getElementById('alert-container').innerHTML = '';
+
+    if (type === 'login') {
+        regForm.classList.remove('visible-form');
+        regForm.classList.add('hidden-form');
+        setTimeout(() => {
+            loginForm.classList.remove('hidden-form');
+            loginForm.classList.add('visible-form');
+            loginTab.classList.add('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
+            loginTab.classList.remove('text-on-surface-variant');
+            regTab.classList.remove('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
+            regTab.classList.add('text-on-surface-variant');
+        }, 100);
+    } else {
+        loginForm.classList.remove('visible-form');
+        loginForm.classList.add('hidden-form');
+        setTimeout(() => {
+            regForm.classList.remove('hidden-form');
+            regForm.classList.add('visible-form');
+            regTab.classList.add('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
+            regTab.classList.remove('text-on-surface-variant');
+            loginTab.classList.remove('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
+            loginTab.classList.add('text-on-surface-variant');
+        }, 100);
+    }
+}
+
+// ============================================
+// Toggle Password
+// ============================================
+function togglePass(id, btn) {
+    const input = document.getElementById(id);
+    const icon = btn.querySelector('.material-symbols-outlined');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.innerText = 'visibility_off';
+    } else {
+        input.type = 'password';
+        icon.innerText = 'visibility';
+    }
+}
+
+// ============================================
+// Show Alert
+// ============================================
+function showAlert(message, type) {
+    const container = document.getElementById('alert-container');
+    const cls = type === 'success' ? 'alert-success' : 'alert-error';
+    container.innerHTML = `<div class="alert ${cls}">${message}</div>`;
+    setTimeout(() => {
+        const alert = container.querySelector('.alert');
+        if (alert) { alert.style.opacity = '0'; alert.style.transition = 'opacity 0.5s'; }
+        setTimeout(() => { if (alert && alert.parentNode) alert.remove(); }, 500);
+    }, 5000);
+}
+
+// ============================================
+// LOGIN - مع التعامل مع redirect
+// ============================================
+document.getElementById('login-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    const originalText = btn.textContent;
+    btn.textContent = 'جاري...';
+    btn.disabled = true;
+
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('doq-login-pass').value;
+
+    if (!username || !password) {
+        showAlert('يرجى إدخال البريد الإلكتروني وكلمة المرور', 'error');
+        btn.textContent = originalText;
+        btn.disabled = false;
+        return;
+    }
+
+    try {
+        const response = await fetch('/auth/signin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: username, password })
+        });
+
+        // ✅ التحقق من نوع الـ response
+        const contentType = response.headers.get('content-type');
+
+        if (contentType && contentType.includes('application/json')) {
+            // لو كان JSON
+            const data = await response.json();
+            if (response.ok) {
+                showAlert('✅ ' + data.message, 'success');
+                if (data.redirect) {
+                    setTimeout(() => window.location.href = data.redirect, 1000);
+                }
+            } else {
+                showAlert('❌ ' + data.message, 'error');
+            }
+        } else {
+            // ✅ لو كان redirect (HTML)
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                // لو كان HTML عادي
+                const text = await response.text();
+                document.documentElement.innerHTML = text;
+            }
+        }
+    } catch (error) {
+        console.error('Login Error:', error);
+        showAlert('❌ حدث خطأ', 'error');
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+});
+
+// ============================================
+// REGISTER - مع التعامل مع redirect
+// ============================================
+document.getElementById('register-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('register-btn');
+    const originalText = btn.textContent;
+    btn.textContent = 'جاري...';
+    btn.disabled = true;
+
+    const data = {
+        firstname: document.getElementById('reg-firstname').value.trim(),
+        lastname: document.getElementById('reg-lastname').value.trim(),
+        phone_number: document.getElementById('reg-phone').value.trim(),
+        email: document.getElementById('reg-email').value.trim(),
+        password: document.getElementById('doq-reg-pass').value,
+        password_confirmation: document.getElementById('doq-reg-pass-conf').value,
+        code: document.getElementById('reg-code').value.trim(),
+        roles: document.getElementById('reg-roles').value
+    };
+
+    // Validation
+    if (!data.firstname || !data.lastname || !data.phone_number || !data.email || !data.password || !data.code) {
+        showAlert('جميع الحقول مطلوبة', 'error');
+        btn.textContent = originalText;
+        btn.disabled = false;
+        return;
+    }
+    if (data.password !== data.password_confirmation) {
+        showAlert('كلمة المرور غير متطابقة', 'error');
+        btn.textContent = originalText;
+        btn.disabled = false;
+        return;
+    }
+    if (data.password.length < 8) {
+        showAlert('كلمة المرور 8 أحرف على الأقل', 'error');
+        btn.textContent = originalText;
+        btn.disabled = false;
+        return;
+    }
+    if (data.code.length !== 6) {
+        showAlert('الرمز يجب أن يكون 6 أرقام', 'error');
+        btn.textContent = originalText;
+        btn.disabled = false;
+        return;
+    }
+
+    try {
+        const response = await fetch('/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        // ✅ التحقق من نوع الـ response
+        const contentType = response.headers.get('content-type');
+
+        if (contentType && contentType.includes('application/json')) {
+            // لو كان JSON
+            const result = await response.json();
+            if (response.ok) {
+                showAlert('✅ ' + result.message, 'success');
+                if (result.redirect) {
+                    setTimeout(() => window.location.href = result.redirect, 1500);
+                }
+            } else {
+                showAlert('❌ ' + result.message, 'error');
+            }
+        } else {
+            // ✅ لو كان redirect (HTML)
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                // لو كان HTML عادي
+                const text = await response.text();
+                document.documentElement.innerHTML = text;
+            }
+        }
+    } catch (error) {
+        console.error('Register Error:', error);
+        showAlert('❌ حدث خطأ', 'error');
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+});
+
+// ============================================
+// Auto-format code
+// ============================================
+document.querySelectorAll('input[name="code"]').forEach(input => {
+    input.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+    });
+});
+
+console.log('✅ Dhouq Auth System Ready');
+</script>
+</body>
+</html>
