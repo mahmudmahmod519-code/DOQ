@@ -7,20 +7,23 @@ const auth=require('../middlware/auth');
 const isOwner=require('../middlware/isOwner');
 const pool = require("../database/pool");
 
+
 const { 
     SpecificDish_render, 
-    Dishes_render, 
-    MyDishes_render
- }=require("../rendering/dishes");
+    Dishes_render,
+    // SpcificMyDish_render
+}=require("../rendering/dishes");
 
 
+const { checkSubscription } = require("../controller/payment");
 
 const { 
     dish_get_id,
     createDish_controller,
     getAllDishes_controller,
     getDish_controller,
-    getMyDishes_controller,
+    // getMyDishes_controller,
+    getMyDishesPaginated_controller,
     getMySpcificDish_controller,
     getAllDieshesForSpecificKitchenForChef_controller,
     deleteDish_controller,
@@ -34,23 +37,17 @@ const router=require("express").Router();
 
 
 
-router.use(auth,for_main('user',true,false),(req,res,next)=>{
-    req.user=req.my;
-    next()
-});//done
+router.use(auth.optional);
 
 
-// render page for dishes dashboard for (admin,customer)=>as kitchen /
-router.get('/',roles('admin','customer'),catchError(Dishes_render));//done
-
-// render mydishes page for chef /my
-router.get('/my',roles('chef'),catchError(MyDishes_render));//done
+// render page for dishes dashboard for (admin,customer,chef)=>as kitchen /
+router.get('/',catchError(Dishes_render));//done
 
 
 // render page for dish specific dish /:id
 router.get('/:id',dish_get_id,catchError(SpecificDish_render));//done
 
-
+// router.get('/chef/:id',roles('admin','chef'),dish_get_id,catchError(SpcificMyDish_render));
 
 //apis
 
@@ -61,12 +58,7 @@ router.get('/v1/api/kitchen/:id',roles('admin','customer'),allRows("dish","kitch
 
 router.get('/v1/api/dashboard',roles('admin'),catchError(getAllDishesAdmin_controller));//done
 
-router.get('/v1/api/my',roles('chef'),for_main('kitchen',true,false),(req,res,next)=>{
-    req.MyKitchens=[...req.my];
-    console.log(req.MyKitchens);
-    next();
-},for_main('dish'),catchError(getMyDishes_controller));//done
-
+router.get('/v1/api/my',roles('chef'),for_main('kitchen',true,false),catchError(getMyDishesPaginated_controller));//done
 
 router.get('/v1/api/:id',roles('admin','customer'),dish_get_id,catchError(getDish_controller));//done
 
@@ -78,14 +70,14 @@ router.get('/v1/api/my/:id',roles('chef'),isOwner('dish'),for_main('dish'),catch
 router.get('/v1/api/kitchen/:id/my',roles('chef'),isOwner('kitchen'),allRows("dish","kitchen"),catchError(getAllDieshesForSpecificKitchenForChef_controller));//done
 
 
-router.put('/v1/api/:id',roles('chef'),isOwner('dish'),catchError(updateDish_controller));//done
+router.put('/v1/api/:id',roles('chef'),checkSubscription,isOwner('dish'),catchError(updateDish_controller));//done
     //check id validation
     //get data of body and validate it
     //check if dish is found
     //update data
     //return successfuly message
 
-router.post('/v1/api/:id/upload_image',roles('chef'),isOwner('dish'),upload.single('image'),catchError(uploadDishImage_controller));//done
+router.post('/v1/api/:id/upload_image',roles('chef'),checkSubscription,isOwner('dish'),upload.single('image'),catchError(uploadDishImage_controller));//done
     // get id and validate it
     //check if dish is found
     //check image file is found
@@ -94,7 +86,7 @@ router.post('/v1/api/:id/upload_image',roles('chef'),isOwner('dish'),upload.sing
     //return successfuly message    
 
 //if primary must be spcify kitchen in body
-router.post('/v1/api/',roles('chef'),catchError(createDish_controller));//done
+router.post('/v1/api/',roles('chef'),checkSubscription,catchError(createDish_controller));//done
     //get data of body and validate it
     //check if chef have kitchen
     // if have more kitchen and chef is primary subscriber must be specify kitchen in body
@@ -113,7 +105,7 @@ router.delete('/v1/api/:id',roles('admin'),catchError(deleteDish_controller));//
     //return successfuly message
 
 
-router.delete('/v1/api/my/:id',roles('chef'),isOwner('dish'),catchError(deleteDish_controller));//done
+router.delete('/v1/api/my/:id',roles('chef'),checkSubscription,isOwner('dish'),catchError(deleteDish_controller));//done
     //get id and validate it
     //check if dish is found
     //delete data from database

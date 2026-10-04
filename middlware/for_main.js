@@ -38,7 +38,11 @@ module.exports = (resource, pass = false,withPageination=true) => {
                 let isCollection = true; // هل النتيجة مجموعة أم مفردة
                 
 
+            if(!req.user)
+                return res.status(401).redirect('/auth');
+
             const userId = req.user.id;
+            
 
             switch (resource) {
                 case 'kitchen':
@@ -182,12 +186,12 @@ if(withPageination){
                 total: total,
                 total_pages: Math.ceil(total / limit)
             };
-
+            
             // 8. إذا لم توجد بيانات و pass = false نعيد 404
             if ((data.length === 0 || !data) && pass === false) {
                 return res.status(404).json({ message: 'لم أجد أي بيانات شخصية', status: 'error' });
             }
-
+            
             next();
 
         } catch (ex) {

@@ -4,7 +4,6 @@ const Joi = require('joi');
  * جميع مخططات التحقق (Validation Schemas) لمنصة دوق
  * متوافقة مع هيكل قاعدة البيانات المحدد
  */
-
 const userSchema = Joi.object({
     firstname: Joi.string()
         .min(2)
@@ -18,7 +17,6 @@ const userSchema = Joi.object({
             'string.pattern.base': 'الاسم الأول يجب أن يحتوي على أحرف فقط',
             'any.required': 'الاسم الأول مطلوب'
         }),
-    
     lastname: Joi.string()
         .min(2)
         .max(50)
@@ -31,26 +29,15 @@ const userSchema = Joi.object({
             'string.pattern.base': 'الاسم الأخير يجب أن يحتوي على أحرف فقط',
             'any.required': 'الاسم الأخير مطلوب'
         }),
-    
-    code: Joi.string()
-        .length(6)
-        .required()
-        .pattern(/^[0-9]{6}$/)
-        .messages({
-            'string.length': 'رمز التحقق يجب أن يكون 6 أرقام',
-            'string.pattern.base': 'رمز التحقق يجب أن يحتوي على أرقام فقط',
-            'any.required': 'رمز التحقق مطلوب'
-        }),
-    
     phone_number: Joi.string()
         .required()
         .trim()
-        .pattern(/^(010|011|012|015|01)[0-9]{9}$/)
+        .length(11)
+        .pattern(/^(010|011|012|015)[0-9]{8}$/)
         .messages({
             'string.pattern.base': 'رقم الهاتف يجب أن يكون رقم مصري صحيح (مثل: 01012345678)',
             'any.required': 'رقم الهاتف مطلوب'
         }),
-    
     email: Joi.string()
         .email()
         .required()
@@ -62,7 +49,6 @@ const userSchema = Joi.object({
             'any.required': 'البريد الإلكتروني مطلوب',
             'string.max': 'البريد الإلكتروني يجب أن لا يتجاوز 100 حرف'
         }),
-    
     password: Joi.string()
         .min(8)
         .max(255)
@@ -74,7 +60,6 @@ const userSchema = Joi.object({
             'string.pattern.base': 'كلمة المرور يجب أن تحتوي على حرف كبير، حرف صغير، رقم، ورمز خاص',
             'any.required': 'كلمة المرور مطلوبة'
         }),
-    
     password_confirmation: Joi.string()
         .valid(Joi.ref('password'))
         .required()
@@ -82,14 +67,80 @@ const userSchema = Joi.object({
             'any.only': 'تأكيد كلمة المرور غير متطابق',
             'any.required': 'تأكيد كلمة المرور مطلوب'
         }),
-    
+    // ✅ إضافة role - customer أو chef فقط (admin من الـ admin فقط)
     roles: Joi.string()
-        .valid('customer', 'chef', 'admin')
+        .valid('customer', 'chef', 'delivery')
         .default('customer')
         .messages({
-            'any.only': 'الدور يجب أن يكون: customer, chef, أو admin'
+            'any.only': 'الدور يجب أن يكون: customer أو chef أو delivery'
+        }),
+    company_name: Joi.string().max(120).trim().allow('', null),
+    enable_2fa: Joi.alternatives().try(Joi.boolean(), Joi.string().valid('0', '1', 'on', 'off')).default(false),
+        
+    city: Joi.string()
+        .max(100)
+        .trim()
+        .allow('', null)
+        .messages({
+            'string.max': 'اسم المدينة يجب أن لا يتجاوز 100 حرف'
+        }),
+    
+    address: Joi.string()
+        .max(255)
+        .trim()
+        .allow('', null)
+        .messages({
+            'string.max': 'العنوان يجب أن لا يتجاوز 255 حرف'
+        }),
+    
+    secretKey: Joi.string().allow('', null)
+    .trim()
+    .uppercase()
+    .pattern(/^[A-Z2-7]{16,32}=*$/)
+    .messages({
+        'string.pattern.base': 'الـ Secret غير صحيح ويجب أن يكون بصيغة Base32'
+    })
+
+});
+
+const createAdminUserSchema = Joi.object({
+    firstname: Joi.string().min(2).max(50).required().trim().messages({
+        'string.min': 'الاسم الأول يجب أن يكون على الأقل حرفين',
+        'any.required': 'الاسم الأول مطلوب'
+    }),
+    lastname: Joi.string().min(2).max(50).required().trim().messages({
+        'string.min': 'اسم العائلة يجب أن يكون على الأقل حرفين',
+        'any.required': 'اسم العائلة مطلوب'
+    }),
+    email: Joi.string().email().required().trim().lowercase().messages({
+        'string.email': 'البريد الإلكتروني غير صحيح',
+        'any.required': 'البريد الإلكتروني مطلوب'
+    }),
+    phone_number: Joi.string().length(11).trim().pattern(/^(010|011|012|015)[0-9]{8}$/).required().messages({
+        'string.pattern.base': 'رقم الهاتف يجب أن يكون رقم مصري صحيح',
+        'any.required': 'رقم الهاتف مطلوب'
+    }),
+    password: Joi.string().min(8).max(255).required().pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/).messages({
+        'string.pattern.base': 'كلمة المرور يجب أن تحتوي على حرف كبير، حرف صغير، رقم، ورمز خاص',
+        'any.required': 'كلمة المرور مطلوبة'
+    }),
+    roles: Joi.string().valid('customer', 'chef', 'delivery').default('customer').messages({
+        'any.only': 'الدور يجب أن يكون عميل أو شيف أو شركة دليفري'
+    })
+});
+
+const signUp2Schema = Joi.object({
+    otp: Joi.string()
+        .length(6)
+        .required()
+        .pattern(/^[0-9]{6}$/)
+        .messages({
+            'string.length': 'رمز التحقق يجب أن يكون 6 أرقام',
+            'string.pattern.base': 'رمز التحقق يجب أن يحتوي على أرقام فقط',
+            'any.required': 'رمز التحقق مطلوب'
         })
 });
+
 
 const userUpdateSchema = Joi.object({
     first_name: Joi.string()
@@ -105,17 +156,32 @@ const userUpdateSchema = Joi.object({
         .pattern(/^[\u0600-\u06FFa-zA-Z\s]+$/),
     
     phone_number: Joi.string()
+        .length(11)
         .trim()
-        .pattern(/^(010|011|012|015|01)[0-9]{9}$/),
-    
+        .pattern(/^(010|011|012|015)[0-9]{8}$/),    
     // email: Joi.string()
     //     .email()
     //     .trim()
     //     .lowercase()
     //     .max(100),
+    city: Joi.string()
+        .max(100)
+        .trim()
+        .allow('', null)
+        .messages({
+            'string.max': 'اسم المدينة يجب أن لا يتجاوز 100 حرف'
+        }),
+    
+    address: Joi.string()
+        .max(255)
+        .trim()
+        .allow('', null)
+        .messages({
+            'string.max': 'العنوان يجب أن لا يتجاوز 255 حرف'
+        }),
     
     roles: Joi.string()
-        .valid('customer', 'chef', 'admin')
+        .valid('customer', 'chef', 'delivery', 'admin')
 });
 
 const loginSchema = Joi.object({
@@ -196,12 +262,13 @@ const kitchenSchema = Joi.object({
     phone_number: Joi.string()
         .required()
         .trim()
-        .pattern(/^(010|011|012|015|01)[0-9]{9}$/)
+        .length(11)
+        .pattern(/^(010|011|012|015)[0-9]{8}$/)
         .messages({
             'string.pattern.base': 'رقم الهاتف يجب أن يكون رقم مصري صحيح',
             'any.required': 'رقم الهاتف مطلوب'
-        }),
-    
+        })
+        
     // user_id: Joi.number()
     //     .integer()
     //     .positive()
@@ -238,7 +305,18 @@ const kitchenUpdateSchema = Joi.object({
     
     phone_number: Joi.string()
         .trim()
-        .pattern(/^(010|011|012|015|01)[0-9]{9}$/)
+        .length(11)
+        .pattern(/^(010|011|012|015)[0-9]{8}$/),
+
+    kitchen_id: Joi.number()
+        .integer()
+        .positive()
+        .required()
+        .messages({
+            'number.base': 'معرف المطبخ يجب أن يكون رقم',
+            'number.positive': 'معرف المطبخ يجب أن يكون رقم موجب',
+            'any.required': 'معرف المطبخ مطلوب'
+        })
 });
 
 const dishSchema = Joi.object({
@@ -352,15 +430,15 @@ const dishUpdateSchema = Joi.object({
 });
 
 const reviewSchema = Joi.object({
-    user_id: Joi.number()
-        .integer()
-        .positive()
-        .required()
-        .messages({
-            'number.base': 'معرف المستخدم يجب أن يكون رقم',
-            'number.positive': 'معرف المستخدم يجب أن يكون رقم موجب',
-            'any.required': 'معرف المستخدم مطلوب'
-        }),
+    // user_id: Joi.number()
+    //     .integer()
+    //     .positive()
+    //     .required()
+    //     .messages({
+    //         'number.base': 'معرف المستخدم يجب أن يكون رقم',
+    //         'number.positive': 'معرف المستخدم يجب أن يكون رقم موجب',
+    //         'any.required': 'معرف المستخدم مطلوب'
+    //     }),
     
     dish_id: Joi.number()
         .integer()
@@ -404,6 +482,18 @@ const reviewUpdateSchema = Joi.object({
         .trim()
         .allow('', null)
 });
+
+const reviewsListQuerySchema = Joi.object({
+    type: Joi.string().valid('dish', 'kitchen').optional(),
+    id: Joi.number().integer().positive().optional(),
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(50).default(10),
+    q: Joi.string().trim().allow('', null).max(200).optional(),
+    rating: Joi.number().integer().min(1).max(5).optional(),
+    sort_order: Joi.string().valid('ASC', 'DESC', 'asc', 'desc').default('DESC').optional(),
+    city: Joi.string().trim().allow('', null).optional(),
+    category: Joi.string().trim().allow('', null).optional()
+}).unknown(true);
 
 const searchQuerySchema = Joi.object({
 
@@ -501,7 +591,12 @@ const searchQuerySchema = Joi.object({
         .messages({
             'string.base': 'نوع الترتيب يجب أن يكون نصاً.',
             'any.only': 'نوع الترتيب يجب أن يكون تصاعدي (ASC) أو تنازلي (DESC).'
-        })
+        }),
+    type: Joi.string().empty(),
+    id: Joi.number().empty(),
+    include_stats: Joi.boolean().empty(),
+    kitchen_id: Joi.number().empty(),
+
 });
 
 
@@ -518,8 +613,7 @@ const idParamSchema = Joi.object({
 });
 
 const changePasswordSchema = Joi.object({
-
-       code: Joi.string()
+    otp: Joi.string()
         .length(6)
         .required()
         .pattern(/^[0-9]{6}$/)
@@ -559,7 +653,7 @@ const changePasswordSchema = Joi.object({
 
 // number save it in database to change password if want
 const forgetPassword = Joi.object({
-    code: Joi.string()
+    otp: Joi.string()
         .length(6)
         .required()
         .pattern(/^[0-9]{6}$/)
@@ -601,7 +695,9 @@ const forgetPassword = Joi.object({
 });
 
 module.exports = {
+    signUp2Schema,
     userSchema,
+    createAdminUserSchema,
     userUpdateSchema,
     loginSchema,
     changePasswordSchema,
@@ -617,6 +713,7 @@ module.exports = {
     
     reviewSchema,
     reviewUpdateSchema,
+    reviewsListQuerySchema,
     
     searchQuerySchema,
     

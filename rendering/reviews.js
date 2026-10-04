@@ -1,23 +1,36 @@
-function reviews_render(req,res){
-    return res.render('./reviews/reviews',{
-        currentUser:req.user,
-        status:'success'
-    })
+const checkLogin = require("../utiles/checkLogin");
+
+
+function myReviews_render(req, res) {
+    return res.render('./customer/myreviews',checkLogin(req,res));
 }
 
 
 //add info kitchen from api mykitchens
-function reviewsDashboard_render(req,res){
-    let path='./reviews/reviews_chef_dashboard';
-    if(req.user.roles==='admin')
-        path='./admin/reviews';
+function reviews_render(req,res){
+    const { type, id } = req.query;
+    //all reviews for customers
+    let path='./customer/reviews';
 
-    return res.render(path,{
-        currentUser:req.user
-    });
+    if(req.user?.roles==='admin')
+        path='./admin/reviews';
+    else if(req.user?.roles==='chef')
+        path='./chef/reviews';
+
+    const response= {
+        type: type || null,
+        id: id || null,
+        ...checkLogin(req,res)
+    }
+   
+    if(req.user?.roles!=='customer')
+        delete response.type;delete response.id;
+    
+    
+    return res.render(path,response);
 }
 
 module.exports={
-    reviewsDashboard_render,
-    reviews_render
+    reviews_render,
+    myReviews_render
 }

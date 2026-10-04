@@ -2,7 +2,6 @@ const router=require("express").Router();
 const roles=require("../middlware/roles");
 const auth=require("../middlware/auth");
 const allRows=require("../middlware/allRows");
-const for_main=require("../middlware/for_main");
 const {
     createCategory_controller,
     getAllCategories_controller,
@@ -11,14 +10,17 @@ const {
     deleteCategory_controller,
     getCategoriesWithCount_controller
 }=require("../controller/category");
-const {catgories_render}=require("../rendering/category");
-const catchError=require("../utiles/catchError")
 
+const {catgories_render}=require("../rendering/category");
+
+const catchError=require("../utiles/catchError");
+
+
+// Customers and guests need this read-only list for the public dish filters.
+// Keep it before the admin-only router guard.
+router.get('/api/v1/all', auth.optional, catchError(getCategoriesWithCount_controller));
 
 router.use(auth);
-
-
-router.get('/all', catchError(getCategoriesWithCount_controller));
 
 
 router.use(roles('admin'));
@@ -26,24 +28,24 @@ router.use(roles('admin'));
 
 //render page catgories to show it admin
 // all categories only admin
-router.get('/dashboard',for_main('user'), allRows('category'), catchError(catgories_render));
+router.get('/', catchError(catgories_render));
 
 
-router.get('/',for_main('user'),allRows('category'),catchError(getAllCategories_controller));
+router.get('/api/v1',allRows('category'),catchError(getAllCategories_controller));
 
 // create category
-router.post('/', catchError(createCategory_controller));
+router.post('/api/v1', catchError(createCategory_controller));
 
 // update any catgory
-router.put('/:id', catchError(updateCategory_controller));
+router.put('/api/v1/:id', catchError(updateCategory_controller));
 
 //delete category
-router.delete('/:id', catchError(deleteCategory_controller));
+router.delete('/api/v1/:id', catchError(deleteCategory_controller));
 
 //get spcific catgory information
-router.get('/:id', catchError(getCategory_controller));
+router.get('/api/v1/:id', catchError(getCategory_controller));
 
-router.get('/stats/count', catchError(getCategoriesWithCount_controller));
+router.get('/api/v1/stats/count', catchError(getCategoriesWithCount_controller));
 
 
 

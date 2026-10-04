@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<script src="/app-client.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الإعدادات - دوق</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#9e2016",
+                        "primary-container": "#c0392b",
+                        "on-primary": "#ffffff",
+                        "secondary": "#a23f00",
+                        "secondary-container": "#fc7127",
+                        "background": "#fff8f6",
+                        "surface": "#fff8f6",
+                        "surface-container": "#ffe9e6",
+                        "surface-container-low": "#fff0ee",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#261816",
+                        "on-surface-variant": "#59413d",
+                        "outline": "#8d706c",
+                        "outline-variant": "#e1bfb9",
+                        "tertiary": "#005875",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6"
+                    },
+                    fontFamily: {
+                        "cairo": ["Cairo", "sans-serif"],
+                        "tajawal": ["Tajawal", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #fff8f6; }
+        .cairo-font { font-family: 'Cairo', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .material-symbols-filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+
+    <%- include('../partials/header.ejs') %>
+
+    <main class="pt-20 pb-16">
+        <div class="max-w-3xl mx-auto px-4">
+            
+            <!-- Header -->
+            <div class="mb-8 fade-in">
+                <a href="/users/profile" class="inline-flex items-center gap-2 text-primary hover:underline mb-4">
+                    <span class="material-symbols-outlined">arrow_forward</span>
+                    العودة للملف الشخصي
+                </a>
+                <h1 class="text-3xl font-cairo font-bold text-on-surface">الإعدادات</h1>
+                <p class="text-on-surface-variant mt-2">تعديل بيانات الحساب، الصورة الشخصية، والإعدادات الأمنية</p>
+            </div>
+
+            <!-- Profile Image Upload Section (NEW) -->
+            <div class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/20 mb-6 fade-in">
+                <h2 class="font-cairo font-bold text-xl mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">account_circle</span>
+                    صورة الملف الشخصي
+                </h2>
+                <div class="flex flex-col md:flex-row items-center gap-6">
+                    <img id="currentProfileImage" src="<%= currentUser.portfolio_url || '/assests/avatar.jpeg' %>" 
+                         alt="صورة الملف الشخصي" 
+                         class="w-24 h-24 rounded-full object-cover border-2 border-outline-variant">
+                    <div class="flex-1 w-full">
+                        <p class="text-sm text-on-surface-variant mb-3">قم برفع صورة جديدة لتحديث صورة ملفك الشخصي. (JPG, PNG, الحد الأقصى 5MB)</p>
+                        <div class="flex flex-wrap gap-3">
+                            <input type="file" id="profileImageInput" accept="image/*" class="hidden">
+                            <button type="button" onclick="document.getElementById('profileImageInput').click()" 
+                                    class="px-4 py-2 bg-surface-container border border-outline-variant rounded-lg text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[18px]">image</span>
+                                اختيار صورة
+                            </button>
+                            <button type="button" id="uploadProfileBtn" 
+                                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-container transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+                                رفع الصورة
+                            </button>
+                        </div>
+                        <p id="uploadStatus" class="text-xs mt-2 hidden"></p>
+                    </div>
+                </div
+            </div>
+
+            <!-- Personal Info Section -->
+            <div class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/20 mb-6 fade-in">
+                <h2 class="font-cairo font-bold text-xl mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">person</span>
+                    البيانات الشخصية
+                </h2>
+                <form id="personalInfoForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-on-surface-variant mb-1">الاسم الأول</label>
+                            <input type="text" id="first_name" value="<%= currentUser.first_name %>" 
+                                   class="w-full bg-surface-container-low border border-outline-variant rounded-xl p-3 focus:border-primary focus:ring-2 focus:ring-primary/20">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-on-surface-variant mb-1">اسم العائلة</label>
+                            <input type="text" id="last_name" value="<%= currentUser.last_name %>" 
+                                   class="w-full bg-surface-container-low border border-outline-variant rounded-xl p-3 focus:border-primary focus:ring-2 focus:ring-primary/20">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-on-surface-variant mb-1">رقم الهاتف</label>
+                        <input type="tel" id="phone_number" value="<%= currentUser.phone_number || '' %>" 
+                               class="w-full bg-surface-container-low border border-outline-variant rounded-xl p-3 focus:border-primary focus:ring-2 focus:ring-primary/20">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-on-surface-variant mb-1">المدينة</label>
+                        <input type="text" id="city" value="<%= currentUser.city || '' %>" 
+                               class="w-full bg-surface-container-low border border-outline-variant rounded-xl p-3 focus:border-primary focus:ring-2 focus:ring-primary/20">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-on-surface-variant mb-1">العنوان</label>
+                        <textarea id="address" rows="3" 
+                                  class="w-full bg-surface-container-low border border-outline-variant rounded-xl p-3 focus:border-primary focus:ring-2 focus:ring-primary/20"><%= currentUser.address || '' %></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-on-surface-variant mb-1">البريد الإلكتروني (للقراءة فقط)</label>
+                        <input type="email" value="<%= currentUser.email %>" readonly 
+                               class="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl p-3 text-on-surface-variant cursor-not-allowed">
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button type="submit" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary-container transition-all">
+                            حفظ التغييرات
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Security Section -->
+            <div class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/20 mb-6 fade-in">
+                <h2 class="font-cairo font-bold text-xl mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">lock</span>
+                    الأمان وكلمة المرور
+                </h2>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-4 bg-surface rounded-xl border border-outline-variant/20">
+                        <div>
+                            <div class="font-bold text-on-surface">تغيير كلمة المرور / نسيت كلمة المرور</div>
+                            <div class="text-sm text-on-surface-variant">إعادة تعيين كلمة المرور عبر البريد الإلكتروني</div>
+                        </div>
+                        <a href="/auth/forgetpassword" class="px-4 py-2 text-sm font-bold text-primary border border-primary rounded-lg hover:bg-primary/10 transition-colors">
+                            إعادة تعيين
+                        </a>
+                    </div>
+                    <div class="flex items-center justify-between p-4 bg-surface rounded-xl border border-outline-variant/20">
+                        <div>
+                            <div class="font-bold text-on-surface">المصادقة الثنائية (2FA)</div>
+                            <div class="text-sm text-on-surface-variant">تأمين إضافي عبر تطبيق المصادقة</div>
+                        </div>
+                        <a href="/auth/2fa" class="px-4 py-2 text-sm font-bold text-tertiary border border-tertiary rounded-lg hover:bg-tertiary/10 transition-colors">
+                            <% if (currentUser.two_factor_enabled) { %>
+                                تعطيل
+                            <% } else { %>
+                                تفعيل
+                            <% } %>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="bg-red-50 rounded-2xl border border-red-200 p-6 fade-in">
+                <h2 class="font-cairo font-bold text-xl mb-4 flex items-center gap-2 text-red-700">
+                    <span class="material-symbols-outlined">warning</span>
+                    منطقة الخطر
+                </h2>
+                <p class="text-sm text-red-600 mb-4">تسجيل الخروج من الموقع عند الضغط ستعود للخطوات القديمة مرة أخرى</p>
+                <a href="/auth/logout">
+                    <button class="px-4 py-2 text-sm font-bold text-red-700 border border-red-300 rounded-lg hover:bg-red-100 transition-colors">
+                        تسجيل الخروج
+                    </button>
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <%- include('../partials/footer.ejs') %>
+
+    <script>
+        const currentUser = <%- JSON.stringify(currentUser || null) %>;
+
+        // ============================================
+        // 1. Upload Profile Image
+        // ============================================
+        const profileImageInput = document.getElementById('profileImageInput');
+        const uploadProfileBtn = document.getElementById('uploadProfileBtn');
+        const currentProfileImage = document.getElementById('currentProfileImage');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        if (profileImageInput && uploadProfileBtn) {
+            // عرض اسم الملف عند الاختيار
+            profileImageInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    uploadStatus.textContent = `تم اختيار: ${this.files[0].name}`;
+                    uploadStatus.classList.remove('hidden');
+                    uploadStatus.className = 'text-xs mt-2 text-on-surface-variant';
+                }
+            });
+
+            // معالجة عملية الرفع
+            uploadProfileBtn.addEventListener('click', async function() {
+                if (!profileImageInput.files || profileImageInput.files.length === 0) {
+                    alert('⚠️ يرجى اختيار صورة أولاً');
+                    return;
+                }
+
+                const file = profileImageInput.files[0];
+                const formData = new FormData();
+                // ⚠️ مهم جداً: اسم 'profile' يجب أن يطابق تماماً ما هو موجود في upload.single('profile')
+                formData.append('profile', file);
+
+                // تغيير حالة الزر إلى "جاري التحميل"
+                uploadProfileBtn.disabled = true;
+                uploadProfileBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> جاري الرفع...';
+                uploadStatus.textContent = 'جاري رفع الصورة...';
+                uploadStatus.className = 'text-xs mt-2 text-primary';
+
+                try {
+                    // ملاحظة: إذا كان الـ Router الخاص بك موضوع تحت /users، فالرابط يكون /users/api/v1/my/profile
+                    // إذا كان في الملف الرئيسي مباشرة، اجعله /api/v1/my/profile
+                    const response = await fetch('/users/api/v1/my/profile', {
+                        method: 'POST',
+                        body: formData 
+                        // ⚠️ تحذير هام: لا تقم بإضافة 'Content-Type': 'multipart/form-data' يدوياً هنا.
+                        // المتصفح يقوم بضبط الـ Boundary تلقائياً عند استخدام FormData، وإضافتها يدوياً ستسبب فشل الـ Backend في قراءة الملف.
+                    });
+
+                    const result = await response.json();
+                    console.log(result);
+                    if (result.status === 'success') {
+                        alert('✅ ' + result.message);
+                        // تحديث الصورة فوراً في الصفحة مع إضافة طابع زمني لمنع الـ Caching
+                        currentProfileImage.src = result.data.image_url + '?t=' + new Date().getTime();
+                        uploadStatus.textContent = 'تم رفع الصورة بنجاح!';
+                        uploadStatus.className = 'text-xs mt-2 text-green-600';
+                        
+                        // إعادة تعيين حقل الإدخال
+                        profileImageInput.value = '';
+                    } else {
+                        alert('❌ ' + (result.message || 'حدث خطأ أثناء الرفع'));
+                        uploadStatus.textContent = 'فشل الرفع.';
+                        uploadStatus.className = 'text-xs mt-2 text-red-600';
+                    }
+                } catch (error) {
+                    console.error('Upload Error:', error);
+                    alert('❌ حدث خطأ في الاتصال بالخادم');
+                    uploadStatus.textContent = 'خطأ في الاتصال.';
+                    uploadStatus.className = 'text-xs mt-2 text-red-600';
+                } finally {
+                    // إعادة الزر لحالته الطبيعية
+                    uploadProfileBtn.disabled = false;
+                    uploadProfileBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">cloud_upload</span> رفع الصورة';
+                }
+            });
+        }
+
+        // ============================================
+        // 2. Update Personal Info
+        // ============================================
+        document.getElementById('personalInfoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                first_name: document.getElementById('first_name').value.trim(),
+                last_name: document.getElementById('last_name').value.trim(),
+                phone_number: document.getElementById('phone_number').value.trim(),
+                city: document.getElementById('city').value.trim(),
+                address: document.getElementById('address').value.trim()
+            };
+
+            try {
+                const response = await fetch('/users/api/v1', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert('✅ تم تحديث البيانات بنجاح');
+                    location.reload();
+                } else {
+                    alert('❌ ' + (result.message || 'حدث خطأ'));
+                }
+            } catch (error) {
+                alert('❌ حدث خطأ في الاتصال');
+            }
+        });
+    </script>
+</body>
+</html>

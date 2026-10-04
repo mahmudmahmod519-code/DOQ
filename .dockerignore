@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+backups
+verification
+tmp
+public/upload
+database/Untitled.pdf

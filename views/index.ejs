@@ -1,519 +1,199 @@
-<!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<!doctype html>
+<html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8">
-<meta content="width=device-width, initial-scale=1.0" name="viewport">
-<title>دوق | Dhouq - فن التذوق المنزلي</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
-<script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                    "surface-tint": "#b02d21",
-                    "surface-container-low": "#fff0ee",
-                    "on-primary-container": "#ffe5e1",
-                    "secondary-container": "#fc7127",
-                    "primary-fixed": "#ffdad5",
-                    "on-primary-fixed": "#410000",
-                    "inverse-primary": "#ffb4a9",
-                    "outline-variant": "#e1bfb9",
-                    "inverse-on-surface": "#ffedea",
-                    "primary-container": "#c0392b",
-                    "on-background": "#261816",
-                    "on-secondary-fixed-variant": "#7c2e00",
-                    "on-primary": "#ffffff",
-                    "surface-container-highest": "#f7ddd9",
-                    "surface-container-high": "#fce2de",
-                    "on-tertiary": "#ffffff",
-                    "on-error-container": "#93000a",
-                    "surface": "#fff8f6",
-                    "on-error": "#ffffff",
-                    "tertiary-fixed-dim": "#80d0f8",
-                    "on-surface-variant": "#59413d",
-                    "error": "#ba1a1a",
-                    "on-secondary-container": "#5c2000",
-                    "surface-container-lowest": "#ffffff",
-                    "inverse-surface": "#3c2d2a",
-                    "primary": "#9e2016",
-                    "tertiary-fixed": "#c0e8ff",
-                    "surface-container": "#ffe9e6",
-                    "secondary-fixed": "#ffdbcd",
-                    "error-container": "#ffdad6",
-                    "on-primary-fixed-variant": "#8e130c",
-                    "on-secondary": "#ffffff",
-                    "tertiary-container": "#007296",
-                    "surface-variant": "#f7ddd9",
-                    "tertiary": "#005875",
-                    "surface-bright": "#fff8f6",
-                    "outline": "#8d706c",
-                    "on-secondary-fixed": "#351000",
-                    "secondary": "#a23f00",
-                    "primary-fixed-dim": "#ffb4a9",
-                    "on-tertiary-fixed-variant": "#004d66",
-                    "on-tertiary-fixed": "#001e2b",
-                    "on-surface": "#261816",
-                    "surface-dim": "#eed4d1",
-                    "on-tertiary-container": "#d3eeff",
-                    "background": "#fff8f6",
-                    "secondary-fixed-dim": "#ffb595"
-            },
-            "borderRadius": {
-                    "DEFAULT": "0.25rem",
-                    "lg": "0.5rem",
-                    "xl": "0.75rem",
-                    "2xl": "1rem",
-                    "full": "9999px"
-            },
-            "spacing": {
-                    "md": "24px",
-                    "lg": "48px",
-                    "container-max": "1280px",
-                    "base": "8px",
-                    "xs": "4px",
-                    "xl": "80px",
-                    "sm": "12px",
-                    "gutter": "24px"
-            },
-            "fontFamily": {
-                    "cairo": ["Cairo", "sans-serif"],
-                    "beVietnamPro": ["beVietnamPro", "sans-serif"],
-                    "label-sm": ["beVietnamPro"],
-                    "headline-md": ["beVietnamPro"],
-                    "body-md": ["beVietnamPro"],
-                    "display-lg": ["beVietnamPro"],
-                    "body-lg": ["beVietnamPro"]
-            }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#9e2016">
+  <title>دوق | اطلب أكلك من مطبخك المفضل</title>
+  <script src="/app-client.js"></script>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            surface: '#fff8f6',
+            'on-surface': '#261816',
+            'on-surface-variant': '#59413d',
+            'surface-container-low': '#fff0ee',
+            'outline-variant': '#e1bfb9',
+            'on-primary': '#ffffff',
+            error: '#ba1a1a',
+            'surface-low': '#fff0ee',
+            'surface-high': '#fce2de',
+            ink: '#261816',
+            muted: '#59413d',
+            primary: '#9e2016',
+            'primary-deep': '#74160f',
+            secondary: '#fc7127',
+            line: '#e1bfb9'
+          },
+          fontFamily: { cairo: ['Cairo', 'sans-serif'] },
+          boxShadow: {
+            card: '0 12px 30px rgba(38, 24, 22, .08)',
+            soft: '0 5px 20px rgba(158, 32, 22, .12)'
           }
         }
       }
-    </script>
-<style>
-        body { font-family: 'Cairo', sans-serif; background-color: #fff8f6; }
-        .font-beVietnamPro { font-family: 'beVietnamPro', sans-serif; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        .glass-effect { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-        .culinary-shadow { box-shadow: 0px 4px 20px rgba(192, 57, 43, 0.08); }
-        .hero-overlay { background: linear-gradient(to bottom, rgba(38, 24, 22, 0.4), rgba(38, 24, 22, 0.7)); }
-        .tasting-bar-active { border: 2px solid #fc7127; box-shadow: 0 0 10px rgba(252, 113, 39, 0.3); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
-</head>
-<body class="text-on-surface selection:bg-primary selection:text-white">
-
-<!-- Top Navigation Bar -->
-<header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface-container-lowest/80 backdrop-blur-md border-b border-outline-variant/20 shadow-sm">
-<nav class="flex flex-row-reverse justify-between items-center px-lg py-md max-w-container-max mx-auto h-20">
-    <!-- Brand Logo -->
-    <div class="flex items-center gap-sm">
-        <span class="text-headline-md font-bold text-primary">دوق</span>
-    </div>
-    
-    <!-- Navigation Links -->
-    <div class="hidden md:flex items-center gap-lg">
-        <a class="text-primary border-b-2 border-primary pb-1 font-semibold" href="/">الرئيسية</a>
-        <a class="text-on-surface-variant hover:text-primary transition-colors" href="/all-portfolios">تصفح المطابخ</a>
-        <a class="text-on-surface-variant hover:text-primary transition-colors" href="/auth">انضم كطباخ</a>
-        <a class="text-on-surface-variant hover:text-primary transition-colors" href="/about">من نحن</a>
-        <a class="text-on-surface-variant hover:text-primary transition-colors" href="/faqs">الأسئلة الشائعة</a>
-    </div>
-    
-    <!-- Trailing Actions -->
-    <div class="flex items-center gap-md">
-        <% if (locals.currentUser) { %>
-            <a href="/vendor-dashboard" class="bg-primary text-on-primary px-lg py-2 rounded-full font-bold hover:scale-105 active:scale-95 transition-all duration-300">
-                لوحة التحكم
-            </a>
-        <% } else { %>
-            <a href="/auth" class="bg-primary text-on-primary px-lg py-2 rounded-full font-bold hover:scale-105 active:scale-95 transition-all duration-300">
-                تسجيل الدخول
-            </a>
-        <% } %>
-    </div>
-</nav>
-</header>
-
-<main class="pt-20">
-
-<!-- Hero Section -->
-<section class="relative h-[85vh] min-h-[600px] flex items-center justify-center overflow-hidden">
-    <div class="absolute inset-0 z-0">
-        <div class="w-full h-full bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=1920&q=80');"></div>
-        <div class="absolute inset-0 hero-overlay"></div>
-    </div>
-    <div class="relative z-10 w-full max-w-4xl px-md text-center">
-        <h1 class="text-white text-display-lg md:text-display-lg font-extrabold mb-md tracking-tight leading-tight">
-            دوق أطيب الأكلات المنزلية <br>
-            <span class="text-secondary-container">من أشهر الطهاة في منطقتك</span>
-        </h1>
-        <p class="text-on-primary-container text-body-lg mb-lg opacity-90">
-            اكتشف مطابخ منزلية موثوقة، واستمتع بوجبات طازجة بطعم البيوت
-        </p>
-        
-        <!-- Search & Filter Bar -->
-        <form class="bg-white/95 backdrop-blur-sm p-sm rounded-2xl md:rounded-full shadow-2xl flex flex-col md:flex-row items-center gap-xs culinary-shadow border border-white/20" action="/all-portfolios" method="GET">
-            <div class="flex-1 w-full flex items-center px-md border-b md:border-b-0 md:border-l border-outline-variant/30 py-2">
-                <span class="material-symbols-outlined text-primary ml-2">search</span>
-                <input class="w-full bg-transparent border-none focus:ring-0 text-on-surface text-body-md placeholder:text-outline" placeholder="ابحث عن مطبخ أو أكلة..." type="text" name="q">
-            </div>
-            <div class="flex flex-col md:flex-row w-full md:w-auto items-center gap-xs">
-                <div class="w-full md:w-48 px-md py-2 border-b md:border-b-0 md:border-l border-outline-variant/30 flex items-center justify-between">
-                    <select class="bg-transparent border-none focus:ring-0 text-on-surface text-body-md w-full cursor-pointer" name="city">
-                        <option value="">اختر منطقتك</option>
-                        <option value="القاهرة">القاهرة</option>
-                        <option value="الجيزة">الجيزة</option>
-                        <option value="الإسكندرية">الإسكندرية</option>
-                        <option value="بورسعيد">بورسعيد</option>
-                        <option value="السويس">السويس</option>
-                        <option value="العاصمة الإدارية">العاصمة الإدارية</option>
-                        <option value="حلوان">حلوان</option>
-                        <option value="6 أكتوبر">6 أكتوبر</option>
-                        <option value="المنصورة">المنصورة</option>
-                        <option value="طنطا">طنطا</option>
-                        <option value="الزقازيق">الزقازيق</option>
-                        <option value="دمنهور">دمنهور</option>
-                        <option value="كفر الشيخ">كفر الشيخ</option>
-                        <option value="بنها">بنها</option>
-                        <option value="شبين الكوم">شبين الكوم</option>
-                        <option value="المنيا">المنيا</option>
-                        <option value="أسيوط">أسيوط</option>
-                        <option value="سوهاج">سوهاج</option>
-                        <option value="قنا">قنا</option>
-                        <option value="الأقصر">الأقصر</option>
-                        <option value="أسوان">أسوان</option>
-                        <option value="الغردقة">الغردقة</option>
-                        <option value="مرسى مطروح">مرسى مطروح</option>
-                        <option value="العريش">العريش</option>
-                        <option value="الخارجة">الخارجة</option>
-                        <option value="الطور">الطور</option>
-                        <option value="شرم الشيخ">شرم الشيخ</option>
-                        <option value="دمياط">دمياط</option>
-                        <option value="بلطيم">بلطيم</option>
-                    </select>
-                </div>
-                <div class="w-full md:w-48 px-md py-2 flex items-center justify-between">
-                    <select class="bg-transparent border-none focus:ring-0 text-on-surface text-body-md w-full cursor-pointer" name="category">
-                        <option value="">نوع الأكلة</option>
-                        <option value="أكلات مصرية">أكلات مصرية</option>
-                        <option value="حلويات">حلويات</option>
-                        <option value="مشويات">مشويات</option>
-                        <option value="مأكولات بحرية">مأكولات بحرية</option>
-                        <option value="محاشي">محاشي</option>
-                    </select>
-                </div>
-                <button type="submit" class="w-full md:w-auto bg-primary text-white p-4 md:rounded-full rounded-xl flex items-center justify-center hover:scale-105 transition-transform">
-                    <span class="material-symbols-outlined">search</span>
-                    <span class="md:hidden mr-2">بحث</span>
-                </button>
-            </div>
-        </form>
-    </div>
-</section>
-
-<!-- Tasting Bar (Categories) -->
-<section class="bg-surface-container-lowest py-lg border-b border-outline-variant/10">
-    <div class="max-w-container-max mx-auto px-md">
-        <div class="flex items-center gap-lg overflow-x-auto pb-4 no-scrollbar scroll-smooth">
-            <!-- All Category -->
-            <a href="/all-portfolios" class="flex flex-col items-center gap-xs min-w-[80px] cursor-pointer group">
-                <div class="w-16 h-16 rounded-full border-2 border-outline-variant p-1 tasting-bar-active transition-all group-hover:scale-110 overflow-hidden">
-                    <div class="w-full h-full rounded-full bg-cover" style="background-image: url('https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=200&q=80');"></div>
-                </div>
-                <span class="text-label-sm font-bold text-secondary">الكل</span>
-            </a>
-            
-            <!-- Category: مشويات -->
-            <a href="/all-portfolios?category=%D9%85%D8%B4%D9%88%D9%8A%D8%A7%D8%AA" class="flex flex-col items-center gap-xs min-w-[80px] cursor-pointer group">
-                <div class="w-16 h-16 rounded-full border-2 border-outline-variant p-1 transition-all group-hover:border-secondary group-hover:scale-110 overflow-hidden">
-                    <div class="w-full h-full rounded-full bg-cover" style="background-image: url('https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=200&q=80');"></div>
-                </div>
-                <span class="text-label-sm font-medium text-on-surface-variant">مشويات</span>
-            </a>
-            
-            <!-- Category: محاشي -->
-            <a href="/all-portfolios?category=%D9%85%D8%AD%D8%A7%D8%B4%D9%8A" class="flex flex-col items-center gap-xs min-w-[80px] cursor-pointer group">
-                <div class="w-16 h-16 rounded-full border-2 border-outline-variant p-1 transition-all group-hover:border-secondary group-hover:scale-110 overflow-hidden">
-                    <div class="w-full h-full rounded-full bg-cover" style="background-image: url('https://images.unsplash.com/photo-1574482620811-d1d0b8caf096?auto=format&fit=crop&w=200&q=80');"></div>
-                </div>
-                <span class="text-label-sm font-medium text-on-surface-variant">محاشي</span>
-            </a>
-            
-            <!-- Category: حلويات -->
-            <a href="/all-portfolios?category=%D8%AD%D9%84%D9%88%D9%8A%D8%A7%D8%AA" class="flex flex-col items-center gap-xs min-w-[80px] cursor-pointer group">
-                <div class="w-16 h-16 rounded-full border-2 border-outline-variant p-1 transition-all group-hover:border-secondary group-hover:scale-110 overflow-hidden">
-                    <div class="w-full h-full rounded-full bg-cover" style="background-image: url('https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=200&q=80');"></div>
-                </div>
-                <span class="text-label-sm font-medium text-on-surface-variant">حلويات</span>
-            </a>
-            
-            <!-- Category: أسماك -->
-            <a href="/all-portfolios?category=%D8%A3%D8%B3%D9%85%D8%A7%D9%83" class="flex flex-col items-center gap-xs min-w-[80px] cursor-pointer group">
-                <div class="w-16 h-16 rounded-full border-2 border-outline-variant p-1 transition-all group-hover:border-secondary group-hover:scale-110 overflow-hidden">
-                    <div class="w-full h-full rounded-full bg-cover" style="background-image: url('https://images.unsplash.com/photo-1535399838253-e129d1c1cc18?auto=format&fit=crop&w=200&q=80');"></div>
-                </div>
-                <span class="text-label-sm font-medium text-on-surface-variant">أسماك</span>
-            </a>
-            
-            <!-- Category: أكلات مصرية -->
-            <a href="/all-portfolios?category=%D8%A3%D9%83%D9%84%D8%A7%D8%AA%20%D9%85%D8%B5%D8%B1%D9%8A%D8%A9" class="flex flex-col items-center gap-xs min-w-[80px] cursor-pointer group">
-                <div class="w-16 h-16 rounded-full border-2 border-outline-variant p-1 transition-all group-hover:border-secondary group-hover:scale-110 overflow-hidden">
-                    <div class="w-full h-full rounded-full bg-cover" style="background-image: url('https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=200&q=80');"></div>
-                </div>
-                <span class="text-label-sm font-medium text-on-surface-variant">أكلات مصرية</span>
-            </a>
-        </div>
-    </div>
-</section>
-
-<!-- Kitchens Grid -->
-<section class="py-xl max-w-container-max mx-auto px-md">
-    <div class="flex justify-between items-end mb-lg">
-        <div>
-            <h2 class="text-headline-md font-bold text-on-surface">أشهر المطابخ المنزلية حولك</h2>
-            <p class="text-on-surface-variant mt-xs">طهاة محليون مبدعون في انتظارك</p>
-        </div>
-        <a class="text-primary font-bold hover:underline flex items-center gap-xs transition-all" href="/all-portfolios">
-            عرض الكل
-            <span class="material-symbols-outlined text-sm">arrow_back_ios</span>
-        </a>
-    </div>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
-        <% if (locals.kitchens && kitchens.length > 0) { %>
-            <% kitchens.forEach(kitchen => { %>
-                <article class="bg-white rounded-2xl overflow-hidden culinary-shadow group transition-all duration-300 hover:-translate-y-2 duration-700 opacity-100 translate-y-0">
-                    <div class="h-56 relative overflow-hidden">
-                        <div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" 
-                             style="background-image: url(&quot;<%= kitchen.image || 'https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=600&q=80' %>&quot;);">
-                        </div>
-                        <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-label-sm font-bold text-primary flex items-center gap-xs">
-                            <span class="material-symbols-outlined text-[16px]">star</span>
-                            <%= kitchen.rating || '4.8' %>
-                        </div>
-                    </div>
-                    <div class="p-md">
-                        <div class="flex justify-between items-start mb-sm">
-                            <div>
-                                <h3 class="text-headline-md font-bold text-on-surface group-hover:text-primary transition-colors"><%= kitchen.name || 'مطبخ منزلي' %></h3>
-                                <p class="text-secondary font-medium text-label-sm">الشيف <%= kitchen.chefName || 'غير معروف' %></p>
-                            </div>
-                            <span class="text-on-surface-variant flex items-center gap-xs text-label-sm bg-surface-container px-2 py-1 rounded-lg">
-                                <span class="material-symbols-outlined text-[18px]">location_on</span>
-                                <%= kitchen.location || 'القاهرة' %>
-                            </span>
-                        </div>
-                        <p class="text-on-surface-variant text-body-md line-clamp-2 mb-md"><%= kitchen.bio || 'أشهى المأكولات المنزلية الطازجة' %></p>
-                        <a href="/portfolio/<%= kitchen.slug || kitchen.id %>" 
-                           class="block w-full bg-primary text-on-primary py-3 rounded-xl font-bold hover:bg-surface-tint transition-all active:scale-95 text-center">
-                            تصفح المنيو
-                        </a>
-                    </div>
-                </article>
-            <% }) %>
-        <% } else { %>
-            <!-- Default Cards when no data -->
-            <!-- Card 1 -->
-            <article class="bg-white rounded-2xl overflow-hidden culinary-shadow group transition-all duration-300 hover:-translate-y-2 duration-700 opacity-100 translate-y-0">
-                <div class="h-56 relative overflow-hidden">
-                    <div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" 
-                         style="background-image: url('https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=600&q=80');">
-                    </div>
-                    <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-label-sm font-bold text-primary flex items-center gap-xs">
-                        <span class="material-symbols-outlined text-[16px]">star</span>
-                        4.9
-                    </div>
-                </div>
-                <div class="p-md">
-                    <div class="flex justify-between items-start mb-sm">
-                        <div>
-                            <h3 class="text-headline-md font-bold text-on-surface group-hover:text-primary transition-colors">مطبخ أم علي</h3>
-                            <p class="text-secondary font-medium text-label-sm">الشيف منى</p>
-                        </div>
-                        <span class="text-on-surface-variant flex items-center gap-xs text-label-sm bg-surface-container px-2 py-1 rounded-lg">
-                            <span class="material-symbols-outlined text-[18px]">location_on</span>
-                            مدينة نصر
-                        </span>
-                    </div>
-                    <p class="text-on-surface-variant text-body-md line-clamp-2 mb-md">أشهى المأكولات المصرية التقليدية بطعم الأصالة. نستخدم أجود المكونات الطازجة يومياً.</p>
-                    <a href="/portfolio/1" class="block w-full bg-primary text-on-primary py-3 rounded-xl font-bold hover:bg-surface-tint transition-all active:scale-95 text-center">تصفح المنيو</a>
-                </div>
-            </article>
-            
-            <!-- Card 2 -->
-            <article class="bg-white rounded-2xl overflow-hidden culinary-shadow group transition-all duration-300 hover:-translate-y-2 duration-700 opacity-100 translate-y-0">
-                <div class="h-56 relative overflow-hidden">
-                    <div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" 
-                         style="background-image: url('https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=600&q=80');">
-                    </div>
-                    <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-label-sm font-bold text-primary flex items-center gap-xs">
-                        <span class="material-symbols-outlined text-[16px]">star</span>
-                        4.8
-                    </div>
-                </div>
-                <div class="p-md">
-                    <div class="flex justify-between items-start mb-sm">
-                        <div>
-                            <h3 class="text-headline-md font-bold text-on-surface group-hover:text-primary transition-colors">مطبخ الست غالية</h3>
-                            <p class="text-secondary font-medium text-label-sm">الشيف سلوى</p>
-                        </div>
-                        <span class="text-on-surface-variant flex items-center gap-xs text-label-sm bg-surface-container px-2 py-1 rounded-lg">
-                            <span class="material-symbols-outlined text-[18px]">location_on</span>
-                            التجمع الخامس
-                        </span>
-                    </div>
-                    <p class="text-on-surface-variant text-body-md line-clamp-2 mb-md">وصفات عائلية متوارثة، من المحاشي إلى الطواجن بالفرن البلدي.</p>
-                    <a href="/portfolio/2" class="block w-full bg-primary text-on-primary py-3 rounded-xl font-bold hover:bg-surface-tint transition-all active:scale-95 text-center">تصفح المنيو</a>
-                </div>
-            </article>
-            
-            <!-- Card 3 -->
-            <article class="bg-white rounded-2xl overflow-hidden culinary-shadow group transition-all duration-300 hover:-translate-y-2 duration-700 opacity-100 translate-y-0">
-                <div class="h-56 relative overflow-hidden">
-                    <div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" 
-                         style="background-image: url('https://images.unsplash.com/photo-1574482620811-d1d0b8caf096?auto=format&fit=crop&w=600&q=80');">
-                    </div>
-                    <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-label-sm font-bold text-primary flex items-center gap-xs">
-                        <span class="material-symbols-outlined text-[16px]">star</span>
-                        5.0
-                    </div>
-                </div>
-                <div class="p-md">
-                    <div class="flex justify-between items-start mb-sm">
-                        <div>
-                            <h3 class="text-headline-md font-bold text-on-surface group-hover:text-primary transition-colors">مطبخ الأصالة</h3>
-                            <p class="text-secondary font-medium text-label-sm">الشيف أحمد</p>
-                        </div>
-                        <span class="text-on-surface-variant flex items-center gap-xs text-label-sm bg-surface-container px-2 py-1 rounded-lg">
-                            <span class="material-symbols-outlined text-[18px]">location_on</span>
-                            المعادي
-                        </span>
-                    </div>
-                    <p class="text-on-surface-variant text-body-md line-clamp-2 mb-md">مشويات شامية وأصناف مميزة بطعم الفحم الأصيل. تجربة ملكية في بيتك.</p>
-                    <a href="/portfolio/3" class="block w-full bg-primary text-on-primary py-3 rounded-xl font-bold hover:bg-surface-tint transition-all active:scale-95 text-center">تصفح المنيو</a>
-                </div>
-            </article>
-        <% } %>
-    </div>
-</section>
-
-<!-- Call to Action Section -->
-<section class="my-xl px-md">
-    <div class="max-w-container-max mx-auto bg-primary-container rounded-[2rem] p-lg md:p-xl flex flex-col md:flex-row items-center justify-between gap-lg relative overflow-hidden">
-        <div class="relative z-10 text-center md:text-right flex-1">
-            <h2 class="text-white text-display-lg-mobile md:text-display-lg font-bold mb-md">هل أنت طباخ ماهر؟</h2>
-            <p class="text-on-primary-container text-body-lg mb-lg opacity-90">انضم إلينا اليوم وابدأ في بيع أطباقك المميزة لألاف المتذوقين في منطقتك.</p>
-            <a href="/auth" class="bg-secondary-container text-white px-xl py-4 rounded-full font-bold text-body-lg hover:scale-105 active:scale-95 transition-all shadow-xl inline-block">
-                ابدأ البيع الآن
-            </a>
-        </div>
-        <div class="relative z-10 flex-1 flex justify-center">
-            <div class="w-64 h-64 md:w-80 md:h-80 rounded-full border-4 border-white/20 p-4 shadow-inner">
-                <div class="w-full h-full rounded-full bg-cover bg-center border-4 border-white" 
-                     style="background-image: url('https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=400&q=80');">
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-</main>
-
-<!-- Footer -->
-<footer class="w-full mt-xl bg-surface-container-lowest dark:bg-surface-dim border-t border-outline-variant">
-    <div class="flex flex-col md:flex-row-reverse justify-between items-center px-lg py-xl gap-md max-w-container-max mx-auto">
-        <div class="flex flex-col md:items-end items-center gap-sm">
-            <div class="flex items-center gap-sm">
-                <span class="text-headline-md font-bold text-primary">دوق</span>
-            </div>
-            <p class="text-on-surface-variant text-body-md md:text-right text-center">© 2026 دوق. جميع الحقوق محفوظة. فن التذوق في كل لقمة.</p>
-        </div>
-        <div class="flex flex-wrap justify-center gap-lg">
-            <a class="text-on-surface-variant hover:text-secondary hover:underline transition-all font-body-md" href="#">الشروط والأحكام</a>
-            <a class="text-on-surface-variant hover:text-secondary hover:underline transition-all font-body-md" href="#">سياسة الخصوصية</a>
-            <a class="text-on-surface-variant hover:text-secondary hover:underline transition-all font-body-md" href="#">اتصل بنا</a>
-            <a class="text-on-surface-variant hover:text-secondary hover:underline transition-all font-body-md" href="/faqs">الأسئلة الشائعة</a>
-        </div>
-        <div class="flex gap-md">
-            <a class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all" href="#">
-                <span class="material-symbols-outlined">public</span>
-            </a>
-            <a class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all" href="#">
-                <span class="material-symbols-outlined">share</span>
-            </a>
-            <a class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all" href="#">
-                <span class="material-symbols-outlined">mail</span>
-            </a>
-        </div>
-    </div>
-</footer>
-
-<script>
-    // ============================================
-    // Header Scroll Effect
-    // ============================================
-    window.addEventListener('scroll', () => {
-        const header = document.querySelector('header');
-        if (window.scrollY > 50) {
-            header.classList.add('shadow-md', 'bg-surface/95');
-        } else {
-            header.classList.remove('shadow-md', 'bg-surface/95');
-        }
-    });
-
-    // ============================================
-    // Card Reveal Animation on Scroll
-    // ============================================
-    const observerOptions = { threshold: 0.1 };
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('opacity-100', 'translate-y-0');
-                entry.target.classList.remove('opacity-0', 'translate-y-10');
-            }
-        });
-    }, observerOptions);
-
-    document.querySelectorAll('article').forEach(card => {
-        card.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-10');
-        observer.observe(card);
-    });
-
-    // ============================================
-    // Tasting Bar Scroll Buttons (Optional)
-    // ============================================
-    const scrollContainer = document.querySelector('.no-scrollbar');
-    if (scrollContainer) {
-        let isDown = false;
-        let startX;
-        let scrollLeft;
-
-        scrollContainer.addEventListener('mousedown', (e) => {
-            isDown = true;
-            startX = e.pageX - scrollContainer.offsetLeft;
-            scrollLeft = scrollContainer.scrollLeft;
-        });
-
-        scrollContainer.addEventListener('mouseleave', () => {
-            isDown = false;
-        });
-
-        scrollContainer.addEventListener('mouseup', () => {
-            isDown = false;
-        });
-
-        scrollContainer.addEventListener('mousemove', (e) => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - scrollContainer.offsetLeft;
-            const walk = (x - startX) * 2;
-            scrollContainer.scrollLeft = scrollLeft - walk;
-        });
     }
-</script>
+  </script>
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: Cairo, sans-serif; background: #fff8f6; color: #261816; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .hero-pattern { background: radial-gradient(circle at 12% 15%, rgba(252,113,39,.18), transparent 30%), radial-gradient(circle at 88% 75%, rgba(158,32,22,.28), transparent 34%); }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  </style>
+</head>
+<body class="min-h-screen bg-surface text-ink antialiased">
+  <%- include('./partials/header.ejs') %>
 
+  <%
+    const role = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.roles : 'guest';
+    const name = (typeof currentUser !== 'undefined' && currentUser && currentUser.first_name) ? currentUser.first_name : 'ضيفنا';
+    const dashboards = {
+      admin: { href: '/admin', label: 'لوحة الإدارة', icon: 'admin_panel_settings' },
+      chef: { href: '/users/dashboard', label: 'لوحة المطبخ', icon: 'restaurant' },
+      delivery: { href: '/delivery', label: 'لوحة التوصيل', icon: 'local_shipping' },
+      customer: { href: '/my-orders', label: 'طلباتي', icon: 'receipt_long' }
+    };
+    const dashboard = dashboards[role];
+  %>
+
+  <main class="pt-16 sm:pt-20">
+    <section class="relative overflow-hidden bg-ink text-white">
+      <div class="hero-pattern absolute inset-0"></div>
+      <div class="absolute inset-y-0 left-0 hidden w-1/2 bg-cover bg-center opacity-35 lg:block" style="background-image:url('/assests/hero.jpeg')"></div>
+      <div class="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 md:py-20 lg:grid-cols-[1.1fr_.9fr] lg:px-8 lg:py-24">
+        <div class="max-w-2xl">
+          <span class="inline-flex items-center gap-2 rounded-full border border-secondary/40 bg-secondary/10 px-4 py-2 text-sm font-bold text-orange-100">
+            <span class="material-symbols-outlined text-secondary">restaurant_menu</span>
+            أكل بيتي بطعم تحبه
+          </span>
+          <h1 class="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">اطلب طبقك من المطبخ اللي يناسبك</h1>
+          <p class="mt-5 max-w-xl text-base leading-8 text-white/75 sm:text-lg">شوف الأطباق والمطابخ المتاحة واختار طلبك بوضوح. كل مطبخ له منيوه وتفاصيله وتقييماته.</p>
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a href="/kitchens" class="inline-flex items-center justify-center gap-2 rounded-xl bg-secondary px-6 py-3.5 font-extrabold text-white shadow-soft transition hover:bg-orange-500 focus:outline-none focus:ring-2 focus:ring-white">
+              <span class="material-symbols-outlined">search</span>
+              استكشف المطابخ
+            </a>
+            <% if (dashboard) { %>
+              <a href="<%= dashboard.href %>" class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3.5 font-bold text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white">
+                <span class="material-symbols-outlined"><%= dashboard.icon %></span>
+                <%= dashboard.label %>
+              </a>
+            <% } else { %>
+              <a href="/auth" class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3.5 font-bold text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white">
+                <span class="material-symbols-outlined">person_add</span>
+                اعمل حساب
+              </a>
+            <% } %>
+          </div>
+          <p class="mt-5 text-sm text-white/55"><%= role === 'guest' ? 'تقدر تتصفح المنيو كضيف وتسجل وقت ما تكون جاهز' : 'أهلاً يا ' + name + '، تقدر تتابع طلباتك من زر لوحتك' %></p>
+        </div>
+        <div class="relative hidden lg:block">
+          <div class="absolute -inset-4 rounded-[2rem] border border-secondary/25"></div>
+          <img src="/assests/high_end_collage_of_delicious_homemade_middle_eastern_meals_warm_lighting_cozy.png" alt="أطباق متنوعة من مطابخ دوق" class="relative h-[390px] w-full rounded-[2rem] object-cover shadow-2xl" loading="eager">
+          <div class="absolute -bottom-5 right-6 rounded-2xl bg-white px-5 py-4 text-ink shadow-card">
+            <p class="text-xs font-bold text-muted">ابدأ من هنا</p>
+            <p class="mt-1 font-extrabold text-primary">اختار مطبخك ثم طبقك</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="border-b border-line/60 bg-white">
+      <div class="mx-auto flex max-w-7xl items-center gap-4 overflow-x-auto px-4 py-6 sm:px-6 lg:px-8">
+        <div class="shrink-0 pl-2 text-sm font-extrabold text-muted">اتفرج على التصنيفات</div>
+        <% if (categories && categories.length) { %>
+          <% categories.slice(0, 8).forEach(category => { %>
+            <a href="/kitchens?category=<%= encodeURIComponent(category.name) %>" class="group flex shrink-0 items-center gap-2 rounded-full border border-line/70 bg-surface px-3 py-2 transition hover:border-secondary hover:bg-surface-low">
+              <img src="<%= category.image || '/assests/category.jpeg' %>" alt="<%= category.name %>" class="h-9 w-9 rounded-full object-cover" loading="lazy">
+              <span class="text-sm font-bold text-ink group-hover:text-primary"><%= category.name %></span>
+            </a>
+          <% }) %>
+        <% } else { %>
+          <span class="text-sm text-muted">التصنيفات هتظهر هنا أول ما تتوفر</span>
+        <% } %>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+      <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <p class="text-sm font-extrabold text-secondary">اختيارات قريبة منك</p>
+          <h2 class="mt-2 text-3xl font-black text-primary sm:text-4xl">مطابخ تقدر تبدأ منها</h2>
+          <p class="mt-2 text-sm text-muted">افتح صفحة المطبخ وشوف المنيو والتقييمات والعنوان قبل ما تطلب</p>
+        </div>
+        <a href="/kitchens" class="inline-flex items-center gap-1 font-bold text-primary hover:text-secondary">كل المطابخ <span class="material-symbols-outlined text-lg">arrow_back</span></a>
+      </div>
+      <div class="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <% if (kitchens && kitchens.length) { %>
+          <% kitchens.slice(0, 6).forEach(kitchen => { %>
+            <article class="group overflow-hidden rounded-2xl border border-line/50 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-card">
+              <a href="/kitchens/<%= kitchen.id %>" class="block">
+                <div class="relative h-52 overflow-hidden bg-surface-high">
+                  <img src="<%= kitchen.image || kitchen.portfolio_url || '/assests/profile_kitchen.jpeg' %>" alt="<%= kitchen.title %>" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" onerror="this.src='/assests/profile_kitchen.jpeg'">
+                  <span class="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-white/95 px-3 py-1 text-xs font-extrabold text-ink shadow-sm"><span class="material-symbols-outlined text-sm text-amber-500">star</span><%= kitchen.avg_rating || kitchen.rating || 'جديد' %></span>
+                </div>
+                <div class="p-5">
+                  <h3 class="text-xl font-extrabold text-ink group-hover:text-primary"><%= kitchen.title %></h3>
+                  <p class="mt-2 text-sm text-muted"><span class="material-symbols-outlined ml-1 text-base text-secondary">person</span><%= kitchen.chef_name || 'مطبخ دوق' %></p>
+                  <div class="mt-5 flex items-center justify-between border-t border-line/50 pt-4 text-sm font-bold text-muted">
+                    <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-base text-secondary">location_on</span><%= kitchen.city || 'مصر' %></span>
+                    <span class="text-primary">شوف المنيو <span class="material-symbols-outlined align-middle text-base">arrow_back</span></span>
+                  </div>
+                </div>
+              </a>
+            </article>
+          <% }) %>
+        <% } else { %>
+          <div class="rounded-2xl border border-dashed border-line bg-white p-10 text-center md:col-span-2 lg:col-span-3">
+            <span class="material-symbols-outlined text-5xl text-line">storefront</span>
+            <p class="mt-3 font-bold text-muted">لسه مفيش مطابخ متاحة للعرض</p>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <section class="bg-surface-low">
+      <div class="mx-auto grid max-w-7xl gap-5 px-4 py-14 sm:px-6 md:grid-cols-3 lg:px-8">
+        <div class="md:col-span-3">
+          <p class="text-sm font-extrabold text-secondary">الطريقة بسيطة</p>
+          <h2 class="mt-2 text-3xl font-black text-primary">من أول التصفح لحد تأكيد الطلب</h2>
+        </div>
+        <% const steps = [
+          { icon: 'storefront', title: 'اختار المطبخ', text: 'قارن المطابخ حسب المدينة والتقييم والمنيو' },
+          { icon: 'restaurant_menu', title: 'اختار الطبق', text: 'افتح تفاصيل الطبق وحدد الكمية واسم الطلب' },
+          { icon: 'local_shipping', title: 'تابع الطلب', text: 'المطبخ والتوصيل يحدثوا الحالة لحد ما يكتمل الطلب' }
+        ]; %>
+        <% steps.forEach((step, index) => { %>
+          <article class="rounded-2xl border border-line/50 bg-white p-6 shadow-sm">
+            <div class="flex items-center gap-3"><span class="flex h-11 w-11 items-center justify-center rounded-xl bg-surface-high text-primary"><span class="material-symbols-outlined"><%= step.icon %></span></span><span class="text-sm font-black text-secondary">0<%= index + 1 %></span></div>
+            <h3 class="mt-5 text-xl font-extrabold text-ink"><%= step.title %></h3>
+            <p class="mt-2 text-sm leading-7 text-muted"><%= step.text %></p>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+
+    <% if (role === 'guest' || role === 'customer') { %>
+      <section class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div class="relative overflow-hidden rounded-3xl bg-primary px-6 py-10 text-white shadow-card sm:px-10 lg:flex lg:items-center lg:justify-between">
+          <div class="relative max-w-2xl">
+            <span class="text-sm font-bold text-orange-200">عندك أكل بتحبه وعايز تعرضه؟</span>
+            <h2 class="mt-3 text-3xl font-black sm:text-4xl">خلّي مطبخك يوصل لناس أكتر</h2>
+            <p class="mt-3 max-w-xl leading-8 text-white/75">سجل كطاهٍ. بعد التسجيل الحساب بيتراجع من الإدارة قبل ما يبدأ استقبال الطلبات</p>
+            <a href="/auth" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-secondary px-6 py-3 font-extrabold text-white transition hover:bg-orange-500"><span class="material-symbols-outlined">restaurant</span>سجل كمطبخ</a>
+          </div>
+          <img src="/assests/chef_landing.jpeg" alt="طاهٍ يجهز الطعام" class="relative mt-8 hidden h-44 w-44 rounded-full border-4 border-white/20 object-cover lg:mt-0 lg:block" loading="lazy">
+        </div>
+      </section>
+    <% } %>
+  </main>
+
+  <%- include('./partials/footer.ejs') %>
 </body>
 </html>

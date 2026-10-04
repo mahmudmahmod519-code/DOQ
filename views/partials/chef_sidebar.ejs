@@ -1,0 +1,108 @@
+<!-- Sidebar Overlay (للموبايل فقط) -->
+<div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden lg:hidden"></div>
+
+<!-- Chef Sidebar -->
+<aside id="sidebar" class="fixed right-0 top-0 h-full w-72 bg-white shadow-2xl z-50 flex flex-col justify-between py-6 transform translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out border-l border-outline-variant/30 overflow-y-auto">
+    <div class="flex flex-col gap-6">
+        <!-- Logo Section -->
+        <div class="flex items-center justify-between px-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-white text-[22px]" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                    <span class="font-cairo font-bold text-xl text-primary leading-tight truncate">دوق DOQ</span>
+                    <span class="text-xs text-on-surface-variant">لوحة الشيف</span>
+                </div>
+            </div>
+            <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-surface-container transition-colors flex-shrink-0">
+                <span class="material-symbols-outlined text-on-surface-variant">close</span>
+            </button>
+        </div>
+
+        <% 
+            // دالة مساعدة لتحديد كلاس الرابط النشط
+            const getChefLinkClass = (page) => {
+                if (typeof activePage !== 'undefined' && activePage === page) {
+                    return "flex items-center gap-3 px-4 py-3 bg-primary text-on-primary font-semibold rounded-xl shadow-sm";
+                }
+                return "flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all";
+            };
+        %>
+
+        <!-- Navigation Menu -->
+        <nav class="flex flex-col gap-1 px-4">
+            <a href="/users/dashboard" class="<%= getChefLinkClass('dashboard') %>">
+                <span class="material-symbols-outlined text-[22px] flex-shrink-0">dashboard</span>
+                <span class="truncate">لوحة التحكم</span>
+            </a>
+            <a href="/users/orders" class="<%= getChefLinkClass('orders') %>">
+                <span class="material-symbols-outlined text-[22px] flex-shrink-0">receipt_long</span>
+                <span class="truncate">الطلبات</span>
+            </a>
+            <a href="/kitchens/my" class="<%= getChefLinkClass('my-kitchen') %>">
+                <span class="material-symbols-outlined text-[22px] flex-shrink-0">storefront</span>
+                <span class="truncate">مطبخي</span>
+            </a>
+            <a href="/dishes" class="<%= getChefLinkClass('dishes') %>">
+                <span class="material-symbols-outlined text-[22px] flex-shrink-0">flatware</span>
+                <span class="truncate">أطباقي</span>
+            </a>
+            <a href="/reviews" class="<%= getChefLinkClass('reviews') %>">
+                <span class="material-symbols-outlined text-[22px] flex-shrink-0">star</span>
+                <span class="truncate">التقييمات</span>
+            </a>
+            <a href="/payment" class="<%= getChefLinkClass('payment') %>">
+                <span class="material-symbols-outlined text-[22px] flex-shrink-0">account_balance_wallet</span>
+                <span class="truncate">الاشتراكات</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Logout Button -->
+    <div class="px-4 mt-auto">
+        <a href="/auth/logout" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-error hover:bg-error-container transition-all">
+            <span class="material-symbols-outlined text-[22px] flex-shrink-0">logout</span>
+            <span class="truncate">تسجيل الخروج</span>
+        </a>
+    </div>
+</aside>
+
+<!-- Script خاص بالـ Sidebar -->
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        if (sidebar.classList.contains('translate-x-full')) {
+            // فتح الـ Sidebar
+            sidebar.classList.remove('translate-x-full');
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                document.body.style.overflow = 'hidden'; // منع التمرير في الخلفية
+            }, 100);
+        } else {
+            // إغلاق الـ Sidebar
+            sidebar.classList.add('translate-x-full');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                document.body.style.overflow = ''; // إعادة التمرير
+            }, 300);
+        }
+    }
+    
+    // إغلاق الـ Sidebar عند الضغط على Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar.classList.contains('translate-x-full')) {
+                toggleSidebar();
+            }
+        }
+    });
+    
+    // منع إغلاق الـ Sidebar عند الضغط عليه
+    document.getElementById('sidebar').addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+</script>

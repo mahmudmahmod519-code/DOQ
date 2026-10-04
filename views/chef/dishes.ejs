@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<script src="/app-client.js"></script>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+    <title>أطباقي | دوق DOQ</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#9e2016",
+                        "primary-container": "#c0392b",
+                        "on-primary": "#ffffff",
+                        "secondary": "#a23f00",
+                        "secondary-container": "#fc7127",
+                        "on-secondary-container": "#5c2000",
+                        "background": "#fff8f6",
+                        "surface": "#fff8f6",
+                        "surface-variant": "#f7ddd9",
+                        "surface-container": "#ffe9e6",
+                        "surface-container-low": "#fff0ee",
+                        "on-surface": "#261816",
+                        "on-surface-variant": "#59413d",
+                        "outline": "#8d706c",
+                        "outline-variant": "#e1bfb9",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6"
+                    },
+                    fontFamily: {
+                        "cairo": ["Cairo", "sans-serif"],
+                        "tajawal": ["Tajawal", "sans-serif"]
+                    },
+                    boxShadow: {
+                        "soft": "0 4px 20px rgba(158, 32, 22, 0.06)",
+                        "card": "0 2px 8px rgba(38, 24, 22, 0.04), 0 4px 16px rgba(38, 24, 22, 0.06)",
+                        "card-hover": "0 8px 24px rgba(158, 32, 22, 0.12)",
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #fff8f6; }
+        .cairo-font { font-family: 'Cairo', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .material-symbols-filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        
+        .meal-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .meal-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(158, 32, 22, 0.12); }
+        
+        .drop-zone {
+            border: 2px dashed #e1bfb9;
+            background-color: #fff0ee;
+            transition: all 0.3s ease;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #9e2016;
+            background-color: #ffe5e1;
+        }
+        
+        .loader { border: 3px solid #f7ddd9; border-top-color: #9e2016; border-radius: 50%; width: 32px; height: 32px; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e1bfb9; border-radius: 10px; }
+
+        
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col antialiased">
+
+    <!-- استدعاء الشريط الجانبي للشيف -->
+    <%- include('../partials/chef_sidebar', { activePage: 'dishes' }) %>
+
+    <script>
+        const currentUser = <%- JSON.stringify(currentUser || null) %>;
+    </script>
+
+    <!-- Main Content Wrapper -->
+    <div class="transition-all duration-300">
+        
+        <!-- Top AppBar Header (متوافق مع الـ Sidebar) -->
+    <header class="fixed top-0 right-0 lg:right-72 left-0 h-16 bg-surface/80 backdrop-blur-xl shadow-sm z-40 flex items-center justify-between px-4 md:px-8 border-b border-outline-variant/20">
+            <div class="flex items-center gap-3 flex-1">
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-surface-container transition-colors">
+                    <span class="material-symbols-outlined text-on-surface text-[24px]">menu</span>
+                </button>
+            <div class="flex items-center gap-2 text-sm text-on-surface-variant">
+                <span class="material-symbols-outlined text-[18px] hidden sm:inline">home</span>
+                <span class="hidden sm:inline">/</span>
+                <span class="text-on-surface font-semibold">الاطباق</span>
+            </div>
+            <div class="hidden md:flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-full mr-2">
+                <span class="w-2 h-2 rounded-full bg-secondary-container animate-pulse"></span>
+                <span class="text-xs text-on-surface-variant">مطبخك يعمل بنشاط</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3 md:gap-4">
+            <!-- زر إضافة طبق سريع -->
+            <button onclick="openCreateModal()" class="flex items-center gap-2 bg-primary text-white px-3 md:px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary-container transition-all shadow-soft active:scale-95">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                <span class="hidden sm:inline">إضافة طبق</span>
+            </button>
+            
+        </div>
+    </header>
+
+        
+        <!-- Main Content Container -->
+        <main class="w-full pt-20 px-4 md:px-8 lg:pr-72 pb-16 bg-surface min-h-screen">
+
+            <!-- Controls Section -->
+            <section class="mb-8 space-y-6">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-surface-container-low p-5 rounded-2xl border border-outline-variant/30">
+                    <div class="flex flex-col gap-1">
+                        <h2 class="text-xl md:text-2xl font-cairo font-bold text-on-surface flex items-center gap-2 flex-wrap">
+                            <span class="text-primary" id="header-kitchen-name">جاري التحميل...</span>
+                            <span class="text-on-surface-variant font-normal text-base md:text-lg">/ قائمة الأطباق</span>
+                        </h2>
+                        <span id="meal-counter" class="text-sm text-on-surface-variant font-medium">
+                            جاري التحميل...
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Search Input -->
+                <div class="relative max-w-2xl">
+                    <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant">search</span>
+                    <input type="text" id="search-input" placeholder="ابحث عن اسم الطبق، مكونات، أو وصف..." 
+                           class="w-full bg-surface border border-outline-variant rounded-xl py-3 pr-12 pl-10 text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-on-surface-variant/50">
+                    <button id="clear-search-btn" onclick="clearSearch()" class="hidden absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary p-1 rounded-full hover:bg-surface-variant transition-all">
+                        <span class="material-symbols-outlined">cancel</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Dynamic Error Alert Box -->
+            <div id="error-alert" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-[9999] w-[90%] max-w-md p-4 bg-error/10 border border-error/20 text-error rounded-xl shadow-card flex items-center justify-center gap-3 animate-fade-in-down">
+                <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">error</span>
+                <p id="error-message-text" class="text-sm font-bold">حدث خطأ</p>
+            </div>
+
+            <!-- Dishes Grid Container -->
+            <section id="dishes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Loading State -->
+                <div class="col-span-full flex flex-col items-center justify-center py-20 gap-4">
+                    <div class="loader"></div>
+                    <p class="text-on-surface-variant font-medium">جاري تحضير قائمة الأطباق...</p>
+                </div>
+            </section>
+
+            <!-- Pagination Section -->
+            <section id="pagination-container" class="mt-12 flex justify-center items-center gap-2">
+                <!-- Dynamic Pagination Buttons -->
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Create / Edit Dish Modal -->
+    <div id="dish-modal" class="fixed inset-0 z-50 hidden bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-surface rounded-2xl max-w-2xl w-full shadow-2xl border border-outline-variant/50 my-8 max-h-[90vh] overflow-y-auto flex flex-col">
+            
+            <div class="flex items-center justify-between border-b border-outline-variant/50 p-6 sticky top-0 bg-surface z-10">
+                <h3 id="modal-title" class="text-xl font-cairo font-bold text-primary flex items-center gap-2">
+                    <span class="material-symbols-outlined text-2xl">restaurant</span>
+                    إضافة طبق جديد
+                </h3>
+                <button onclick="closeModal()" class="text-on-surface-variant hover:text-primary hover:bg-surface-container p-2 rounded-full transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <form id="dish-form" onsubmit="handleFormSubmit(event)" class="p-6 space-y-5 flex-grow">
+                
+                <!-- Kitchen Info (Hidden + Display Only) -->
+                <input type="hidden" id="dish-kitchen-id" required>
+                <div class="bg-surface-container-low/50 border border-outline-variant/30 rounded-xl p-3 flex items-center gap-2 text-on-surface-variant">
+                    <span class="material-symbols-outlined text-primary">storefront</span>
+                    <span class="text-sm font-semibold">يتم إضافة الأطباق تلقائياً إلى: <span id="modal-kitchen-name" class="text-primary font-bold">مطبخي</span></span>
+                </div>
+
+                <!-- Name -->
+                <div>
+                    <label class="block text-sm font-bold text-on-surface mb-1.5">اسم الطبق *</label>
+                    <input type="text" id="dish-name" required placeholder="مثال: طاجن لحم بالبرقوق" 
+                           class="w-full bg-surface-container-low border border-outline-variant rounded-xl p-3 text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all">
+                </div>
+
+                <!-- Price & Category -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-bold text-on-surface mb-1.5">السعر (ج.م) *</label>
+                        <div class="relative">
+                            <input type="number" step="0.01" min="0" id="dish-price" required placeholder="0.00" 
+                                   class="w-full bg-surface-container-low border border-outline-variant rounded-xl p-3 pl-10 text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm font-bold">ج.م</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-on-surface mb-1.5">التصنيف *</label>
+                        <select id="dish-category" required class="w-full bg-surface-container-low border border-outline-variant rounded-xl p-3 text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all">
+                            <option value="">اختر التصنيف...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-sm font-bold text-on-surface mb-1.5">وصف الطبق</label>
+                    <textarea id="dish-description" rows="3" placeholder="اكتب وصفاً شهياً ومغرياً للطبق..." 
+                              class="w-full bg-surface-container-low border border-outline-variant rounded-xl p-3 text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all resize-none"></textarea>
+                </div>
+
+                <!-- Ingredients -->
+                <div>
+                    <label class="block text-sm font-bold text-on-surface mb-1.5">المكونات</label>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="ingredient-input" placeholder="أضف مكوناً (مثال: أرز بسمتي) واضغط Enter" 
+                               class="flex-grow bg-surface-container-low border border-outline-variant rounded-xl p-3 text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all">
+                        <button type="button" onclick="addIngredientFromInput()" class="bg-secondary-container hover:bg-secondary text-white font-bold px-4 rounded-xl transition-all flex items-center justify-center">
+                            <span class="material-symbols-outlined">add</span>
+                        </button>
+                    </div>
+                    <div id="ingredients-pills-container" class="flex flex-wrap gap-2 min-h-[40px] p-2 bg-surface-container-low/50 rounded-xl border border-dashed border-outline-variant/50"></div>
+                </div>
+
+                <!-- Image Upload (Drag & Drop Style) -->
+                <div>
+                    <label class="block text-sm font-bold text-on-surface mb-1.5">صورة الطبق</label>
+                    <label for="dish-image-file" class="drop-zone flex flex-col items-center justify-center w-full h-32 rounded-xl cursor-pointer relative overflow-hidden group">
+                        <input type="file" id="dish-image-file" accept="image/*" onchange="previewImage(event)" class="hidden">
+                        
+                        <div id="upload-placeholder" class="flex flex-col items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+                            <span class="material-symbols-outlined text-3xl mb-1">cloud_upload</span>
+                            <span class="text-sm font-medium">اضغط لاختيار صورة أو اسحبها هنا</span>
+                        </div>
+                        
+                        <img id="image-preview" src="" alt="معاينة" class="absolute inset-0 w-full h-full object-cover hidden">
+                        <button type="button" id="remove-image-btn" onclick="removeImage(event)" class="hidden absolute top-2 left-2 bg-error text-white p-1.5 rounded-full shadow-md hover:bg-red-700 transition-colors z-10">
+                            <span class="material-symbols-outlined text-[16px]">close</span>
+                        </button>
+                    </label>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center justify-between gap-3 pt-4 border-t border-outline-variant/50 mt-2 sticky bottom-0 bg-surface py-2">
+                    <button type="button" id="delete-dish-btn" onclick="deleteCurrentDish()" class="hidden bg-error-container text-error border border-error/20 font-bold px-4 py-2.5 rounded-xl hover:bg-error hover:text-white transition-all flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                        <span>حذف</span>
+                    </button>
+                    
+                    <div class="flex items-center gap-3 mr-auto">
+                        <button type="button" onclick="closeModal()" class="px-5 py-2.5 rounded-xl border border-outline text-on-surface font-medium hover:bg-surface-container transition-all">
+                            إلغاء
+                        </button>
+                        <button type="submit" id="save-dish-btn" class="bg-primary hover:bg-primary-container text-white font-bold px-6 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-soft hover:shadow-card-hover active:scale-95">
+                            <span>حفظ الطبق</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Client-side Logic Script -->
+    <script>
+        // State Management
+        let currentPage = 1;
+        let searchQuery = '';
+        let currentDishId = null;
+        let ingredientsList = [];
+        const dishesById = new Map();
+        let currentKitchenId = null; // سيتم تعبئته تلقائياً بالمطبخ الوحيد
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadKitchens(); // تحميل المطبخ الوحيد وتعيينه
+            await loadCategories();
+            
+            if (currentKitchenId) {
+                await fetchDishes(1, '');
+            } else {
+                showError('لا يوجد مطبخ مرتبط بحسابك. يرجى إنشاء مطبخ أولاً.');
+            }
+
+            let searchTimeout = null;
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                document.getElementById('clear-search-btn').classList.toggle('hidden', query === '');
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    searchQuery = query;
+                    fetchDishes(1, searchQuery);
+                }, 400);
+            });
+
+            document.getElementById('ingredient-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); addIngredientFromInput(); }
+            });
+        });
+
+        function showError(msg) {
+            const errorBox = document.getElementById('error-alert');
+            document.getElementById('error-message-text').textContent = msg || 'حدث خطأ غير متوقع';
+            errorBox.classList.remove('hidden');
+            setTimeout(() => errorBox.classList.add('hidden'), 4000);
+        }
+
+        function hideError() { document.getElementById('error-alert').classList.add('hidden'); }
+
+        function toggleLoading(btnId, isLoading, text = 'حفظ الطبق') {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = `<div class="loader w-4 h-4 border-2" style="width:16px;height:16px;border-width:2px;"></div> <span>جاري العمل...</span>`;
+                btn.classList.add('opacity-70', 'cursor-not-allowed');
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = text;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        }
+
+        async function loadKitchens() {
+            try {
+                const response = await fetch('/kitchens/api/v1/my'); 
+                const data = await response.json();
+
+                if (response.ok && data.status === 'success' && data.data) {
+                    let kitchens = Array.isArray(data.data) ? data.data : [data.data];
+                    if (kitchens.length > 0) {
+                        const myKitchen = kitchens[0]; // نأخذ المطبخ الأول والوحيد
+                        currentKitchenId = myKitchen.id;
+                        const kitchenName = myKitchen.title || myKitchen.name || 'مطبخي';
+                        
+                        // تحديث الاسم في العنوان
+                        document.getElementById('header-kitchen-name').textContent = kitchenName;
+                        // تحديث الاسم في المودال
+                        document.getElementById('modal-kitchen-name').textContent = kitchenName;
+                        // تعيين القيمة المخفية في النموذج
+                        document.getElementById('dish-kitchen-id').value = currentKitchenId;
+                    } else {
+                        document.getElementById('header-kitchen-name').textContent = 'لا يوجد مطبخ';
+                    }
+                }
+            } catch (err) { 
+                console.error("خطأ في تحميل المطابخ:", err); 
+                showError('فشل في تحميل بيانات المطبخ');
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                const response = await fetch('/categories/api/v1/all');
+                const data = await response.json();
+                const select = document.getElementById('dish-category');
+                select.innerHTML = '<option value="">اختر التصنيف...</option>';
+                if (response.ok && data.status === 'success' && data.data) {
+                    const categories = Array.isArray(data.data) ? data.data : [data.data];
+                    categories.forEach(cat => { select.innerHTML += `<option value="${Number(cat.id) || 0}">${DOQ.escape(cat.name || '')}</option>`; });
+                }
+            } catch (err) { console.error("خطأ في تحميل التصنيفات:", err); }
+        }
+
+        async function fetchDishes(page = 1, q = '') {
+            hideError();
+            currentPage = page;
+            const container = document.getElementById('dishes-container');
+            container.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center py-20 gap-4"><div class="loader"></div><p class="text-on-surface-variant font-medium">جاري تحميل البيانات...</p></div>`;
+
+            try {
+                const url = `/dishes/v1/api/my?page=${page}&limit=12&q=${encodeURIComponent(q)}&kitchen_id=${currentKitchenId}`;
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (!response.ok || result.status === 'error') throw new Error(result.message || 'حدث خطأ أثناء جلب الأطباق');
+
+                const dishes = Array.isArray(result.data) ? result.data : (result.data ? [result.data] : []);
+                const pagination = result.pagination || { page: 1, limit: 12, total: dishes.length, total_pages: 1 };
+
+                document.getElementById('meal-counter').textContent = `${pagination.total || dishes.length} طبق متاح`;
+                renderDishesGrid(dishes);
+                renderPagination(pagination);
+            } catch (error) {
+                container.innerHTML = '';
+                document.getElementById('pagination-container').innerHTML = '';
+                showError(error.message);
+            }
+        }
+
+        function renderDishesGrid(dishes) {
+            const container = document.getElementById('dishes-container');
+            if (!dishes || dishes.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-16 bg-surface-container-low/50 rounded-2xl border border-dashed border-outline-variant">
+                        <div class="w-20 h-20 bg-surface-container rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="material-symbols-outlined text-4xl text-outline-variant">restaurant_menu</span>
+                        </div>
+                        <p class="text-xl font-cairo font-bold text-on-surface mb-2">لا توجد أطباق في هذا المطبخ حالياً</p>
+                        <p class="text-sm text-on-surface-variant mb-6 max-w-md mx-auto">ابدأ بإضافة أول طبق مميز لك ليظهر للعملاء ويبدأ الطلب.</p>
+                        <button onclick="openCreateModal()" class="bg-primary text-white font-bold px-6 py-2.5 rounded-xl shadow-soft hover:bg-primary-container transition-all inline-flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px]">add</span> إضافة طبق جديد
+                        </button>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = dishes.map(dish => {
+                const imageSrc = DOQ.safeImage(dish.image_url || '/assests/dish_avatar.jpeg');
+                const dishId = Number(dish.id) || 0;
+                if (dishId) dishesById.set(dishId, dish);
+                
+                return `
+                    <div class="meal-card bg-surface rounded-2xl overflow-hidden shadow-card border border-outline-variant/30 flex flex-col h-full group">
+                        <div class="relative h-48 bg-surface-container overflow-hidden">
+                            <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="${imageSrc}" alt="${DOQ.escape(dish.name || '')}" loading="lazy">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
+                            <div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm text-primary px-3 py-1 rounded-lg font-extrabold text-sm shadow-sm">
+                                ${Number(dish.price) || 0} ج.م
+                            </div>
+                            ${dish.category_name ? `<div class="absolute top-3 right-3 bg-surface-container-low/90 backdrop-blur-sm text-on-surface px-3 py-1 rounded-lg font-bold text-xs shadow-sm border border-outline-variant/30">${DOQ.escape(dish.category_name)}</div>` : ''}
+                        </div>
+                        <div class="p-5 flex flex-col flex-grow">
+                            <h3 class="text-lg font-cairo font-bold text-on-surface mb-2 line-clamp-1">${DOQ.escape(dish.name || '')}</h3>
+                            <p class="text-on-surface-variant text-sm mb-5 flex-grow line-clamp-2 leading-relaxed">
+                                ${DOQ.escape(dish.description || 'لا يوجد وصف محدد لهذا الطبق الشهي.')}
+                            </p>
+                            <button onclick="openEditModalById(${dishId})" 
+                                    class="w-full bg-surface-container hover:bg-primary hover:text-white text-primary border border-primary/20 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 group/btn">
+                                <span class="material-symbols-outlined text-[18px] group-hover/btn:scale-110 transition-transform">edit</span>
+                                <span>تعديل التفاصيل</span>
+                            </button>
+
+                            <button onclick="openCouponModalById(${dishId})"
+                                    class="w-full mt-2 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-[18px]">sell</span>
+                                <span>إنشاء كوبون</span>
+                            </button>                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderPagination(pagination) {
+            const container = document.getElementById('pagination-container');
+            const { page, total_pages } = pagination;
+            if (!total_pages || total_pages <= 1) { container.innerHTML = ''; return; }
+
+            let html = `<button onclick="fetchDishes(${page - 1}, searchQuery)" ${page <= 1 ? 'disabled class="opacity-50 cursor-not-allowed px-3 py-2 border border-outline-variant rounded-xl text-sm"' : 'class="px-3 py-2 border border-outline-variant hover:bg-surface-container rounded-xl text-sm font-bold transition-colors"'}><span class="material-symbols-outlined text-[18px] align-middle">chevron_right</span></button>`;
+
+            for (let i = 1; i <= total_pages; i++) {
+                if (i === page) html += `<button class="px-4 py-2 bg-primary text-white font-bold rounded-xl text-sm shadow-soft">${i}</button>`;
+                else html += `<button onclick="fetchDishes(${i}, searchQuery)" class="px-4 py-2 border border-outline-variant hover:bg-surface-container rounded-xl text-sm transition-colors">${i}</button>`;
+            }
+
+            html += `<button onclick="fetchDishes(${page + 1}, searchQuery)" ${page >= total_pages ? 'disabled class="opacity-50 cursor-not-allowed px-3 py-2 border border-outline-variant rounded-xl text-sm"' : 'class="px-3 py-2 border border-outline-variant hover:bg-surface-container rounded-xl text-sm font-bold transition-colors"'}><span class="material-symbols-outlined text-[18px] align-middle">chevron_left</span></button>`;
+            container.innerHTML = html;
+        }
+
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('clear-search-btn').classList.add('hidden');
+            searchQuery = '';
+            fetchDishes(1, '');
+        }
+
+        function addIngredientFromInput() {
+            const input = document.getElementById('ingredient-input');
+            const val = input.value.trim();
+            if (val && !ingredientsList.includes(val)) {
+                ingredientsList.push(val);
+                renderIngredientsPills();
+                input.value = '';
+            }
+        }
+
+        function removeIngredient(index) {
+            ingredientsList.splice(index, 1);
+            renderIngredientsPills();
+        }
+
+        function renderIngredientsPills() {
+            const container = document.getElementById('ingredients-pills-container');
+            container.innerHTML = ingredientsList.map((ing, idx) => `
+                <span class="inline-flex items-center gap-1 bg-surface border border-outline-variant text-on-surface px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm animate-fade-in">
+                    ${DOQ.escape(ing)}
+                    <button type="button" onclick="removeIngredient(${idx})" class="hover:text-error transition-colors p-0.5 rounded-full hover:bg-error/10">
+                        <span class="material-symbols-outlined text-[16px]">close</span>
+                    </button>
+                </span>
+            `).join('');
+        }
+
+        function previewImage(e) {
+            const file = e.target.files[0];
+            const placeholder = document.getElementById('upload-placeholder');
+            const img = document.getElementById('image-preview');
+            const removeBtn = document.getElementById('remove-image-btn');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    img.src = event.target.result;
+                    img.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                    removeBtn.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeImage(e) {
+            e.preventDefault();
+            const input = document.getElementById('dish-image-file');
+            input.value = '';
+            document.getElementById('image-preview').classList.add('hidden');
+            document.getElementById('upload-placeholder').classList.remove('hidden');
+            document.getElementById('remove-image-btn').classList.add('hidden');
+        }
+
+        function openCreateModal() {
+            currentDishId = null;
+            document.getElementById('modal-title').innerHTML = '<span class="material-symbols-outlined text-2xl">restaurant</span> إضافة طبق جديد';
+            document.getElementById('dish-form').reset();
+            document.getElementById('delete-dish-btn').classList.add('hidden');
+            
+            removeImage({ preventDefault: () => {} });
+            
+            document.getElementById('dish-kitchen-id').value = currentKitchenId;
+            
+            ingredientsList = [];
+            renderIngredientsPills();
+            document.getElementById('dish-modal').classList.remove('hidden');
+        }
+
+        function openEditModal(dish) {
+            currentDishId = dish.id;
+            document.getElementById('modal-title').innerHTML = '<span class="material-symbols-outlined text-2xl">edit</span> تعديل بيانات الطبق';
+            
+            document.getElementById('dish-name').value = dish.name || '';
+            document.getElementById('dish-price').value = dish.price || '';
+            document.getElementById('dish-category').value = dish.category_id || '';
+            document.getElementById('dish-description').value = dish.description || '';
+            
+            document.getElementById('dish-kitchen-id').value = currentKitchenId;
+
+            if (dish.ingredients) {
+                ingredientsList = Array.isArray(dish.ingredients) ? dish.ingredients : dish.ingredients.split(',').map(s => s.trim()).filter(Boolean);
+            } else { ingredientsList = []; }
+            renderIngredientsPills();
+
+            const img = document.getElementById('image-preview');
+            const placeholder = document.getElementById('upload-placeholder');
+            const removeBtn = document.getElementById('remove-image-btn');
+            
+            if (dish.image_url) {
+                img.src = dish.image_url;
+                img.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                removeBtn.classList.remove('hidden');
+            } else {
+                removeImage({ preventDefault: () => {} });
+            }
+
+            document.getElementById('delete-dish-btn').classList.remove('hidden');
+            document.getElementById('dish-modal').classList.remove('hidden');
+        }
+
+        function openEditModalById(id) {
+            const dish = dishesById.get(Number(id));
+            if (dish) openEditModal(dish);
+        }
+
+        function closeModal() {
+            document.getElementById('dish-modal').classList.add('hidden');
+            hideError();
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            hideError();
+            toggleLoading('save-dish-btn', true);
+
+            const name = document.getElementById('dish-name').value.trim();
+            const price = parseFloat(document.getElementById('dish-price').value);
+            const category_id = parseInt(document.getElementById('dish-category').value);
+            const description = document.getElementById('dish-description').value.trim();
+            const kitchen_id = parseInt(document.getElementById('dish-kitchen-id').value);
+            const ingredients = ingredientsList.join(',');
+            const payload = { name, price, category_id, description, kitchen_id, ingredients };
+
+            try {
+                let dishId = currentDishId;
+                if (currentDishId) {
+                    const res = await fetch(`/dishes/v1/api/${currentDishId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    const data = await res.json();
+                    if (!res.ok || data.status === 'error') throw new Error(data.message || 'فشل في تحديث بيانات الطبق');
+                } else {
+                    const res = await fetch('/dishes/v1/api/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    const data = await res.json();
+                    if (!res.ok || data.status === 'error') throw new Error(data.message || 'فشل في إضافة الطبق');
+                    dishId = data.data.id;
+                }
+
+                const imageFileInput = document.getElementById('dish-image-file');
+                if (imageFileInput.files.length > 0 && dishId) {
+                    const formData = new FormData();
+                    formData.append('image', imageFileInput.files[0]);
+                    const imgRes = await fetch(`/dishes/v1/api/${dishId}/upload_image`, { method: 'POST', body: formData });
+                    const imgData = await imgRes.json();
+                    if (!imgRes.ok || imgData.status === 'error') throw new Error(imgData.message || 'تم حفظ البيانات لكن فشل رفع الصورة');
+                }
+
+                closeModal();
+                await fetchDishes(currentPage, searchQuery);
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                toggleLoading('save-dish-btn', false, '<span>حفظ الطبق</span>');
+            }
+        }
+
+        async function deleteCurrentDish() {
+            if (!currentDishId) return;
+            if (!confirm('هل أنت متأكد من رغبتك في حذف هذا الطبق نهائياً؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+
+            hideError();
+            toggleLoading('delete-dish-btn', true, 'جاري الحذف...');
+
+            try {
+                const res = await fetch(`/dishes/v1/api/my/${currentDishId}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!res.ok || data.status === 'error') throw new Error(data.message || 'فشل في حذف الطبق');
+
+                closeModal();
+                await fetchDishes(1, searchQuery);
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                toggleLoading('delete-dish-btn', false, '<span class="material-symbols-outlined text-[18px]">delete</span><span>حذف</span>');
+            }
+        }
+    </script>
+
+<div id="coupon-modal" class="hidden fixed inset-0 z-[80] bg-black/50 p-4 items-center justify-center">
+  <div class="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="coupon-title">
+    <div class="flex items-center justify-between gap-3">
+      <h2 id="coupon-title" class="text-xl font-bold">إنشاء كوبون للطبق</h2>
+      <button type="button" onclick="closeCouponModal()" class="p-2 rounded-full bg-gray-100" aria-label="إغلاق">×</button>
+    </div>
+    <p id="coupon-dish-name" class="mt-2 text-sm text-gray-600"></p>
+    <form id="coupon-form" class="mt-5 space-y-4">
+      <label class="block text-sm font-bold" for="coupon-discount">نسبة الخصم</label>
+      <input id="coupon-discount" type="number" min="1" max="90" step="0.01" required class="w-full border rounded-xl p-3" placeholder="مثال: 15">
+      <label class="block text-sm font-bold" for="coupon-expires">ينتهي في</label>
+      <input id="coupon-expires" type="datetime-local" required class="w-full border rounded-xl p-3">
+      <p class="text-xs text-gray-500">الكوبون يخص الطبق المختار فقط ويستخدم مرة واحدة لكل حساب</p>
+      <p id="coupon-form-alert" class="hidden rounded-xl p-3 text-sm" role="status"></p>
+      <button id="coupon-generate" type="submit" class="w-full rounded-xl bg-primary text-white py-3 font-bold">توليد الكوبون</button>
+    </form>
+    <div id="coupon-result" class="hidden mt-5 rounded-2xl bg-green-50 p-4">
+      <p class="text-sm font-bold text-green-900">الكود الجاهز للمشاركة</p>
+      <div class="mt-2 flex items-center gap-2">
+        <code id="coupon-code" class="flex-1 rounded-xl bg-white px-3 py-2 text-center font-extrabold tracking-widest"></code>
+        <button type="button" onclick="copyCouponCode()" class="rounded-xl border border-green-700 px-3 py-2 text-sm font-bold text-green-800">نسخ</button>
+      </div>
+      <p id="coupon-copy-status" class="mt-2 text-xs text-green-800"></p>
+    </div>
+  </div>
+</div>
+<script>
+let couponDishId=null;
+function openCouponModalById(id){
+  const dish=dishesById.get(Number(id));
+  if(dish) openCouponModal(dish);
+}
+function openCouponModal(dish){
+  couponDishId=Number(dish.id);
+  document.getElementById('coupon-dish-name').textContent=dish.name||'';
+  document.getElementById('coupon-form').reset();
+  document.getElementById('coupon-result').classList.add('hidden');
+  document.getElementById('coupon-form-alert').className='hidden rounded-xl p-3 text-sm';
+  const modal=document.getElementById('coupon-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('coupon-discount').focus();
+}
+function closeCouponModal(){
+  const modal=document.getElementById('coupon-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+document.getElementById('coupon-form')?.addEventListener('submit',async event=>{
+  event.preventDefault();
+  const alertBox=document.getElementById('coupon-form-alert');
+  const button=document.getElementById('coupon-generate');
+  const discount=Number(document.getElementById('coupon-discount').value);
+  const expiryValue=document.getElementById('coupon-expires').value;
+  if(!couponDishId||!Number.isFinite(discount)||discount<1||discount>90||!expiryValue){
+    alertBox.textContent='راجع نسبة الخصم وموعد الانتهاء';
+    alertBox.className='rounded-xl p-3 text-sm bg-red-100 text-red-800';
+    return;
+  }
+  button.disabled=true;
+  try{
+    const result=await DOQ.api('/platform/coupons','POST',{
+      dish_id:couponDishId,discount_percent:discount,expires_at:new Date(expiryValue).toISOString()
+    });
+    document.getElementById('coupon-code').textContent=result.data.code;
+    document.getElementById('coupon-result').classList.remove('hidden');
+    alertBox.textContent='تم إنشاء الكوبون. انسخه وشاركه مع عملائك';
+    alertBox.className='rounded-xl p-3 text-sm bg-green-100 text-green-800';
+  }catch(error){
+    alertBox.textContent=error.message||'تعذر إنشاء الكوبون';
+    alertBox.className='rounded-xl p-3 text-sm bg-red-100 text-red-800';
+  }finally{button.disabled=false;}
+});
+async function copyCouponCode(){
+  const code=document.getElementById('coupon-code').textContent;
+  const status=document.getElementById('coupon-copy-status');
+  try{await navigator.clipboard.writeText(code);status.textContent='تم نسخ الكود';}
+  catch(error){status.textContent='حدد الكود وانسخه يدويا';}
+}
+</script>
+</body>
+</html>

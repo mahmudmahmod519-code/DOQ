@@ -1,31 +1,31 @@
+const checkLogin = require("../utiles/checkLogin");
+
 async function SpecificDish_render(req,res){
     //change , to , english
     req.my.ingredients = req.my.ingredients ? req.my.ingredients.split('，') : null;
-    
-    return res.render('./dish/dish',{dish:req.my,user:req.user});
+
+    return res.render('./dish/dish',{dish:req.my,...checkLogin(req,res)});
 }
 
+// async function SpcificMyDish_render(req,res) {
+    
+// }
 
 async function Dishes_render(req,res){
-        let path='./dish/dishes';
-        if(req.user.roles==='admin')
+        let path='./customer/dishes';
+        if(req.user?.roles==='admin')
             path='./admin/dishes';
+        else if(req.user?.roles==='chef')
+            path='./chef/dishes';
         
-        return res.render(path,
-            {
-                currentUser: req.user || null,
-            });
+        
+        return res.render(path,checkLogin(req,res));
 }
 
-async function MyDishes_render(req,res){
-    return res.render('./dish/mydishes',{ 
-        currentUser:req.user||null,
-    });
-}
 
 
 module.exports = {
     SpecificDish_render,
     Dishes_render,
-    MyDishes_render
+    // SpcificMyDish_render
 }

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<script src="/app-client.js"></script>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>تقييمات مطبخي | دوق DOQ</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "surface-dim": "#eed4d1",
+            "inverse-surface": "#3c2d2a",
+            "on-background": "#261816",
+            "secondary": "#a23f00",
+            "surface-container-highest": "#f7ddd9",
+            "on-error": "#ffffff",
+            "surface-container": "#ffe9e6",
+            "inverse-on-surface": "#ffedea",
+            "surface-container-high": "#fce2de",
+            "on-primary-fixed-variant": "#8e130c",
+            "on-primary": "#ffffff",
+            "primary-container": "#c0392b",
+            "surface-tint": "#b02d21",
+            "secondary-fixed": "#ffdbcd",
+            "on-tertiary-fixed-variant": "#004d66",
+            "tertiary": "#005875",
+            "primary-fixed": "#ffdad5",
+            "primary": "#9e2016",
+            "primary-fixed-dim": "#ffb4a9",
+            "on-primary-fixed": "#410000",
+            "surface": "#fff8f6",
+            "surface-container-low": "#fff0ee",
+            "tertiary-fixed-dim": "#80d0f8",
+            "tertiary-container": "#007296",
+            "tertiary-fixed": "#c0e8ff",
+            "error-container": "#ffdad6",
+            "on-error-container": "#93000a",
+            "secondary-fixed-dim": "#ffb595",
+            "surface-container-lowest": "#ffffff",
+            "surface-bright": "#fff8f6",
+            "on-surface-variant": "#59413d",
+            "on-secondary-container": "#5c2000",
+            "outline-variant": "#e1bfb9",
+            "on-secondary": "#ffffff",
+            "background": "#fff8f6",
+            "on-primary-container": "#ffe5e1",
+            "on-tertiary-container": "#d3eeff",
+            "secondary-container": "#fc7127",
+            "inverse-primary": "#ffb4a9",
+            "on-surface": "#261816",
+            "on-secondary-fixed-variant": "#7c2e00",
+            "on-tertiary": "#ffffff",
+            "on-secondary-fixed": "#351000",
+            "outline": "#8d706c",
+            "surface-variant": "#f7ddd9",
+            "error": "#ba1a1a"
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            "2xl": "1rem",
+            full: "9999px"
+          },
+          spacing: {
+            "container-max": "1280px",
+            gutter: "16px",
+            md: "16px",
+            xl: "24px",
+            base: "8px",
+            sm: "12px"
+          },
+          fontFamily: {
+            "body-lg": ["Tajawal", "sans-serif"],
+            "headline-md": ["Cairo", "sans-serif"],
+            "display-lg-mobile": ["Cairo", "sans-serif"],
+            "label-sm": ["Tajawal", "sans-serif"],
+            "body-md": ["Tajawal", "sans-serif"],
+            "display-lg": ["Cairo", "sans-serif"]
+          },
+          fontSize: {
+            "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+            "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+            "display-lg-mobile": ["28px", { lineHeight: "36px", fontWeight: "700" }],
+            "label-sm": ["13px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "500" }],
+            "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+            "display-lg": ["40px", { lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: "700" }]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Tajawal', sans-serif; background-color: #fff8f6; -webkit-tap-highlight-color: transparent; }
+    h1, h2, h3, h4, h5, h6, .cairo-font { font-family: 'Cairo', sans-serif; }
+    .ambient-shadow { box-shadow: 0 4px 12px rgba(192, 57, 43, 0.06); }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .stat-card { transition: all 0.2s ease; }
+    .stat-card:active { transform: scale(0.98); }
+    .review-card-enter { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .pb-safe-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
+    
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-20 md:pb-8">
+
+  <!-- استدعاء الشريط الجانبي للشيف -->
+  <%- include('../partials/chef_sidebar', { activePage: 'reviews' }) %>
+
+  <!-- Main Content Wrapper -->
+  <div class="transition-all duration-300">
+
+    <!-- Top AppBar Header -->
+    <header class="fixed top-0 right-0 lg:right-72 left-0 h-16 bg-surface/80 backdrop-blur-xl shadow-sm z-40 flex items-center justify-between px-4 md:px-8 border-b border-outline-variant/20">
+      <div class="flex items-center gap-3 flex-1">
+        <!-- زر القائمة للموبايل -->
+        <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-surface-container transition-colors">
+          <span class="material-symbols-outlined text-on-surface text-[24px]">menu</span>
+        </button>
+        
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 text-sm text-on-surface-variant">
+          <a href="/chef/dashboard" class="hover:text-primary transition-colors flex items-center gap-1">
+            <span class="material-symbols-outlined text-[18px]">dashboard</span>
+            <span class="hidden sm:inline">لوحة التحكم</span>
+          </a>
+          <span class="hidden sm:inline">/</span>
+          <span class="text-on-surface font-semibold flex items-center gap-1">
+            <span class="material-symbols-outlined text-[18px]">star</span>
+            تقييمات مطبخي
+          </span>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-3 md:gap-4">
+        <!-- صورة المستخدم -->
+        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm shadow-sm">
+          <%= (currentUser?.first_name || 'ش').charAt(0).toUpperCase() %>
+        </div>
+      </div>
+    </header>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="w-full pt-20 px-4 md:px-8 lg:pr-72 pb-16 bg-surface min-h-screen">
+      <div class="max-w-[1200px] mx-auto">
+
+        <!-- الهيدر -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <div>
+            <h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface cairo-font">تقييمات مطبخي</h1>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="material-symbols-outlined text-primary text-lg">storefront</span>
+              <p id="kitchen-name-display" class="font-body-md text-body-md text-on-surface-variant font-bold">جاري التحميل...</p>
+            </div>
+          </div>
+        </header>
+
+        <!-- رسالة في حال عدم وجود مطبخ -->
+        <div id="no-kitchen-message" class="hidden text-center py-16 bg-surface-container-low/50 rounded-2xl border border-dashed border-outline-variant mb-8">
+          <span class="material-symbols-outlined text-[56px] text-outline-variant block mb-3">storefront</span>
+          <h3 class="font-headline-md text-headline-md text-on-surface mb-2">لا يوجد مطبخ مرتبط بحسابك</h3>
+          <p class="font-body-md text-body-md text-on-surface-variant mb-6">يرجى إنشاء مطبخ أولاً لتتمكن من متابعة تقييمات عملائك.</p>
+          <a href="/kitchens/create" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary/90 transition">
+            <span class="material-symbols-outlined">add_business</span> إنشاء مطبخ جديد
+          </a>
+        </div>
+
+        <!-- Dashboard Content (يظهر فقط عند وجود مطبخ) -->
+        <div id="dashboard-content" class="hidden">
+          <!-- Stats Row -->
+          <div id="stats-row" class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-10">
+            <div class="stat-card bg-surface-container-lowest p-4 md:p-6 rounded-xl border border-outline-variant/30 ambient-shadow">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-label-sm text-label-sm text-on-surface-variant">إجمالي التقييمات</span>
+                <span class="material-symbols-outlined text-secondary-container bg-secondary-container/10 p-2 rounded-lg text-[20px]">reviews</span>
+              </div>
+              <div id="total-reviews" class="font-headline-md text-headline-md text-on-surface font-bold">-</div>
+              <div class="text-xs md:text-sm text-on-surface-variant font-body-md mt-1">جميع التقييمات</div>
+            </div>
+            <div class="stat-card bg-surface-container-lowest p-4 md:p-6 rounded-xl border border-outline-variant/30 ambient-shadow">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-label-sm text-label-sm text-on-surface-variant">متوسط التقييم</span>
+                <span class="material-symbols-outlined text-secondary-container bg-secondary-container/10 p-2 rounded-lg text-[20px]">star</span>
+              </div>
+              <div id="avg-rating" class="font-headline-md text-headline-md text-on-surface font-bold">-</div>
+              <div class="text-xs md:text-sm text-on-surface-variant font-body-md mt-1">من 5.0</div>
+            </div>
+            <div class="stat-card bg-surface-container-lowest p-4 md:p-6 rounded-xl border border-outline-variant/30 ambient-shadow">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-label-sm text-label-sm text-on-surface-variant">Fair Score</span>
+                <span class="material-symbols-outlined text-primary bg-primary-container/20 p-2 rounded-lg text-[20px]">verified</span>
+              </div>
+              <div id="fair-score" class="font-headline-md text-headline-md text-on-surface font-bold">-</div>
+              <div class="text-xs md:text-sm text-on-surface-variant font-body-md mt-1">التقييم العادل</div>
+            </div>
+            <div class="stat-card bg-surface-container-lowest p-4 md:p-6 rounded-xl border border-outline-variant/30 ambient-shadow">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-label-sm text-label-sm text-on-surface-variant">تقييمات اليوم</span>
+                <span class="material-symbols-outlined text-tertiary bg-tertiary-container/20 p-2 rounded-lg text-[20px]">trending_up</span>
+              </div>
+              <div id="today-reviews" class="font-headline-md text-headline-md text-on-surface font-bold">-</div>
+              <div class="text-xs md:text-sm text-on-surface-variant font-body-md mt-1">آخر 24 ساعة</div>
+            </div>
+          </div>
+
+          <!-- Charts Section -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-10">
+            <!-- Donut Chart -->
+            <div class="bg-surface-container-lowest p-4 md:p-6 rounded-xl border border-outline-variant/30 ambient-shadow">
+              <h3 class="font-headline-md text-headline-md text-on-surface mb-4 md:mb-6 border-b border-surface-variant pb-3 cairo-font">توزيع التقييمات</h3>
+              <div class="relative h-56 md:h-64 w-full flex items-center justify-center">
+                <canvas id="ratingDonutChart"></canvas>
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span id="donut-center-rating" class="font-display-lg-mobile text-display-lg-mobile text-on-background">-</span>
+                  <span class="font-label-sm text-label-sm text-on-surface-variant">المتوسط</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Line Chart -->
+            <div class="bg-surface-container-lowest p-4 md:p-6 rounded-xl border border-outline-variant/30 ambient-shadow">
+              <h3 class="font-headline-md text-headline-md text-on-surface mb-4 md:mb-6 border-b border-surface-variant pb-3 cairo-font">التقييمات آخر 30 يوم</h3>
+              <div class="relative h-56 md:h-64 w-full">
+                <canvas id="reviewsLineChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Dishes Section -->
+          <div id="top-dishes-section" class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 ambient-shadow overflow-hidden mb-6 md:mb-10">
+            <div class="bg-surface-container-low p-4 border-b border-outline-variant/30 flex justify-between items-center">
+              <h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2 cairo-font text-[16px] md:text-[20px]">
+                <span class="material-symbols-outlined text-secondary-container text-[20px]">restaurant_menu</span>
+                أفضل الأطباق تقييماً
+              </h3>
+              <span class="text-[10px] md:text-xs bg-primary-container/10 text-primary px-2 py-1 rounded-full border border-primary-container/20">حسب Fair Score</span>
+            </div>
+            <div id="top-dishes-list" class="p-0 divide-y divide-surface-variant"></div>
+          </div>
+
+          <!-- Reviews Section -->
+          <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 ambient-shadow overflow-hidden">
+            <div class="p-4 md:p-6 border-b border-surface-variant flex flex-col gap-3">
+              <h3 class="font-headline-md text-headline-md text-on-surface cairo-font">سجل التقييمات</h3>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <div class="relative flex-1">
+                  <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+                  <input type="text" id="search-input" placeholder="بحث في التقييمات..." class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-background text-sm">
+                </div>
+                <select id="rating-filter" class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-background text-sm">
+                  <option value="">كل التقييمات</option>
+                  <option value="5">5 نجوم</option>
+                  <option value="4">4 نجوم</option>
+                  <option value="3">3 نجوم</option>
+                  <option value="2">2 نجوم</option>
+                  <option value="1">1 نجمة</option>
+                </select>
+                <button id="apply-filters" class="px-6 py-2.5 bg-primary text-on-primary rounded-xl font-label-sm hover:bg-primary/90 transition whitespace-nowrap">تطبيق</button>
+              </div>
+            </div>
+
+            <!-- Mobile View: Cards (يظهر فقط على الموبايل) -->
+            <div id="reviews-mobile-cards" class="md:hidden p-4 space-y-3 bg-surface-container-low/30"></div>
+
+            <!-- Desktop View: Table (يظهر فقط على الشاشات الكبيرة) -->
+            <div class="hidden md:block overflow-x-auto">
+              <table class="w-full text-right border-collapse">
+                <thead class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">
+                  <tr>
+                    <th class="p-4 font-medium border-b border-outline-variant/30">العميل</th>
+                    <th class="p-4 font-medium border-b border-outline-variant/30">الطبق</th>
+                    <th class="p-4 font-medium border-b border-outline-variant/30">التقييم</th>
+                    <th class="p-4 font-medium border-b border-outline-variant/30 w-1/3">التعليق</th>
+                    <th class="p-4 font-medium border-b border-outline-variant/30">التاريخ</th>
+                  </tr>
+                </thead>
+                <tbody id="reviews-table-body" class="text-body-md font-body-md text-on-background"></tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="flex justify-center items-center gap-3 p-4 border-t border-surface-variant bg-surface-container-low/50"></div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+
+  <script>
+    // ================ متغيرات ================
+    let currentPage = 1;
+    const limit = 10;
+    let currentKitchenId = null;
+    let currentRating = '';
+    let currentSearch = '';
+    let chartInstances = { donut: null, line: null };
+
+    // ================ دوال مساعدة ================
+    function renderStars(rating) {
+      const full = Math.floor(rating);
+      let html = '';
+      for (let i = 0; i < full; i++) html += `<span class="material-symbols-outlined text-secondary-container" style="font-variation-settings:'FILL' 1; font-size:16px;">star</span>`;
+      const empty = 5 - full;
+      for (let i = 0; i < empty; i++) html += `<span class="material-symbols-outlined text-outline-variant" style="font-variation-settings:'FILL' 0; font-size:16px;">star</span>`;
+      return html;
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function getInitials(first, last) {
+      const f = first ? first.charAt(0) : '';
+      const l = last ? last.charAt(0) : '';
+      return (f + l).toUpperCase() || '؟';
+    }
+
+    // ================ جلب مطبخ الشيف الوحيد ================
+    async function fetchMyKitchen() {
+      try {
+        const res = await fetch('/kitchens/api/v1/my');
+        const data = await res.json();
+        if (data.status === 'success' && data.data) {
+          const kitchens = Array.isArray(data.data) ? data.data : [data.data];
+          if (kitchens.length > 0) {
+            currentKitchenId = kitchens[0].id;
+            const kitchenName = kitchens[0].title || kitchens[0].name || 'مطبخي';
+            document.getElementById('kitchen-name-display').textContent = kitchenName;
+            
+            // إظهار المحتوى وإخفاء رسالة الخطأ
+            document.getElementById('no-kitchen-message').classList.add('hidden');
+            document.getElementById('dashboard-content').classList.remove('hidden');
+            return true;
+          }
+        }
+        // إذا لم يكن هناك مطابخ
+        document.getElementById('no-kitchen-message').classList.remove('hidden');
+        document.getElementById('dashboard-content').classList.add('hidden');
+        return false;
+      } catch (err) {
+        console.error('Error fetching kitchen:', err);
+        document.getElementById('no-kitchen-message').classList.remove('hidden');
+        document.getElementById('dashboard-content').classList.add('hidden');
+        return false;
+      }
+    }
+
+    // ================ جلب بيانات الـ Dashboard ================
+    async function fetchChefData() {
+      if (!currentKitchenId) return;
+
+      const includeStats = 'true';
+      const params = new URLSearchParams();
+      params.set('include_stats', includeStats);
+      params.set('page', currentPage);
+      params.set('limit', limit);
+      params.set('kitchen_id', currentKitchenId); // دائماً نرسل معرف المطبخ الوحيد
+      
+      if (currentSearch) params.set('q', currentSearch);
+      if (currentRating) params.set('rating', currentRating);
+
+      const url = `/reviews/v1/api/chef?${params.toString()}`;
+
+      try {
+        const res = await fetch(url);
+        const response = await res.json();
+        if (response.status !== 'success') throw new Error(response.message || 'حدث خطأ');
+        renderDashboard(response);
+      } catch (err) {
+        console.error('Error fetching chef data:', err);
+        const errorMsg = `<div class="text-center py-10 text-error col-span-full">${DOQ.escape(err.message || 'حصل خطأ')}</div>`;
+        document.getElementById('reviews-table-body').innerHTML = errorMsg;
+        document.getElementById('reviews-mobile-cards').innerHTML = errorMsg;
+      }
+    }
+
+    // ================ عرض البيانات ================
+    function renderDashboard(response) {
+      const data = response.data || {};
+      const reviews = data.reviews || [];
+      const stats = data.stats || {};
+      const topDishes = data.top_dishes || [];
+      const pagination = response.pagination || { page: 1, limit: 10, total: 0, total_pages: 1 };
+
+      // ====== 1. تحديث الإحصائيات ======
+      document.getElementById('total-reviews').textContent = stats.total_reviews || 0;
+      document.getElementById('avg-rating').textContent = stats.average_rating || '0.0';
+      
+      const dist = stats.rating_distribution || {};
+      const total = stats.total_reviews || 1;
+      const star5 = parseInt(dist[5]) || 0;
+      const star4 = parseInt(dist[4]) || 0;
+      const star3 = parseInt(dist[3]) || 0;
+      const star2 = parseInt(dist[2]) || 0;
+      const star1 = parseInt(dist[1]) || 0;
+      const weightedAvg = (star5*5 + star4*4 + star3*3 + star2*2 + star1*1) / total;
+      
+      document.getElementById('fair-score').textContent = weightedAvg.toFixed(1) || '0.0';
+      document.getElementById('donut-center-rating').textContent = stats.average_rating || '0.0';
+      
+      const overTime = stats.reviews_over_time || [];
+      const today = overTime.length > 0 ? overTime[overTime.length - 1]?.count || 0 : 0;
+      document.getElementById('today-reviews').textContent = today;
+
+      // ====== 2. تحديث الرسوم البيانية ======
+      updateCharts(stats);
+
+      // ====== 3. تحديث أفضل الأطباق ======
+      const topDishesContainer = document.getElementById('top-dishes-list');
+      if (topDishes.length === 0) {
+        topDishesContainer.innerHTML = '<div class="p-6 text-center text-on-surface-variant text-sm">لا توجد أطباق مصنفة بعد</div>';
+      } else {
+        topDishesContainer.innerHTML = topDishes.slice(0, 5).map((d, i) => `
+          <div class="flex items-center justify-between p-4 hover:bg-surface-variant/30 transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-on-surface-variant w-6 text-center bg-surface-container rounded-full h-6 flex items-center justify-center text-xs">${i + 1}</span>
+              <div>
+                <h4 class="font-body-md text-body-md font-bold text-on-surface">${DOQ.escape(d.name || 'طبق')}</h4>
+                <p class="text-xs text-on-surface-variant">${d.reviews_count || 0} تقييم</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 bg-secondary-container/10 text-secondary-container px-2.5 py-1 rounded-lg border border-secondary-container/20">
+              <span class="font-bold text-sm">${d.avg_rating || 0}</span>
+              <span class="material-symbols-outlined text-[14px]" style="font-variation-settings:'FILL' 1;">star</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // ====== 4. تحديث عرض التقييمات (موبايل + ديسكتوب) ======
+      renderReviewsList(reviews);
+
+      // ====== 5. تحديث Pagination ======
+      const pagContainer = document.getElementById('pagination');
+      const totalPages = pagination.total_pages || 1;
+      let pagHtml = '';
+      pagHtml += `<button onclick="changePage(${currentPage - 1})" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low transition text-sm ${currentPage <= 1 ? 'opacity-50 pointer-events-none' : ''}">السابق</button>`;
+      pagHtml += `<span class="font-label-sm text-label-sm text-on-surface-variant">صفحة ${currentPage} من ${totalPages}</span>`;
+      pagHtml += `<button onclick="changePage(${currentPage + 1})" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low transition text-sm ${currentPage >= totalPages ? 'opacity-50 pointer-events-none' : ''}">التالي</button>`;
+      pagContainer.innerHTML = pagHtml;
+    }
+
+    function renderReviewsList(reviews) {
+      const mobileContainer = document.getElementById('reviews-mobile-cards');
+      const desktopTbody = document.getElementById('reviews-table-body');
+
+      if (reviews.length === 0) {
+        const emptyMsg = `<div class="text-center py-10 text-on-surface-variant col-span-full">لا توجد تقييمات مطابقة</div>`;
+        mobileContainer.innerHTML = emptyMsg;
+        desktopTbody.innerHTML = `<tr>${emptyMsg}</tr>`;
+        return;
+      }
+
+      // Mobile Cards Rendering
+      mobileContainer.innerHTML = reviews.map(r => `
+        <div class="review-card-enter bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30 ambient-shadow">
+          <div class="flex justify-between items-start mb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm shrink-0">
+                ${DOQ.escape(getInitials(r.first_name, r.last_name))}
+              </div>
+              <div>
+                <div class="font-bold text-sm text-on-surface">${DOQ.escape(r.first_name || '')} ${DOQ.escape(r.last_name || '')}</div>
+                <div class="text-xs text-on-surface-variant">${formatDate(r.created_at)}</div>
+              </div>
+            </div>
+            <div class="flex text-secondary-container text-[16px]">${renderStars(r.rating)}</div>
+          </div>
+          <div class="mb-2.5 flex items-center gap-2 text-sm">
+            <span class="font-bold text-on-surface">${DOQ.escape(r.dish_name || 'طبق')}</span>
+          </div>
+          ${r.comment ? `<p class="text-sm text-on-surface-variant bg-surface-container-low p-3 rounded-lg leading-relaxed">"${DOQ.escape(r.comment)}"</p>` : '<p class="text-sm text-on-surface-variant italic">لا يوجد تعليق</p>'}
+        </div>
+      `).join('');
+
+      // Desktop Table Rendering
+      desktopTbody.innerHTML = reviews.map(r => `
+        <tr class="review-card-enter hover:bg-surface-container-highest/50 transition-colors border-b border-surface-variant last:border-0">
+          <td class="p-4">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-xs shrink-0">
+                ${DOQ.escape(getInitials(r.first_name, r.last_name))}
+              </div>
+              <span class="font-medium">${DOQ.escape(r.first_name || '')} ${DOQ.escape(r.last_name || '')}</span>
+            </div>
+          </td>
+          <td class="p-4 font-medium text-on-surface">${DOQ.escape(r.dish_name || 'طبق')}</td>
+          <td class="p-4">
+            <div class="flex text-secondary-container text-[16px]">${renderStars(r.rating)}</div>
+          </td>
+          <td class="p-4 text-on-surface-variant text-sm max-w-xs truncate" title="${DOQ.escape(r.comment || '')}">${DOQ.escape(r.comment || 'لا يوجد تعليق')}</td>
+          <td class="p-4 text-on-surface-variant text-sm whitespace-nowrap">${formatDate(r.created_at)}</td>
+        </tr>
+      `).join('');
+    }
+
+    // ================ تحديث الرسوم البيانية ================
+    function updateCharts(stats) {
+      const dist = stats.rating_distribution || {};
+      const star5 = parseInt(dist[5]) || 0;
+      const star4 = parseInt(dist[4]) || 0;
+      const star3 = parseInt(dist[3]) || 0;
+      const star2 = parseInt(dist[2]) || 0;
+      const star1 = parseInt(dist[1]) || 0;
+      const values = [star5, star4, star3, star2, star1];
+
+      // Donut Chart
+      if (chartInstances.donut) chartInstances.donut.destroy();
+      const ctxDonut = document.getElementById('ratingDonutChart').getContext('2d');
+      chartInstances.donut = new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: {
+          labels: ['5', '4', '3', '2', '1'],
+          datasets: [{
+            data: values,
+            backgroundColor: ['#fc7127', '#ffb595', '#c0392b', '#ffdad5', '#e1bfb9'],
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '70%',
+          plugins: {
+            legend: { position: 'bottom', rtl: true, labels: { font: { family: 'Tajawal', size: 11 }, boxWidth: 12, padding: 10 } },
+            tooltip: { rtl: true, textDirection: 'rtl', fontFamily: 'Tajawal' }
+          }
+        }
+      });
+
+      // Line Chart
+      const overTime = stats.reviews_over_time || [];
+      const labels = overTime.map(d => d.date ? new Date(d.date).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' }) : '');
+      const counts = overTime.map(d => d.count || 0);
+
+      if (chartInstances.line) chartInstances.line.destroy();
+      const ctxLine = document.getElementById('reviewsLineChart').getContext('2d');
+      chartInstances.line = new Chart(ctxLine, {
+        type: 'line',
+        data: {
+          labels: labels.length > 0 ? labels : ['1', '5', '10', '15', '20', '25', '30'],
+          datasets: [{
+            label: 'عدد التقييمات',
+            data: counts.length > 0 ? counts : [0, 0, 0, 0, 0, 0, 0],
+            borderColor: '#9e2016',
+            backgroundColor: 'rgba(192, 57, 43, 0.08)',
+            borderWidth: 2,
+            pointBackgroundColor: '#fff8f6',
+            pointBorderColor: '#9e2016',
+            pointBorderWidth: 2,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(225, 191, 185, 0.2)' }, border: { display: false }, ticks: { font: { family: 'Tajawal', size: 10 } } },
+            x: { grid: { display: false }, border: { display: false }, ticks: { font: { family: 'Tajawal', size: 10 } } }
+          }
+        }
+      });
+    }
+
+    // ================ تغيير الصفحة ================
+    function changePage(newPage) {
+      if (newPage < 1) return;
+      const pag = document.getElementById('pagination');
+      const totalPages = parseInt(pag.querySelector('span')?.textContent?.split('من')[1]?.trim()) || 1;
+      if (newPage > totalPages) return;
+      currentPage = newPage;
+      fetchChefData();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function refreshData() {
+      currentPage = 1;
+      fetchChefData();
+    }
+
+    // ================ ربط الأحداث ================
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. جلب المطبخ أولاً
+      const hasKitchen = await fetchMyKitchen();
+      if (!hasKitchen) return;
+
+      // 2. ربط الأحداث
+      document.getElementById('apply-filters').addEventListener('click', () => {
+        currentSearch = document.getElementById('search-input').value.trim();
+        currentRating = document.getElementById('rating-filter').value;
+        currentPage = 1;
+        fetchChefData();
+      });
+
+      document.getElementById('search-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          currentSearch = document.getElementById('search-input').value.trim();
+          currentRating = document.getElementById('rating-filter').value;
+          currentPage = 1;
+          fetchChefData();
+        }
+      });
+
+      document.getElementById('rating-filter').addEventListener('change', () => {
+        currentSearch = document.getElementById('search-input').value.trim();
+        currentRating = document.getElementById('rating-filter').value;
+        currentPage = 1;
+        fetchChefData();
+      });
+
+      // 3. تحميل البيانات
+      fetchChefData();
+    });
+  </script>
+</body>
+</html>

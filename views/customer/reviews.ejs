@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<script src="/app-client.js"></script>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DOQ - التقييمات</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "surface-dim": "#eed4d1",
+            "inverse-surface": "#3c2d2a",
+            "on-background": "#261816",
+            "secondary": "#a23f00",
+            "surface-container-highest": "#f7ddd9",
+            "on-error": "#ffffff",
+            "surface-container": "#ffe9e6",
+            "inverse-on-surface": "#ffedea",
+            "surface-container-high": "#fce2de",
+            "on-primary-fixed-variant": "#8e130c",
+            "on-primary": "#ffffff",
+            "primary-container": "#c0392b",
+            "surface-tint": "#b02d21",
+            "secondary-fixed": "#ffdbcd",
+            "on-tertiary-fixed-variant": "#004d66",
+            "tertiary": "#005875",
+            "primary-fixed": "#ffdad5",
+            "primary": "#9e2016",
+            "primary-fixed-dim": "#ffb4a9",
+            "on-primary-fixed": "#410000",
+            "surface": "#fff8f6",
+            "surface-container-low": "#fff0ee",
+            "tertiary-fixed-dim": "#80d0f8",
+            "tertiary-container": "#007296",
+            "tertiary-fixed": "#c0e8ff",
+            "error-container": "#ffdad6",
+            "on-error-container": "#93000a",
+            "secondary-fixed-dim": "#ffb595",
+            "surface-container-lowest": "#ffffff",
+            "surface-bright": "#fff8f6",
+            "on-surface-variant": "#59413d",
+            "on-secondary-container": "#5c2000",
+            "outline-variant": "#e1bfb9",
+            "on-secondary": "#ffffff",
+            "background": "#fff8f6",
+            "on-primary-container": "#ffe5e1",
+            "on-tertiary-container": "#d3eeff",
+            "secondary-container": "#fc7127",
+            "inverse-primary": "#ffb4a9",
+            "on-surface": "#261816",
+            "on-secondary-fixed-variant": "#7c2e00",
+            "on-tertiary": "#ffffff",
+            "on-secondary-fixed": "#351000",
+            "outline": "#8d706c",
+            "surface-variant": "#f7ddd9",
+            "error": "#ba1a1a"
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            full: "9999px"
+          },
+          spacing: {
+            lg: "48px",
+            xs: "4px",
+            "container-max": "1280px",
+            gutter: "24px",
+            md: "24px",
+            xl: "80px",
+            base: "8px",
+            sm: "12px"
+          },
+          fontFamily: {
+            "body-lg": ["Tajawal", "sans-serif"],
+            "headline-md": ["Cairo", "sans-serif"],
+            "display-lg-mobile": ["Cairo", "sans-serif"],
+            "label-sm": ["Tajawal", "sans-serif"],
+            "body-md": ["Tajawal", "sans-serif"],
+            "display-lg": ["Cairo", "sans-serif"]
+          },
+          fontSize: {
+            "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+            "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+            "display-lg-mobile": ["32px", { lineHeight: "40px", fontWeight: "700" }],
+            "label-sm": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "500" }],
+            "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+            "display-lg": ["48px", { lineHeight: "60px", letterSpacing: "-0.02em", fontWeight: "700" }]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Tajawal', sans-serif; background-color: #fff8f6; }
+    h1, h2, h3, h4, h5, h6, .cairo-font { font-family: 'Cairo', sans-serif; }
+    .ambient-shadow { box-shadow: 0 4px 20px rgba(192, 57, 43, 0.06); }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen">
+
+
+  <%- include('../partials/header') %>
+
+
+<!-- المحتوى الرئيسي -->
+<main class="max-w-[1000px] mx-auto px-4 md:px-0 pt-32 pb-32">
+
+  <!-- الهيدر -->
+  <header class="flex items-center gap-4 mb-8">
+    <button onclick="history.back()" class="p-2 bg-surface-container-lowest rounded-full ambient-shadow hover:bg-surface-container-low transition-colors text-primary">
+      <span class="material-symbols-outlined">arrow_forward</span>
+    </button>
+    <h1 class="font-headline-md text-headline-md text-on-background cairo-font">
+      <span id="page-title">التقييمات</span>
+    </h1>
+  </header>
+
+  <!-- بطاقة الملخص -->
+  <section id="summary-card" class="bg-surface-container-lowest rounded-[24px] ambient-shadow p-6 md:p-8 mb-10 flex flex-col md:flex-row gap-8 items-center md:items-stretch">
+    <div class="flex flex-col items-center justify-center border-b md:border-b-0 md:border-l border-outline-variant/30 pb-6 md:pb-0 md:pl-8 min-w-[200px] w-full md:w-auto">
+      <div id="avg-rating" class="text-[64px] font-bold leading-none text-on-background cairo-font mb-2">-</div>
+      <div id="stars-container" class="flex text-secondary-container mb-3 text-xl"></div>
+      <p id="total-reviews" class="font-label-sm text-label-sm text-on-surface-variant mb-1">جاري التحميل...</p>
+      <p id="entity-name" class="font-label-sm text-label-sm text-on-surface-variant mb-3"></p>
+      <div class="bg-surface-container px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+        <span class="material-symbols-outlined text-[16px] text-tertiary">verified</span>
+        <span class="font-label-sm text-label-sm text-tertiary-container">تقييم موثوق</span>
+      </div>
+    </div>
+    <div id="distribution" class="flex-grow flex flex-col justify-center gap-3 w-full"></div>
+  </section>
+
+  <!-- الفلاتر -->
+  <div class="flex flex-wrap gap-3 mb-6 items-center">
+    <div class="flex-1 min-w-[150px]">
+      <input type="text" id="search-input" placeholder="ابحث في التعليقات..." class="w-full px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-background">
+    </div>
+    <div class="flex-1 min-w-[150px]">
+      <input type="text" id="city-input" placeholder="المدينة..." class="w-full px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-background">
+    </div>
+    <div class="flex-1 min-w-[150px]">
+      <input type="text" id="category-input" placeholder="فئة الأكل..." class="w-full px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-background">
+    </div>
+    <select id="rating-filter" class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-background">
+      <option value="">كل التقييمات</option>
+      <option value="5">5 نجوم</option>
+      <option value="4">4 نجوم</option>
+      <option value="3">3 نجوم</option>
+      <option value="2">2 نجوم</option>
+      <option value="1">1 نجمة</option>
+    </select>
+    <select id="sort-order" class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-background">
+      <option value="DESC">الأحدث أولاً</option>
+      <option value="ASC">الأقدم أولاً</option>
+    </select>
+    <button id="apply-filters" class="px-6 py-2 bg-primary text-on-primary rounded-full font-label-sm hover:bg-primary/90 transition">تطبيق</button>
+  </div>
+
+  <!-- قائمة التقييمات -->
+  <div id="reviews-list" class="space-y-6">
+    <div class="text-center py-10 text-on-surface-variant">جاري تحميل التقييمات...</div>
+  </div>
+
+  <!-- Pagination -->
+  <div id="pagination" class="flex justify-center items-center gap-4 mt-10"></div>
+
+</main>
+
+<!-- BottomNavBar (موبايل) -->
+<nav class="fixed bottom-0 w-full rounded-t-xl z-50 md:hidden shadow-[0_-4px_20px_rgba(192,57,43,0.06)] bg-surface-container shadow-lg flex justify-around items-center p-base pb-safe-bottom rtl">
+  <a class="flex flex-col items-center justify-center text-on-surface-variant font-label-sm text-label-sm active:bg-surface-variant scale-110 transition-transform duration-300" href="#">
+    <span class="material-symbols-outlined">home</span>
+    <span>الرئيسية</span>
+  </a>
+  <a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 font-label-sm text-label-sm text-primary font-bold active:bg-surface-variant scale-110 transition-transform duration-300" href="#">
+    <span class="material-symbols-outlined">explore</span>
+    <span>اكتشف</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant font-label-sm text-label-sm active:bg-surface-variant scale-110 transition-transform duration-300" href="#">
+    <span class="material-symbols-outlined">receipt_long</span>
+    <span>طلباتي</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant font-label-sm text-label-sm active:bg-surface-variant scale-110 transition-transform duration-300" href="#">
+    <span class="material-symbols-outlined">person</span>
+    <span>الحساب</span>
+  </a>
+</nav>
+
+  <%- include('../partials/footer') %>
+
+<script>
+  // قراءة المعاملات من URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialType = urlParams.get('type') || null;
+  const initialId = urlParams.get('id') || null;
+  
+  let currentPage = 1;
+  const limit = 10;
+
+  function renderStars(rating) {
+    const full = Math.floor(rating);
+    const half = rating % 1 >= 0.5 ? 1 : 0;
+    let html = '';
+    for (let i = 0; i < full; i++) html += `<span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">star</span>`;
+    if (half) html += `<span class="material-symbols-outlined" style="font-variation-settings:'FILL' 0.5;">star_half</span>`;
+    const empty = 5 - full - half;
+    for (let i = 0; i < empty; i++) html += `<span class="material-symbols-outlined text-outline-variant" style="font-variation-settings:'FILL' 0;">star</span>`;
+    return html;
+  }
+
+  function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  async function fetchReviews() {
+    const q = document.getElementById('search-input').value.trim();
+    const rating = document.getElementById('rating-filter').value;
+    const sort = document.getElementById('sort-order').value;
+    const city = document.getElementById('city-input').value.trim();
+    const category = document.getElementById('category-input').value.trim();
+
+    const params = new URLSearchParams();
+    if (initialType && initialId) {
+      params.set('type', initialType);
+      params.set('id', initialId);
+    }
+    params.set('page', currentPage);
+    params.set('limit', limit);
+    if (q) params.set('q', q);
+    if (rating) params.set('rating', rating);
+    if (sort) params.set('sort_order', sort);
+    if (city) params.set('city', city);
+    if (category) params.set('category', category);
+
+    const url = `/reviews/v1/api/list?${params.toString()}`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.status !== 'success') throw new Error(data.message || 'حدث خطأ');
+      renderReviews(data);
+    } catch (err) {
+      document.getElementById('reviews-list').textContent = err.message;
+    }
+  }
+
+  function renderReviews(data) {
+    const { reviews, summary, entity_name } = data.data;
+    const { pagination } = data;
+
+    document.getElementById('page-title').textContent = entity_name ? `تقييمات ${entity_name}` : 'التقييمات';
+    document.getElementById('avg-rating').textContent = summary.average_rating || '0.0';
+    document.getElementById('stars-container').innerHTML = renderStars(summary.average_rating || 0);
+    document.getElementById('total-reviews').textContent = `بناءً على ${summary.total_reviews} تقييم`;
+    document.getElementById('entity-name').textContent = entity_name ? `لـ ${entity_name}` : '';
+
+    const dist = summary.rating_distribution || {};
+    const max = Math.max(dist[5], dist[4], dist[3], dist[2], dist[1], 1);
+    const distContainer = document.getElementById('distribution');
+    distContainer.innerHTML = '';
+    for (let i = 5; i >= 1; i--) {
+      const count = dist[i] || 0;
+      const pct = max > 0 ? (count / max * 100) : 0;
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-3';
+      row.innerHTML = `
+        <span class="font-label-sm text-label-sm text-on-surface-variant w-4">${i}</span>
+        <span class="material-symbols-outlined text-[14px] text-secondary-container">star</span>
+        <div class="flex-grow h-2 bg-surface-container rounded-full overflow-hidden">
+          <div class="h-full bg-secondary-container rounded-full" style="width: ${pct}%; opacity: ${0.3 + 0.7 * (i/5)};"></div>
+        </div>
+        <span class="font-label-sm text-label-sm text-on-surface-variant w-8 text-left">${count}</span>
+      `;
+      distContainer.appendChild(row);
+    }
+
+    const listContainer = document.getElementById('reviews-list');
+    if (reviews.length === 0) {
+      listContainer.innerHTML = `<div class="text-center py-10 text-on-surface-variant">لا توجد تقييمات تطابق المعايير</div>`;
+    } else {
+      listContainer.innerHTML = reviews.map(r => `
+        <article class="bg-surface-container-lowest rounded-[24px] p-6 ambient-shadow">
+          <div class="flex justify-between items-start mb-4">
+            <div class="flex items-center gap-4">
+              ${r.user_image ? `<img src="${DOQ.safeImage(r.user_image)}" alt="صورة المستخدم" class="w-12 h-12 rounded-full object-cover border-2 border-surface-container-highest"/>` :
+                `<div class="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-lg">${DOQ.escape((r.first_name && r.first_name[0]) || '?')}</div>`}
+              <div>
+                <h3 class="font-body-md text-body-md font-bold text-on-background">${DOQ.escape(r.first_name || '')} ${DOQ.escape(r.last_name || '')}</h3>
+                <p class="font-label-sm text-label-sm text-on-surface-variant">${formatDate(r.created_at)}</p>
+              </div>
+            </div>
+            <div class="flex text-secondary-container text-sm">${renderStars(r.rating)}</div>
+          </div>
+          <p class="font-body-md text-body-md text-on-background mb-4 leading-relaxed">${DOQ.escape(r.comment || '')}</p>
+          <div class="flex flex-wrap gap-3">
+            <div class="inline-flex items-center gap-1.5 bg-surface px-3 py-1.5 rounded-lg border border-outline-variant/30">
+              <span class="material-symbols-outlined text-[16px] text-primary">restaurant</span>
+              <span class="font-label-sm text-label-sm text-on-surface-variant">${DOQ.escape(r.dish_name || 'طبق')}</span>
+            </div>
+            <div class="inline-flex items-center gap-1.5 bg-surface px-3 py-1.5 rounded-lg border border-outline-variant/30">
+              <span class="material-symbols-outlined text-[16px] text-secondary">kitchen</span>
+              <span class="font-label-sm text-label-sm text-on-surface-variant">${DOQ.escape(r.kitchen_name || 'مطبخ')}</span>
+            </div>
+            ${r.kitchen_city ? `<div class="inline-flex items-center gap-1.5 bg-surface px-3 py-1.5 rounded-lg border border-outline-variant/30">
+              <span class="material-symbols-outlined text-[16px] text-tertiary">location_on</span>
+              <span class="font-label-sm text-label-sm text-on-surface-variant">${DOQ.escape(r.kitchen_city)}</span>
+            </div>` : ''}
+            ${r.category_name ? `<div class="inline-flex items-center gap-1.5 bg-surface px-3 py-1.5 rounded-lg border border-outline-variant/30">
+              <span class="material-symbols-outlined text-[16px] text-primary-container">category</span>
+              <span class="font-label-sm text-label-sm text-on-surface-variant">${DOQ.escape(r.category_name)}</span>
+            </div>` : ''}
+          </div>
+        </article>
+      `).join('');
+    }
+
+    const pagContainer = document.getElementById('pagination');
+    const totalPages = pagination.total_pages || 1;
+    let pagHtml = '';
+    pagHtml += `<button onclick="changePage(${currentPage - 1})" class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low transition ${currentPage <= 1 ? 'opacity-50 pointer-events-none' : ''}">السابق</button>`;
+    pagHtml += `<span class="font-label-sm text-label-sm text-on-surface-variant">صفحة ${currentPage} من ${totalPages}</span>`;
+    pagHtml += `<button onclick="changePage(${currentPage + 1})" class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low transition ${currentPage >= totalPages ? 'opacity-50 pointer-events-none' : ''}">التالي</button>`;
+    pagContainer.innerHTML = pagHtml;
+  }
+
+  function changePage(newPage) {
+    if (newPage < 1) return;
+    const pag = document.getElementById('pagination');
+    const totalPages = parseInt(pag.querySelector('span')?.textContent?.split('من')[1]?.trim()) || 1;
+    if (newPage > totalPages) return;
+    currentPage = newPage;
+    fetchReviews();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('apply-filters').addEventListener('click', () => {
+      currentPage = 1;
+      fetchReviews();
+    });
+    document.querySelectorAll('#search-input, #city-input, #category-input').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          currentPage = 1;
+          fetchReviews();
+        }
+      });
+    });
+    fetchReviews();
+  });
+</script>
+</body>
+</html>

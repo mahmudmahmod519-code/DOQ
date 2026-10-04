@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<script src="/app-client.js"></script>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>إدارة التقييمات | دوق DOQ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#9e2016",
+            "primary-container": "#c0392b",
+            "on-primary": "#ffffff",
+            "secondary": "#a23f00",
+            "secondary-container": "#fc7127",
+            "on-secondary": "#ffffff",
+            "background": "#fff8f6",
+            "surface": "#fff8f6",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#fff0ee",
+            "surface-container": "#ffe9e6",
+            "surface-container-high": "#fce2de",
+            "on-surface": "#261816",
+            "on-surface-variant": "#59413d",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "outline-variant": "#e1bfb9",
+            "tertiary": "#005875",
+            "tertiary-container": "#007296"
+          },
+          fontFamily: {
+            sans: ["Cairo", "sans-serif"],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Cairo', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #e1bfb9; border-radius: 10px; }
+    
+    .zoom-in { animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    @keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    
+    .slide-in-right { animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+    
+    .review-row-enter { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased">
+    <%- include('../partials/admin_sidebar', { activePage: 'reviews' }) %>
+
+  <!-- Header -->
+  <header class="fixed top-0 right-0 lg:right-72 left-0 h-16 bg-surface/80 backdrop-blur-xl shadow-sm z-40 flex items-center justify-between px-4 md:px-8">
+    <div class="flex items-center gap-3 flex-1">
+      <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-surface-container transition-colors">
+        <span class="material-symbols-outlined text-on-surface text-[24px]">menu</span>
+      </button>
+      <div class="flex items-center gap-2 text-sm text-on-surface-variant">
+        <span class="material-symbols-outlined text-[18px] hidden sm:inline">home</span>
+        <span class="hidden sm:inline">/</span>
+        <span class="text-on-surface font-semibold">إدارة التقييمات</span>
+      </div>
+      <div class="hidden md:flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-full mr-2">
+        <span class="w-2 h-2 rounded-full bg-secondary-container animate-pulse"></span>
+        <span class="text-xs text-on-surface-variant">المنصة تعمل بنشاط</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold">
+        أ
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="pt-20 pb-16 px-4 md:px-8 lg:pr-72 min-h-screen bg-surface transition-all duration-300">
+    
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold text-primary mb-1 flex items-center gap-3">
+          <span class="material-symbols-outlined text-3xl md:text-4xl" style="font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;">star</span>
+          لوحة تحكم التقييمات
+        </h1>
+        <p class="text-on-surface-variant text-sm md:text-base">نظرة عامة على أداء وجودة المنصة وآراء المتذوقين</p>
+      </div>
+      <button onclick="refreshData()" class="w-full sm:w-auto px-6 py-2.5 bg-surface-container-low text-on-surface rounded-xl font-bold hover:bg-surface-container-high transition-all active:scale-95 flex items-center justify-center gap-2 border border-outline-variant/50">
+        <span class="material-symbols-outlined text-[20px]">refresh</span>
+        تحديث البيانات
+      </button>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+      <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm hover:shadow-md transition-all">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-sm text-on-surface-variant font-medium">إجمالي التقييمات</span>
+          <span class="material-symbols-outlined text-secondary-container bg-secondary-container/10 p-2 rounded-lg">reviews</span>
+        </div>
+        <div id="total-reviews" class="text-2xl md:text-3xl font-bold text-on-surface">-</div>
+        <div class="text-xs text-on-surface-variant mt-1">جميع التقييمات المسجلة</div>
+      </div>
+      <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm hover:shadow-md transition-all">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-sm text-on-surface-variant font-medium">متوسط التقييم</span>
+          <span class="material-symbols-outlined text-secondary-container bg-secondary-container/10 p-2 rounded-lg" style="font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;">star</span>
+        </div>
+        <div id="avg-rating" class="text-2xl md:text-3xl font-bold text-on-surface">-</div>
+        <div class="text-xs text-on-surface-variant mt-1">من أصل 5.0</div>
+      </div>
+      <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm hover:shadow-md transition-all">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-sm text-on-surface-variant font-medium">أفضل مطبخ</span>
+          <span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">storefront</span>
+        </div>
+        <div id="top-kitchen" class="text-lg font-bold text-on-surface truncate">-</div>
+        <div class="text-xs text-on-surface-variant mt-1">حسب التقييم العادل</div>
+      </div>
+      <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm hover:shadow-md transition-all">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-sm text-on-surface-variant font-medium">أفضل طبق</span>
+          <span class="material-symbols-outlined text-tertiary bg-tertiary/10 p-2 rounded-lg">restaurant</span>
+        </div>
+        <div id="top-dish" class="text-lg font-bold text-on-surface truncate">-</div>
+        <div class="text-xs text-on-surface-variant mt-1">حسب التقييم العادل</div>
+      </div>
+    </div>
+
+    <!-- Charts & Lists Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Rating Distribution -->
+      <div class="bg-surface-container-lowest p-5 md:p-6 rounded-xl border border-outline-variant/30 shadow-sm">
+        <h3 class="text-lg font-bold text-on-surface mb-6 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">donut_large</span>
+          توزيع التقييمات
+        </h3>
+        <div class="flex flex-col md:flex-row items-center gap-8">
+          <div id="donut-chart" class="relative w-40 h-40 md:w-48 md:h-48 rounded-full flex items-center justify-center shadow-inner flex-shrink-0" style="background: conic-gradient(#fc7127 0% 0%, #9e2016 0% 0%, #a23f00 0% 0%, #005875 0% 0%, #8d706c 0% 0%);">
+            <div class="w-28 h-28 md:w-32 md:h-32 bg-surface-container-lowest rounded-full shadow-[inset_0_4px_10px_rgba(0,0,0,0.05)] flex items-center justify-center flex-col">
+              <span id="donut-percent" class="text-2xl font-bold text-on-surface">0%</span>
+              <span class="text-xs text-on-surface-variant">أعلى نسبة</span>
+            </div>
+          </div>
+          <div id="distribution-legend" class="flex-1 w-full space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- Top Kitchens -->
+      <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col">
+        <div class="bg-surface-container-low p-4 border-b border-outline-variant/30 flex justify-between items-center">
+          <h3 class="text-lg font-bold text-on-surface flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">storefront</span>
+            أفضل المطابخ
+          </h3>
+          <span class="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">حسب التقييم</span>
+        </div>
+        <div id="top-kitchens-list" class="p-0 divide-y divide-outline-variant/20 flex-1">
+          <div class="p-8 text-center text-on-surface-variant">جاري التحميل...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Management Table -->
+    <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden">
+      <div class="p-4 md:p-6 border-b border-outline-variant/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h3 class="text-lg font-bold text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary-container">list_alt</span>
+          سجل التقييمات
+        </h3>
+        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div class="relative flex-1 sm:flex-none">
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline-variant text-[20px]">search</span>
+            <input type="text" id="search-input" placeholder="بحث في التعليقات..." 
+                   class="w-full sm:w-64 pr-10 pl-4 py-2.5 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-on-surface outline-none text-sm font-medium">
+          </div>
+          <select id="rating-filter" class="w-full sm:w-40 py-2.5 px-4 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-on-surface outline-none text-sm font-medium appearance-none">
+            <option value="">كل التقييمات</option>
+            <option value="5">5 نجوم</option>
+            <option value="4">4 نجوم</option>
+            <option value="3">3 نجوم</option>
+            <option value="2">2 نجوم</option>
+            <option value="1">1 نجمة</option>
+          </select>
+          <button id="apply-filters" class="w-full sm:w-auto px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary-container transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm">
+            <span class="material-symbols-outlined text-[18px]">filter_list</span>تطبيق
+          </button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[900px]">
+          <thead>
+            <tr class="border-b border-surface-container text-on-surface-variant text-right bg-surface-container-low/50">
+              <th class="p-4 font-bold text-xs whitespace-nowrap">العميل</th>
+              <th class="p-4 font-bold text-xs whitespace-nowrap">الطبق</th>
+              <th class="p-4 font-bold text-xs whitespace-nowrap hidden md:table-cell">المطبخ</th>
+              <th class="p-4 font-bold text-xs whitespace-nowrap">التقييم</th>
+              <th class="p-4 font-bold text-xs whitespace-nowrap">التعليق</th>
+              <th class="p-4 font-bold text-xs whitespace-nowrap hidden lg:table-cell">التاريخ</th>
+              <th class="p-4 font-bold text-xs whitespace-nowrap text-center">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="reviews-table-body" class="divide-y divide-outline-variant/20">
+            <tr><td colspan="7" class="p-12 text-center text-on-surface-variant">
+              <div class="flex flex-col items-center gap-3">
+                <div class="w-10 h-10 border-[3px] border-primary border-t-transparent rounded-full animate-spin"></div>
+                <p class="font-medium">جاري تحميل التقييمات...</p>
+              </div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div id="pagination" class="px-4 md:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-outline-variant/30 hidden">
+        <span id="pageInfoText" class="text-xs text-on-surface-variant"></span>
+        <div id="paginationButtons" class="flex items-center gap-1 md:gap-2 flex-wrap justify-center"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Edit Modal -->
+  <div id="edit-modal" class="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-surface-container-lowest rounded-2xl max-w-lg w-full p-6 shadow-2xl zoom-in border border-outline-variant/30">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">edit</span>
+          تعديل التقييم
+        </h3>
+        <button onclick="closeEditModal()" class="p-2 rounded-lg hover:bg-surface-container transition-colors">
+          <span class="material-symbols-outlined text-on-surface-variant">close</span>
+        </button>
+      </div>
+      <form id="edit-form" onsubmit="submitEdit(event)" class="space-y-5">
+        <input type="hidden" id="edit-review-id">
+        <div>
+          <label class="block text-xs font-bold text-on-surface-variant mb-2">التقييم</label>
+          <div class="flex gap-2" id="edit-stars">
+            <!-- سيتم تعبئتها بواسطة JS -->
+          </div>
+          <input type="hidden" id="edit-rating" value="5">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-on-surface-variant mb-2">التعليق</label>
+          <textarea id="edit-comment" rows="3" class="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-on-surface outline-none text-sm font-medium resize-none"></textarea>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="submit" class="flex-1 px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary-container transition-all active:scale-[0.98]">حفظ التعديلات</button>
+          <button type="button" onclick="closeEditModal()" class="flex-1 px-6 py-2.5 bg-surface-container-low text-on-surface-variant rounded-xl font-bold hover:bg-surface-container-high transition-all">إلغاء</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="fixed top-24 left-4 md:left-8 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+
+  <script>
+    // ============================================
+    // Sidebar Toggle
+    // ============================================
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      if (sidebar.classList.contains('translate-x-full')) {
+        sidebar.classList.remove('translate-x-full');
+        overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      } else {
+        sidebar.classList.add('translate-x-full');
+        overlay.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    }
+
+    let currentPage = 1;
+    const limit = 10;
+
+    // ============================================
+    // Helper Functions (✅ تم الإصلاح الجذري لعرض النجوم)
+    // ============================================
+    function renderStars(rating) {
+      let html = '';
+      // ضمان أن التقييم رقم صحيح بين 0 و 5
+      const numRating = Math.min(5, Math.max(0, parseInt(rating, 10) || 0));
+      
+      for (let i = 1; i <= 5; i++) {
+        if (i <= numRating) {
+          // نجمة ممتلئة (مع كل إعدادات الخط لضمان عدم حدوث خلل)
+          html += `<span class="material-symbols-outlined text-[18px] text-secondary-container" style="font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;">star</span>`;
+        } else {
+          // نجمة فارغة (بلون باهت لتظهر أنها فارغة بوضوح)
+          html += `<span class="material-symbols-outlined text-[18px] text-outline-variant" style="font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;">star</span>`;
+        }
+      }
+      return html;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '—';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function getInitials(first, last) {
+      const f = first ? first.charAt(0) : '';
+      const l = last ? last.charAt(0) : '';
+      return (f + l).toUpperCase() || '؟';
+    }
+
+    // ============================================
+    // Fetch Data
+    // ============================================
+    async function fetchDashboardData() {
+      try {
+        const res = await fetch('/reviews/v1/api/dashboard?include_stats=true');
+        const data = await res.json();
+        if (data.status !== 'success') throw new Error(data.message || 'حدث خطأ');
+        renderStats(data.data);
+        renderCharts(data.data);
+        renderTopLists(data.data);
+      } catch (err) {
+        console.error('Error fetching dashboard:', err);
+        showToast('فشل في تحميل بيانات لوحة التحكم', 'error');
+      }
+    }
+
+    async function fetchReviews() {
+      const q = document.getElementById('search-input').value.trim();
+      const rating = document.getElementById('rating-filter').value;
+      const params = new URLSearchParams({ page: currentPage, limit });
+      if (q) params.set('q', q);
+      if (rating) params.set('rating', rating);
+
+      try {
+        const res = await fetch(`/reviews/v1/api/dashboard?${params.toString()}`);
+        const data = await res.json();
+
+        if (data.status !== 'success') throw new Error(data.message || 'حدث خطأ');
+        renderReviewsTable(data);
+      } catch (err) {
+        document.getElementById('reviews-table-body').innerHTML = `
+          <tr><td colspan="7" class="p-12 text-center text-error">
+            <div class="flex flex-col items-center gap-3">
+              <span class="material-symbols-outlined text-4xl">error</span>
+              <p class="font-bold">${DOQ.escape(err.message || 'حدث خطأ غير متوقع')}</p>
+            </div>
+          </td></tr>`;
+      }
+    }
+
+    // ============================================
+    // Render Functions
+    // ============================================
+    function renderStats(data) {
+      const stats = data.stats || {};
+      const topKitchens = data.top_kitchens || [];
+      const topDishes = data.top_dishes || [];
+
+      document.getElementById('total-reviews').textContent = stats.total_reviews || 0;
+      document.getElementById('avg-rating').textContent = stats.average_rating || '0.0';
+      document.getElementById('top-kitchen').textContent = topKitchens.length > 0 ? (topKitchens[0].title || '-') : '-';
+      document.getElementById('top-dish').textContent = topDishes.length > 0 ? (topDishes[0].name || '-') : '-';
+    }
+
+    function renderCharts(data) {
+      const stats = data.stats || {};
+      const dist = stats.rating_distribution || {};
+      const total = stats.total_reviews || 1;
+
+      const colors = ['#fc7127', '#9e2016', '#a23f00', '#005875', '#8d706c'];
+      const labels = ['5 نجوم', '4 نجوم', '3 نجوم', '2 نجوم', '1 نجمة'];
+      const values = [dist[5] || 0, dist[4] || 0, dist[3] || 0, dist[2] || 0, dist[1] || 0];
+
+      let cumulative = 0;
+      const percentages = values.map(v => (v / total) * 100);
+      const donutSegments = percentages.map((p, i) => {
+        const start = cumulative;
+        cumulative += p;
+        return `${colors[i]} ${start}% ${cumulative}%`;
+      });
+      
+      document.getElementById('donut-chart').style.background = `conic-gradient(${donutSegments.join(', ')})`;
+      const topPercent = Math.max(...percentages, 0);
+      document.getElementById('donut-percent').textContent = `${Math.round(topPercent)}%`;
+
+      const legendContainer = document.getElementById('distribution-legend');
+      legendContainer.innerHTML = values.map((val, i) => `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full flex-shrink-0" style="background:${colors[i]}"></div>
+            <span class="text-sm text-on-surface font-medium">${labels[i]}</span>
+          </div>
+          <span class="text-xs text-on-surface-variant font-bold">${val} (${Math.round(percentages[i])}%)</span>
+        </div>
+      `).join('');
+    }
+
+    function renderTopLists(data) {
+      const topKitchens = data.top_kitchens || [];
+      const kitchensContainer = document.getElementById('top-kitchens-list');
+      
+      if (topKitchens.length === 0) {
+        kitchensContainer.innerHTML = '<div class="p-6 text-center text-on-surface-variant text-sm">لا توجد بيانات كافية</div>';
+      } else {
+        kitchensContainer.innerHTML = topKitchens.slice(0, 5).map((k, i) => `
+          <div class="flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="w-6 h-6 rounded-full ${i === 0 ? 'bg-secondary-container text-white' : 'bg-surface-container-high text-primary'} font-bold text-xs flex items-center justify-center flex-shrink-0">${i + 1}</span>
+              <div class="min-w-0">
+                <h4 class="font-bold text-on-surface text-sm truncate">${DOQ.escape(k.title || 'مطبخ')}</h4>
+                <p class="text-xs text-on-surface-variant">${k.reviews_count || 0} تقييم</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 bg-secondary-container/10 text-secondary px-2 py-1 rounded-md text-xs font-bold flex-shrink-0">
+              ${k.avg_rating || 0}
+              <span class="material-symbols-outlined text-[14px]" style="font-variation-settings:'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;">star</span>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function renderReviewsTable(data) {
+      const reviews = data.data?.reviews || []; reviewLookup = new Map(reviews.map(r => [Number(r.id),r]));
+      const pagination = data.pagination || { page: 1, limit: 10, total: 0, total_pages: 1 };
+      const tbody = document.getElementById('reviews-table-body');
+      
+      if (reviews.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-on-surface-variant">
+          <div class="flex flex-col items-center gap-3">
+            <span class="material-symbols-outlined text-4xl text-outline-variant">search_off</span>
+            <p class="font-bold">لا توجد تقييمات مطابقة</p>
+          </div>
+        </td></tr>`;
+        document.getElementById('pagination').classList.add('hidden');
+        return;
+      }
+
+      tbody.innerHTML = reviews.map(r => {
+        return `
+        <tr class="review-row-enter hover:bg-surface-container-low/60 transition-colors group">
+          <td class="p-4">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs flex-shrink-0">
+                ${DOQ.escape(getInitials(r.first_name, r.last_name))}
+              </div>
+              <span class="font-medium text-on-surface text-sm truncate max-w-[120px]">${DOQ.escape(r.first_name || '')} ${DOQ.escape(r.last_name || '')}</span>
+            </div>
+          </td>
+          <td class="p-4 text-on-surface text-sm font-medium truncate max-w-[150px]">${DOQ.escape(r.dish_name || 'طبق')}</td>
+          <td class="p-4 text-on-surface-variant text-sm hidden md:table-cell truncate max-w-[150px]">${DOQ.escape(r.kitchen_name || 'مطبخ')}</td>
+          <td class="p-4"><div class="flex">${renderStars(r.rating)}</div></td>
+          <td class="p-4 text-on-surface-variant text-sm max-w-xs truncate" title="${DOQ.escape(r.comment || '')}">${DOQ.escape(r.comment || 'لا يوجد تعليق')}</td>
+          <td class="p-4 text-on-surface-variant text-xs hidden lg:table-cell whitespace-nowrap">${formatDate(r.created_at)}</td>
+          <td class="p-4 text-center">
+            <div class="flex items-center justify-center gap-1">
+              <button onclick="openEditModalById(${Number(r.id)})" 
+                      class="w-8 h-8 rounded-lg flex items-center justify-center text-primary hover:bg-primary/10 transition-colors" title="تعديل">
+                <span class="material-symbols-outlined text-[20px]">edit</span>
+              </button>
+              <button onclick="deleteReview(${r.id})" 
+                      class="w-8 h-8 rounded-lg flex items-center justify-center text-error hover:bg-error/10 transition-colors" title="حذف">
+                <span class="material-symbols-outlined text-[20px]">delete</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `}).join('');
+
+      // Pagination
+      const pagContainer = document.getElementById('pagination');
+      const pageInfoText = document.getElementById('pageInfoText');
+      const paginationButtons = document.getElementById('paginationButtons');
+      
+      pagContainer.classList.remove('hidden');
+      pageInfoText.textContent = `صفحة ${pagination.page} من ${pagination.total_pages}`;
+      
+      let btnsHtml = '';
+      if (pagination.page > 1) {
+        btnsHtml += `<button onclick="changePage(${pagination.page - 1})" class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant text-xs font-bold hover:bg-white transition-all">السابق</button>`;
+      }
+      for (let i = 1; i <= pagination.total_pages; i++) {
+        if (i === pagination.page) {
+          btnsHtml += `<span class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-xs font-bold">${i}</span>`;
+        } else if (i === 1 || i === pagination.total_pages || (i >= pagination.page - 1 && i <= pagination.page + 1)) {
+          btnsHtml += `<button onclick="changePage(${i})" class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant text-xs font-bold hover:bg-white transition-all">${i}</button>`;
+        } else if (i === pagination.page - 2 || i === pagination.page + 2) {
+          btnsHtml += `<span class="text-xs text-on-surface-variant px-1">...</span>`;
+        }
+      }
+      if (pagination.page < pagination.total_pages) {
+        btnsHtml += `<button onclick="changePage(${pagination.page + 1})" class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant text-xs font-bold hover:bg-white transition-all">التالي</button>`;
+      }
+      paginationButtons.innerHTML = btnsHtml;
+    }
+
+    function changePage(newPage) {
+      if (newPage < 1) return;
+      const pag = document.getElementById('pagination');
+      const totalPagesText = pag.querySelector('#pageInfoText')?.textContent?.split('من')[1]?.trim() || 1;
+      if (newPage > parseInt(totalPagesText)) return;
+      currentPage = newPage;
+      fetchReviews();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function refreshData() {
+      fetchDashboardData();
+      fetchReviews();
+      showToast('تم تحديث البيانات بنجاح', 'success');
+    }
+
+    // ============================================
+    // Delete & Edit Actions
+    // ============================================
+    async function deleteReview(id) {
+      Swal.fire({
+        title: 'هل أنت متأكد؟',
+        text: 'سيتم حذف هذا التقييم نهائياً من النظام.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ba1a1a',
+        cancelButtonColor: '#59413d',
+        confirmButtonText: 'نعم، حذف',
+        cancelButtonText: 'إلغاء',
+        customClass: { popup: 'rounded-2xl font-["Cairo"]' }
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          try {
+            const res = await fetch(`/reviews/v1/api/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.status === 'success') {
+              showToast('✅ تم حذف التقييم بنجاح', 'success');
+              fetchReviews();
+              fetchDashboardData();
+            } else {
+              showToast('❌ ' + (data.message || 'حدث خطأ أثناء الحذف'), 'error');
+            }
+          } catch (err) {
+            showToast('❌ حدث خطأ في الاتصال بالخادم', 'error');
+          }
+        }
+      });
+    }
+
+    let editReviewId = null;
+    let editRating = 5;
+
+let reviewLookup = new Map();
+function openEditModalById(id){const review=reviewLookup.get(Number(id));if(review)openEditModal(review.id,review.rating,review.comment||'');}
+    function openEditModal(id, rating, comment) {
+      editReviewId = id;
+      editRating = Math.min(5, Math.max(0, parseInt(rating, 10) || 0));
+      
+      document.getElementById('edit-review-id').value = id;
+      document.getElementById('edit-rating').value = editRating;
+      document.getElementById('edit-comment').value = comment || '';
+      
+      renderEditStars(editRating);
+      
+      document.getElementById('edit-modal').classList.remove('hidden');
+      document.getElementById('edit-modal').classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').classList.add('hidden');
+      document.getElementById('edit-modal').classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+
+    function renderEditStars(rating) {
+      const container = document.getElementById('edit-stars');
+      container.innerHTML = '';
+      const numRating = Math.min(5, Math.max(0, parseInt(rating, 10) || 0));
+      
+      for (let i = 1; i <= 5; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        const isFilled = i <= numRating;
+        
+        btn.className = `material-symbols-outlined text-3xl transition-colors ${isFilled ? 'text-secondary-container' : 'text-outline-variant hover:text-secondary-container/50'}`;
+        // ✅ الإصلاح الجذري: استخدام كل إعدادات الخط لضمان عمل الزر بشكل صحيح
+        btn.style.fontVariationSettings = isFilled ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" : "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24";
+        btn.textContent = 'star';
+        
+        btn.onclick = () => {
+          editRating = i;
+          document.getElementById('edit-rating').value = i;
+          renderEditStars(i);
+        };
+        container.appendChild(btn);
+      }
+    }
+
+    async function submitEdit(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-review-id').value;
+      const rating = parseInt(document.getElementById('edit-rating').value);
+      const comment = document.getElementById('edit-comment').value.trim();
+
+      try {
+        const res = await fetch(`/reviews/v1/api/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rating, comment })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast('✅ تم تحديث التقييم بنجاح', 'success');
+          closeEditModal();
+          fetchReviews();
+          fetchDashboardData();
+        } else {
+          showToast('❌ ' + (data.message || 'حدث خطأ أثناء التعديل'), 'error');
+        }
+      } catch (err) {
+        showToast('❌ حدث خطأ في الاتصال بالخادم', 'error');
+      }
+    }
+
+    // ============================================
+    // Toast Notification
+    // ============================================
+    function showToast(message, type) {
+      type = type || 'success';
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const theme = type === 'success' 
+        ? 'bg-surface-container-lowest border-r-4 border-[#15803d] text-on-surface' 
+        : 'bg-surface-container-lowest border-r-4 border-error text-on-surface';
+      const iconColor = type === 'success' ? 'text-[#15803d]' : 'text-error';
+      const icon = type === 'success' ? 'check_circle' : 'error';
+
+      toast.className = theme + ' px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 slide-in-right border border-outline-variant/30 pointer-events-auto';
+      toast.innerHTML = `
+        <span class="material-symbols-outlined text-xl ${iconColor}" style="font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;">${icon}</span>
+        <span class="font-bold text-sm">${message}</span>
+      `;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        toast.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        setTimeout(() => { if(toast.parentElement) toast.remove(); }, 400);
+      }, 4000);
+    }
+
+    // ============================================
+    // Event Listeners
+    // ============================================
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('apply-filters').addEventListener('click', () => {
+        currentPage = 1;
+        fetchReviews();
+      });
+
+      document.getElementById('search-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          currentPage = 1;
+          fetchReviews();
+        }
+      });
+
+      document.getElementById('rating-filter').addEventListener('change', () => {
+        currentPage = 1;
+        fetchReviews();
+      });
+
+      document.getElementById('edit-modal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeEditModal();
+      });
+
+      fetchDashboardData();
+      fetchReviews();
+    });
+  </script>
+</body>
+</html>

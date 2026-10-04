@@ -1,0 +1,6 @@
+-- This legacy migration is intentionally disabled for MySQL 8.
+-- Use the idempotent Node migration instead:
+-- npm run migrate
+-- The Node script checks information_schema before each column and index change,
+-- keeps the schema compatible with the existing DOQ database, and should be run
+-- only after a verified backup and a database connection check.

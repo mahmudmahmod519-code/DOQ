@@ -8,9 +8,14 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test tests/security.test.js tests/implementation.test.js tests/arabic-integrity.test.js tests/regression.test.js",
+    "cron": "node tasks/cron.js",
+    "migrate": "node scripts/migrate.js",
+    "bootstrap:admin": "node scripts/bootstrap-admin.js",
+    "bootstrap:test-accounts": "node scripts/bootstrap-test-accounts.js"
   },
   "dependencies": {
+    "axios": "^1.20.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.2",
@@ -21,7 +26,15 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "mysql2": "^3.22.6",
+    "node-cache": "^5.1.2",
+    "nodemailer": "^7.0.13",
+    "speakeasy": "^2.0.0",
     "swagger-autogen": "^2.23.7",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^14.0.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.2.0"
   }
 }

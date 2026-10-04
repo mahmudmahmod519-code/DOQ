@@ -1,412 +1,828 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
-    <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title><%= dish ? dish.name : 'الوجبة' %> | دوق</title>
-    
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-    
-    <style>
-        :root { font-family: 'Cairo', 'beVietnamPro', sans-serif; }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-            vertical-align: middle;
-        }
-        .glass-effect {
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        .custom-shadow {
-            box-shadow: 0px 4px 20px rgba(192, 57, 43, 0.06);
-        }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #e1bfb9; border-radius: 10px; }
-        .rating-star {
-            color: #fc7127;
-        }
-        .rating-star-empty {
-            color: #e1bfb9;
-        }
-        .shimmer {
-            background: linear-gradient(90deg, #f7ddd9 25%, #ffe9e6 50%, #f7ddd9 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-        }
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-    </style>
-    
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "on-error-container": "#93000a",
-                        "surface-dim": "#eed4d1",
-                        "surface-tint": "#b02d21",
-                        "secondary": "#a23f00",
-                        "on-primary-fixed": "#410000",
-                        "error": "#ba1a1a",
-                        "surface-container-low": "#fff0ee",
-                        "on-surface-variant": "#59413d",
-                        "secondary-fixed-dim": "#ffb595",
-                        "surface-container-highest": "#f7ddd9",
-                        "on-secondary-container": "#5c2000",
-                        "background": "#fff8f6",
-                        "outline": "#8d706c",
-                        "on-background": "#261816",
-                        "inverse-surface": "#3c2d2a",
-                        "primary-container": "#c0392b",
-                        "inverse-primary": "#ffb4a9",
-                        "surface": "#fff8f6",
-                        "secondary-container": "#fc7127",
-                        "on-secondary-fixed-variant": "#7c2e00",
-                        "surface-container-high": "#fce2de",
-                        "on-tertiary-fixed": "#001e2b",
-                        "tertiary-fixed-dim": "#80d0f8",
-                        "on-tertiary-container": "#d3eeff",
-                        "on-tertiary": "#ffffff",
-                        "surface-container": "#ffe9e6",
-                        "primary-fixed-dim": "#ffb4a9",
-                        "tertiary-container": "#007296",
-                        "secondary-fixed": "#ffdbcd",
-                        "on-error": "#ffffff",
-                        "error-container": "#ffdad6",
-                        "on-primary-container": "#ffe5e1",
-                        "on-primary": "#ffffff",
-                        "surface-variant": "#f7ddd9",
-                        "primary-fixed": "#ffdad5",
-                        "outline-variant": "#e1bfb9",
-                        "surface-bright": "#fff8f6",
-                        "on-primary-fixed-variant": "#8e130c",
-                        "primary": "#9e2016",
-                        "tertiary-fixed": "#c0e8ff",
-                        "on-tertiary-fixed-variant": "#004d66",
-                        "on-secondary-fixed": "#351000",
-                        "on-secondary": "#ffffff",
-                        "on-surface": "#261816",
-                        "tertiary": "#005875",
-                        "surface-container-lowest": "#ffffff",
-                        "inverse-on-surface": "#ffedea"
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                    spacing: {
-                        "container-max": "1280px",
-                        "xs": "4px",
-                        "sm": "12px",
-                        "gutter": "24px",
-                        "xl": "80px",
-                        "base": "8px",
-                        "md": "24px",
-                        "lg": "48px"
-                    },
-                    fontFamily: {
-                        "headline-md": ["Cairo", "sans-serif"],
-                        "display-lg": ["Cairo", "sans-serif"],
-                        "body-md": ["Cairo", "sans-serif"],
-                        "body-lg": ["Cairo", "sans-serif"],
-                        "label-sm": ["Cairo", "sans-serif"]
-                    },
-                    fontSize: {
-                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
-                        "display-lg": ["32px", {"lineHeight": "40px", "fontWeight": "800"}],
-                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
-                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
-                        "label-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
-                    }
-                }
-            }
-        }
-    </script>
+<script src="/app-client.js"></script>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title><%= dish ? dish.name : 'الوجبة' %> | دوق</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+darkMode: "class",
+theme: {
+extend: {
+colors: {
+"surface": "#fff8f6",
+"surface-dim": "#eed4d1",
+"surface-bright": "#fff8f6",
+"surface-container-lowest": "#ffffff",
+"surface-container-low": "#fff0ee",
+"surface-container": "#ffe9e6",
+"surface-container-high": "#fce2de",
+"surface-container-highest": "#f7ddd9",
+"on-surface": "#261816",
+"on-surface-variant": "#59413d",
+"inverse-surface": "#3c2d2a",
+"inverse-on-surface": "#ffedea",
+"outline": "#8d706c",
+"outline-variant": "#e1bfb9",
+"surface-tint": "#b02d21",
+"primary": "#9e2016",
+"on-primary": "#ffffff",
+"primary-container": "#c0392b",
+"on-primary-container": "#ffe5e1",
+"inverse-primary": "#ffb4a9",
+"secondary": "#a23f00",
+"on-secondary": "#ffffff",
+"secondary-container": "#fc7127",
+"on-secondary-container": "#5c2000",
+"tertiary": "#005875",
+"on-tertiary": "#ffffff",
+"tertiary-container": "#007296",
+"on-tertiary-container": "#d3eeff",
+"error": "#ba1a1a",
+"on-error": "#ffffff",
+"error-container": "#ffdad6",
+"on-error-container": "#93000a",
+"primary-fixed": "#ffdad5",
+"primary-fixed-dim": "#ffb4a9",
+"on-primary-fixed": "#410000",
+"on-primary-fixed-variant": "#8e130c",
+"secondary-fixed": "#ffdbcd",
+"secondary-fixed-dim": "#ffb595",
+"on-secondary-fixed": "#351000",
+"on-secondary-fixed-variant": "#7c2e00",
+"tertiary-fixed": "#c0e8ff",
+"tertiary-fixed-dim": "#80d0f8",
+"on-tertiary-fixed": "#001e2b",
+"on-tertiary-fixed-variant": "#004d66",
+"background": "#fff8f6",
+"on-background": "#261816",
+"surface-variant": "#f7ddd9",
+},
+borderRadius: {
+"sm": "0.25rem",
+"DEFAULT": "0.5rem",
+"md": "0.75rem",
+"lg": "1rem",
+"xl": "1.5rem",
+"2xl": "2rem",
+"full": "9999px"
+},
+spacing: {
+"container-max": "1280px",
+"xs": "4px",
+"sm": "12px",
+"md": "24px",
+"lg": "48px",
+"xl": "80px",
+"gutter": "24px",
+},
+fontFamily: {
+"cairo": ["Cairo", "sans-serif"],
+},
+fontSize: {
+"display-lg": ["48px", { lineHeight: "60px", fontWeight: "700", letterSpacing: "-0.02em" }],
+"display-lg-mobile": ["32px", { lineHeight: "40px", fontWeight: "700" }],
+"headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+"body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+"body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+"label-sm": ["14px", { lineHeight: "20px", fontWeight: "500", letterSpacing: "0.01em" }]
+},
+boxShadow: {
+"ambient": "0px 4px 20px rgba(192, 57, 43, 0.06)",
+"ambient-lg": "0px 12px 40px rgba(192, 57, 43, 0.08)",
+"glow": "0px 4px 24px rgba(158, 32, 22, 0.15)"
+}
+}
+}
+}
+</script>
+
+
+<style>
+body {
+font-family: 'Cairo', sans-serif;
+background-color: #fff8f6;
+color: #261816;
+-webkit-font-smoothing: antialiased;
+}
+.material-symbols-outlined {
+font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+vertical-align: middle;
+}
+@keyframes elegantFadeIn {
+from { opacity: 0; transform: translateY(16px); }
+to { opacity: 1; transform: translateY(0); }
+}
+.animate-elegant {
+animation: elegantFadeIn 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+.delay-100 { animation-delay: 0.1s; opacity: 0; }
+.delay-200 { animation-delay: 0.2s; opacity: 0; }
+.delay-300 { animation-delay: 0.3s; opacity: 0; }
+.hero-image {
+transition: transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.hero-wrapper:hover .hero-image {
+transform: scale(1.05);
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e1bfb9; border-radius: 10px; }
+</style>
 </head>
 <body class="bg-background text-on-surface selection:bg-primary-container selection:text-on-primary-container">
 
-    <!-- Header / TopAppBar -->
-    <header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md flex flex-row-reverse justify-between items-center px-md py-sm">
-        <div class="font-headline-md text-headline-md text-primary">دوق</div>
-        <button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-high text-primary hover:scale-105 transition-transform" onclick="window.history.back()">
-            <span class="material-symbols-outlined">arrow_forward</span>
-        </button>
-    </header>
+<%- include('../partials/header') %>
 
-    <main class="pb-32 pt-20">
+<main class="pb-32">
+<% if (dish) {
+    var kitchenName = dish.title || '';
+    var chefName = (dish.first_name || '') + ' ' + (dish.last_name || '');
+    var imageUrl = dish.image_url || '/assests/dish_avatar.jpeg';
+    var price = dish.price || 0;
+    var rating = dish.avg_rating || 0;
+    var reviewsCount = dish.reviews_count || 0;
+    var description = dish.description || 'لا يوجد وصف متاح لهذا الطبق الشهي.';
+    var ingredients = dish.ingredients || ['مكونات طازجة'];
+%>
 
-        <% if (dish) { 
-            var kitchenPhone = dish.phone_number || '';
-            var kitchenName = dish.title || '';
-            var chefName = (dish.first_name || '') + ' ' + (dish.last_name || '');
-            var imageUrl = dish.image_url || 'https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=1920&q=80';
-            var price = dish.price || 0;
-            var rating = dish.avg_rating || 0;
-            var reviewsCount = dish.reviews_count || 0;
-            var description = dish.description || 'لا يوجد وصف';
-            var ingredients = dish.ingredients || ['لا توجد مكونات'];
-        %>
+<!-- 1. Hero Section -->
+<section class="relative w-full h-[50vh] md:h-[65vh] overflow-hidden hero-wrapper bg-surface-dim">
+    <div class="absolute inset-0 w-full h-full hero-image bg-cover bg-center"
+         style="background-image: url('<%= imageUrl %>');">
+    </div>
+    <div class="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent z-10"></div>
+    <a href="/dishes" class="absolute top-6 right-6 z-20 w-12 h-12 rounded-full bg-surface/80 backdrop-blur-md border border-outline-variant/30 flex items-center justify-center text-on-surface shadow-ambient hover:bg-surface-container-high transition-all duration-300">
+        <span class="material-symbols-outlined">arrow_forward</span>
+    </a>
+</section>
 
-        <!-- 1. Hero Section -->
-        <section class="relative w-full h-[50vh] md:h-[60vh] overflow-hidden">
-            <div class="absolute inset-0 w-full h-full bg-cover bg-center" style="background-image: url('<%= imageUrl %>');"></div>
-            <div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
-            
-            <!-- Floating Badge (تحضير سريع) -->
-            <div class="absolute bottom-10 right-6 flex items-center gap-2 bg-secondary-container text-on-secondary-container px-4 py-2 rounded-full font-bold shadow-lg animate-bounce">
-                <span class="material-symbols-outlined text-sm">schedule</span>
-                <span class="text-sm">جاهز خلال ٣ ساعات</span>
+<!-- 2. المحتوى الرئيسي -->
+<div class="container-max mx-auto px-4 md:px-6 -mt-20 relative z-20">
+
+    <!-- بطاقة معلومات الطبق -->
+    <div class="bg-surface-container-lowest rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-ambient border border-outline-variant/20 animate-elegant">
+        <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
+            <div class="flex-1">
+                <h1 class="font-cairo font-bold text-display-lg-mobile md:text-display-lg text-on-surface mb-3 leading-tight">
+                    <%= dish.name %>
+                </h1>
+                <div class="flex items-center gap-3 text-on-surface-variant">
+                    <div class="flex items-center gap-1 bg-secondary-fixed/50 px-3 py-1 rounded-full">
+                        <span class="material-symbols-outlined text-secondary-container text-xl" style="font-variation-settings: 'FILL' 1;">star</span>
+                        <span class="font-cairo font-bold text-on-surface text-body-md" id="avgRatingDisplay"><%= rating %></span>
+                    </div>
+                    <span class="text-label-sm" id="reviewsCountDisplay">(<%= reviewsCount %> تقييم)</span>
+                </div>
             </div>
-        </section>
-
-        <div class="container-max mx-auto px-md -mt-12 relative z-10">
-
-            <!-- 2. Meal Info Card -->
-            <div class="bg-surface rounded-3xl p-md custom-shadow flex flex-col gap-md">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h1 class="font-display-lg text-display-lg text-primary mb-2"><%= dish.name %></h1>
-                        <div class="flex items-center gap-2 text-on-surface-variant">
-                            <span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">star</span>
-                            <span class="font-bold" id="avgRatingDisplay"><%= rating %></span>
-                            <span class="" id="reviewsCountDisplay">(<%= reviewsCount %> تقييم)</span>
-                        </div>
-                    </div>
-                    <div class="text-left">
-                        <span class="text-secondary font-extrabold text-3xl"><%= price %></span>
-                        <span class="text-secondary text-sm block">ج.م</span>
-                    </div>
-                </div>
-
-                <hr class="border-outline-variant opacity-30">
-
-                <!-- Mini Chef Card -->
-                <a href="/kitchens/<%= dish.kitchen_id %>" class="flex items-center justify-between bg-surface-container-low p-sm rounded-2xl border border-outline-variant/20 transition-all hover:bg-surface-container-high cursor-pointer">
-                    <div class="flex items-center gap-sm">
-                        <div class="w-14 h-14 rounded-full overflow-hidden border-2 border-secondary p-0.5 bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xl">
-                            <%= chefName ? chefName.charAt(0).toUpperCase() : 'ش' %>
-                        </div>
-                        <div>
-                            <p class="font-bold text-on-surface text-lg"><%= chefName || 'شيف' %></p>
-                            <p class="text-on-surface-variant text-sm flex items-center gap-1">
-                                <span class="material-symbols-outlined text-xs">restaurant</span>
-                                <%= kitchenName %>
-                            </p>
-                        </div>
-                    </div>
-                    <span class="material-symbols-outlined text-outline">chevron_left</span>
-                </a>
+            <div class="flex items-center gap-2 md:flex-col md:items-end bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/20 md:w-fit">
+                <span class="font-cairo font-extrabold text-3xl text-primary"><%= price %></span>
+                <span class="text-on-surface-variant text-label-sm">جنيه مصري</span>
             </div>
-
-            <!-- 3. Details Section -->
-            <section class="mt-lg">
-                <h2 class="font-headline-md text-headline-md text-on-surface mb-md flex items-center gap-2">
-                    <span class="w-2 h-8 bg-primary rounded-full"></span>
-                    المكونات والتفاصيل
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
-                    <div class="bg-surface-container rounded-2xl p-md">
-                        <p class="text-body-lg text-on-surface-variant leading-relaxed"><%= description %></p>
-                    </div>
-                    <div class="flex flex-wrap gap-sm">
-                        <!-- Ingredient Pills -->
-                        <% ingredients.forEach(function(ing) { %>
-                            <div class="flex items-center gap-2 bg-white border border-outline-variant px-4 py-2 rounded-full custom-shadow">
-                                <span class="material-symbols-outlined text-primary text-sm">check_circle</span>
-                                <span class="text-sm font-medium"><%= ing %></span>
-                            </div>
-                        <% }); %>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 4. Reviews Section -->
-            <section class="mt-lg">
-                <div class="flex justify-between items-end mb-md">
-                    <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
-                        <span class="w-2 h-8 bg-primary rounded-full"></span>
-                        آراء الأكيلة والتقييمات
-                    </h2>
-                    <button class="text-primary font-bold text-sm underline" onclick="loadMoreReviews()">عرض الكل</button>
-                </div>
-
-                <!-- Reviews Container -->
-                <div id="reviewsContainer" class="space-y-sm">
-                    <!-- سيتم تعبئتها بواسطة JavaScript -->
-                    <div class="text-center text-on-surface-variant py-8">جاري تحميل التقييمات...</div>
-                </div>
-            </section>
-
         </div>
 
-        <!-- 5. Action Bar (Sticky Footer) -->
-        <div class="fixed bottom-0 left-0 right-0 p-md glass-effect bg-white/70 z-50 border-t border-outline-variant/10">
-            <div class="container-max mx-auto flex items-center gap-sm">
-                <!-- WhatsApp Button -->
-                <a href="https://wa.me/2<%= kitchenPhone %>?text=مرحباً%20أريد%20طلب%20<%= encodeURIComponent(dish.name) %>%20من%20مطبخ%20<%= encodeURIComponent(kitchenName) %>" 
-                   target="_blank" 
-                   class="flex-1 bg-[#25D366] text-white py-4 px-6 rounded-2xl font-bold flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg">
-                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
-                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217s.231.001.332.005c.109.004.258-.041.404.314.159.386.541 1.32.588 1.417.047.097.078.21.014.339-.063.129-.096.21-.188.319l-.282.33c-.093.102-.191.214-.081.403.11.189.488.804.1.478 1.24.474 2.286.735 2.612.87.326.134.518.111.713-.111.195-.222.845-.985.938-1.321.093-.336.186-.282.313-.235.127.047.804.38.943.449.139.069.231.104.265.161.035.056.035.328-.11.733z"/>
-                        <path d="M12 1c-6.075 0-11 4.925-11 11s4.925 11 11 11 11-4.925 11-11-4.925-11-11-11zm0 18.25c-1.512 0-2.934-.396-4.168-1.089l-4.169 1.093 1.112-4.062c-.759-1.28-1.2-2.775-1.2-4.367 0-4.631 3.769-8.4 8.425-8.4s8.425 3.769 8.425 8.4-3.769 8.4-8.425 8.4z"/>
-                    </svg>
-                    اطلب الآن عبر الواتساب
-                </a>
+        <hr class="border-outline-variant/30 mb-6">
 
-                <!-- Share Button -->
-                <button onclick="shareDish()" class="w-14 h-14 rounded-2xl bg-surface-container-high text-primary flex items-center justify-center custom-shadow hover:bg-surface-container-highest transition-colors">
-                    <span class="material-symbols-outlined">ios_share</span>
+        <!-- بطاقة الشيف -->
+        <a href="/kitchens/<%= dish.kitchen_id %>" class="group flex items-center justify-between bg-surface-container-low p-4 rounded-xl border border-outline-variant/20 transition-all duration-300 hover:bg-surface-container-high hover:shadow-ambient">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 border-2 border-surface shadow-sm">
+                    <img
+                        src="<%= dish.portfolio_url || dish.image_url || '/assests/profile_kitchen.jpeg' %>"
+                        alt="<%= chefName %>"
+                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        onerror="this.src='/assests/profile_kitchen.jpeg'"
+                    >
+                </div>
+                <div>
+                    <p class="font-cairo font-bold text-on-surface text-body-lg leading-tight group-hover:text-primary transition-colors duration-300">
+                        <%= chefName || 'شيف مبدع' %>
+                    </p>
+                    <p class="text-on-surface-variant text-label-sm flex items-center gap-1.5 mt-1">
+                        <span class="material-symbols-outlined text-secondary-container text-sm">restaurant</span>
+                        <%= kitchenName %>
+                    </p>
+                </div>
+            </div>
+            <span class="material-symbols-outlined text-outline-variant group-hover:text-primary group-hover:-translate-x-1 transition-all duration-300">chevron_left</span>
+        </a>
+    </div>
+
+    <!-- 3. قسم التفاصيل -->
+    <section class="mt-xl animate-elegant delay-100">
+        <h2 class="font-cairo font-semibold text-headline-md text-on-surface mb-4 flex items-center gap-3">
+            <span class="w-1.5 h-8 bg-primary rounded-full"></span>
+            القصة والمكونات
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+            <div class="md:col-span-7 bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/20 shadow-ambient">
+                <p class="font-cairo text-body-lg text-on-surface-variant leading-[1.8]">
+                    <%= description %>
+                </p>
+            </div>
+            <div class="md:col-span-5 flex flex-wrap content-start gap-3">
+                <% ingredients.forEach(function(ing) { %>
+                <div class="inline-flex items-center gap-2 bg-primary-fixed text-on-primary-fixed-variant px-4 py-2.5 rounded-full text-label-sm font-medium border border-primary/10 hover:scale-105 transition-transform duration-300 cursor-default">
+                    <span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    <span><%= ing %></span>
+                </div>
+                <% }); %>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. قسم التقييمات -->
+    <section class="mt-xl animate-elegant delay-200">
+        <div class="flex justify-between items-end mb-6">
+            <h2 class="font-cairo font-semibold text-headline-md text-on-surface flex items-center gap-3">
+                <span class="w-1.5 h-8 bg-secondary-container rounded-full"></span>
+                آراء الذواقة
+            </h2>
+            <a href="/reviews?type=dish&id=<%= dish.id %>" class="text-primary font-cairo font-bold text-label-sm hover:text-primary-container transition-colors underline decoration-2 underline-offset-4">
+                عرض كل التقييمات
+            </a>
+        </div>
+
+        <div id="reviewsContainer" class="space-y-4">
+            <div class="text-center text-on-surface-variant py-12 bg-surface-container-low/50 rounded-2xl border border-dashed border-outline-variant">
+                <span class="material-symbols-outlined text-4xl mb-2 opacity-50">rate_review</span>
+                <p class="text-body-md">جاري تحميل تجارب الأكيلة...</p>
+            </div>
+        </div>
+    </section>
+
+    <%if(currentUser && currentUser.roles==='customer'){%>
+    <!-- 4.5 نموذج إضافة/تعديل التقييم -->
+    <section class="mt-xl mb-24 animate-elegant delay-300 hidden" id="reviewFormSection">
+        <div class="bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-ambient border border-outline-variant/30">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-cairo font-semibold text-headline-md text-on-surface flex items-center gap-3" id="reviewFormTitle">
+                    <span class="w-1.5 h-8 bg-primary rounded-full"></span>
+                    أضف لمسة من رأيك
+                </h3>
+                <button type="button" id="closeFormBtn" onclick="closeReviewForm()" class="hidden w-10 h-10 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center hover:bg-error-container hover:text-on-error-container transition-all">
+                    <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
+
+            <form id="reviewForm" onsubmit="submitReview(event)" class="space-y-5">
+                <!-- نظام النجوم -->
+                <div class="flex items-center gap-2 flex-row-reverse justify-end bg-surface-container-low p-4 rounded-xl w-fit mx-auto md:mx-0" id="starRatingSelector">
+                    <span class="material-symbols-outlined cursor-pointer text-4xl text-outline-variant hover:text-secondary-container hover:scale-110 transition-all duration-200" data-value="5" style="font-variation-settings: 'FILL' 0;">star</span>
+                    <span class="material-symbols-outlined cursor-pointer text-4xl text-outline-variant hover:text-secondary-container hover:scale-110 transition-all duration-200" data-value="4" style="font-variation-settings: 'FILL' 0;">star</span>
+                    <span class="material-symbols-outlined cursor-pointer text-4xl text-outline-variant hover:text-secondary-container hover:scale-110 transition-all duration-200" data-value="3" style="font-variation-settings: 'FILL' 0;">star</span>
+                    <span class="material-symbols-outlined cursor-pointer text-4xl text-outline-variant hover:text-secondary-container hover:scale-110 transition-all duration-200" data-value="2" style="font-variation-settings: 'FILL' 0;">star</span>
+                    <span class="material-symbols-outlined cursor-pointer text-4xl text-outline-variant hover:text-secondary-container hover:scale-110 transition-all duration-200" data-value="1" style="font-variation-settings: 'FILL' 0;">star</span>
+                </div>
+                <input type="hidden" id="selectedRating" value="0">
+
+                <textarea id="reviewComment" rows="4" class="w-full bg-surface border border-outline-variant rounded-xl p-4 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-body-md text-on-surface resize-none transition-all duration-300 placeholder:text-on-surface-variant/50" placeholder="شاركنا تجربتك مع هذا الطبق الشهي..."></textarea>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" id="saveReviewBtn" class="flex-1 bg-primary text-on-primary py-3.5 px-6 rounded-xl font-cairo font-bold text-body-md shadow-glow hover:scale-[1.02] active:scale-95 transition-all duration-300">
+                        حفظ التقييم
+                    </button>
+                    <button type="button" id="deleteReviewBtn" onclick="deleteReview()" class="hidden bg-error-container text-on-error-container border border-error/20 py-3.5 px-6 rounded-xl font-cairo font-bold text-body-md hover:bg-error hover:text-on-error transition-all duration-300">
+                        حذف التقييم
+                    </button>
+                </div>
+            </form>
         </div>
+    </section>
+    <%}%>
+</div>
 
-        <% } else { %>
-            <!-- Dish Not Found -->
-            <div class="container-max mx-auto px-md py-20 text-center">
-                <span class="material-symbols-outlined text-6xl text-outline-variant">restaurant</span>
-                <h2 class="text-2xl font-bold text-on-surface mt-4">الطبق غير موجود</h2>
-                <p class="text-on-surface-variant">عذراً، لم نتمكن من العثور على هذا الطبق.</p>
-                <a href="/dishes" class="mt-4 inline-block text-primary hover:underline">العودة إلى الأطباق</a>
-            </div>
-        <% } %>
+<!-- 5. شريط الإجراءات السفلي -->
+<div class="fixed bottom-0 left-0 right-0 bg-surface/85 backdrop-blur-md border-t border-outline-variant/30 z-50 pb-safe">
+    <div class="container-max mx-auto px-4 md:px-6 py-4 flex items-center gap-4">        <button type="button" onclick="openOrderModal()" class="flex-1 bg-primary text-on-primary py-4 px-6 rounded-xl font-cairo font-bold text-body-lg shadow-glow hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2.5">
+            <span class="material-symbols-outlined">shopping_bag</span>
+            اطلب الطبق
+        </button>
 
-    </main>
+        <button onclick="shareDish()" class="w-14 h-14 rounded-xl bg-surface-container-high text-on-surface-variant flex items-center justify-center border border-outline-variant/30 hover:bg-surface-container-highest hover:text-primary transition-all duration-300 active:scale-95">
+            <span class="material-symbols-outlined text-2xl">ios_share</span>
+        </button>
+    </div>
+</div>
 
-    <script>
-        // ============================================
-        // جلب التقييمات الخاصة بالطبق
-        // ============================================
-        const dishId = '<%= dish ? dish.id : '' %>';
+<% } else { %>
+<!-- حالة عدم العثور على الطبق -->
+<div class="container-max mx-auto px-4 md:px-6 py-32 text-center animate-elegant">
+    <div class="w-24 h-24 bg-surface-container rounded-full flex items-center justify-center mx-auto mb-6">
+        <span class="material-symbols-outlined text-5xl text-outline-variant">restaurant</span>
+    </div>
+    <h2 class="font-cairo font-bold text-headline-md text-on-surface mb-3">الطبق غير موجود</h2>
+    <p class="text-on-surface-variant text-body-lg mb-8">عذراً، لم نتمكن من العثور على هذا الطبق في قائمتنا.</p>
+    <a href="/dishes" class="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3.5 rounded-xl font-cairo font-bold shadow-glow hover:scale-[1.02] active:scale-95 transition-all duration-300">
+        <span class="material-symbols-outlined">arrow_forward</span>
+        العودة إلى قائمة الأطباق
+    </a>
+</div>
+<% } %>
+<div id="order-modal" class="hidden fixed inset-0 z-[70] bg-black/50 p-4 items-center justify-center">
+  <div class="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="order-title">
+    <div class="flex items-center justify-between gap-3"><h2 id="order-title" class="text-xl font-bold">تأكيد الطلب</h2><button type="button" onclick="closeOrderModal()" class="p-2 rounded-full bg-gray-100" aria-label="إغلاق">×</button></div>
+    <p class="text-sm text-gray-600 mt-2"><%= dish ? dish.name : '' %> · <span id="order-unit" data-price="<%= dish ? dish.price : 0 %>"><%= dish ? dish.price : '' %></span> جنيه للطبق</p>
+    <label class="block mt-5 text-sm font-bold" for="order-name">اسم الطلب <span class="text-red-600">*</span></label>
+    <input id="order-name" type="text" minlength="2" maxlength="60" placeholder="مثلا: غدا البيت" class="w-full border rounded-xl p-3 mt-2" required>
+    <label class="block mt-4 text-sm font-bold" for="order-quantity">الكمية <span class="text-red-600">*</span></label>
+    <input id="order-quantity" type="number" inputmode="numeric" min="1" max="50" value="1" class="w-full border rounded-xl p-3 mt-2" required>
 
-        async function fetchReviews() {
-            const container = document.getElementById('reviewsContainer');
-            if (!dishId) {
-                container.innerHTML = '<div class="text-center text-on-surface-variant py-8">لا توجد تقييمات</div>';
-                return;
-            }
+    <label class="block mt-4 text-sm font-bold" for="order-coupon">كود الخصم</label>
+    <div class="mt-2 flex gap-2">
+      <input id="order-coupon" type="text" maxlength="32" autocomplete="off" placeholder="مثال: DOQ-1234ABCD" class="min-w-0 flex-1 border rounded-xl p-3 uppercase">
+      <button type="button" onclick="applyDishCoupon()" class="rounded-xl border border-primary px-4 py-3 font-bold text-primary">تطبيق</button>
+    </div>
+    <p id="coupon-hint" class="mt-1 text-xs text-gray-500">الكوبون يخص الطبق ده فقط ويستخدم مرة واحدة لكل حساب</p>
+    <p class="mt-1 text-xs text-gray-500"><span class="text-red-600">*</span> مطلوب</p>
+    <div class="mt-4 flex items-center justify-between rounded-xl bg-amber-50 p-3 text-amber-900">
+      <span class="text-sm font-bold">جهز فلوسك</span>
+      <span class="text-lg font-extrabold"><span id="order-total"></span> جنيه</span>
+    </div>
+    <p class="mt-1 text-xs text-gray-500">الدفع كاش لمندوب التوصيل وقت الاستلام</p>
+    <div id="order-alert" class="hidden mt-4 rounded-xl p-3 text-sm" role="status"></div>
+    <button type="button" id="order-submit" onclick="submitOrder()" class="w-full mt-5 rounded-xl bg-primary text-white py-3 font-bold">تأكيد الطلب</button>
+  </div>
+</div></main>
 
-            try {
-                const res = await fetch('/reviews/dish/' + dishId);
-                const data = await res.json();
+<%- include('../partials/footer') %>
+<script>
+// ============================================
+// المتغيرات العامة
+// ============================================
+const dishId = '<%= dish ? dish.id : "" %>';
+let currentReviewId = null;
+let myReviewData = null;
 
-                if (data.status === 'success' && data.data && data.data.length > 0) {
-                    const reviews = data.data;
-                    let html = '';
-                    reviews.forEach(r => {
-                        const name = (r.first_name || '') + ' ' + (r.last_name || '');
-                        const stars = getStarsHtml(r.rating);
-                        const date = new Date(r.created_at).toLocaleDateString('ar-EG');
-                        html += `
-                            <div class="bg-surface rounded-2xl p-md border border-outline-variant/10 custom-shadow">
-                                <div class="flex justify-between mb-2">
-                                    <div class="flex items-center gap-sm">
-                                        <div class="w-10 h-10 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-bold">${name ? name.charAt(0) : 'م'}</div>
-                                        <div>
-                                            <p class="font-bold text-sm">${name || 'مستخدم'}</p>
-                                            <p class="text-[10px] text-on-surface-variant">${date}</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex text-secondary scale-75">${stars}</div>
-                                </div>
-                                <p class="text-body-md text-on-surface-variant">${r.comment || 'لا يوجد تعليق'}</p>
-                            </div>
-                        `;
-                    });
-                    container.innerHTML = html;
+// ============================================
+// جلب التقييمات
+// ============================================
+async function fetchReviews() {
+    const container = document.getElementById('reviewsContainer');
+    if (!dishId) {
+        container.innerHTML = '<div class="text-center text-on-surface-variant py-12 bg-surface-container-low/50 rounded-2xl border border-dashed border-outline-variant"><p class="text-body-md">لا توجد تقييمات</p></div>';
+        return;
+    }
 
-                    // تحديث عدد التقييمات ومتوسط التقييم
-                    const avg = calculateAverage(reviews);
-                    document.getElementById('avgRatingDisplay').textContent = avg.toFixed(1);
-                    document.getElementById('reviewsCountDisplay').textContent = `(${reviews.length} تقييم)`;
-                } else {
-                    container.innerHTML = '<div class="text-center text-on-surface-variant py-8">لا توجد تقييمات لهذا الطبق بعد</div>';
-                }
-            } catch (err) {
-                console.error('Error fetching reviews:', err);
-                container.innerHTML = '<div class="text-center text-on-surface-variant py-8">حدث خطأ في تحميل التقييمات</div>';
-            }
-        }
+    try {
+        const res = await fetch('/reviews/v1/api/list/?type=dish&limit=3&id=' + dishId, {
+            credentials: 'include'
+        });
+        const data = await res.json();
 
-        // ============================================
-        // دوال مساعدة
-        // ============================================
-        function getStarsHtml(rating) {
+        if (data.status === 'success' && data.data?.reviews?.length > 0) {
+            const reviews = data.data.reviews;
             let html = '';
-            for (let i = 1; i <= 5; i++) {
-                if (i <= rating) {
-                    html += `<span class="material-symbols-outlined rating-star" style="font-variation-settings: 'FILL' 1;">star</span>`;
-                } else {
-                    html += `<span class="material-symbols-outlined rating-star-empty">star</span>`;
-                }
+
+            reviews.forEach(r => {
+                const name = ((r.first_name || '') + ' ' + (r.last_name || '')).trim();
+                const stars = getStarsHtml(r.rating);
+                const date = new Date(r.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                // نحاول نطابق تقييمنا
+                const isMyReview = (currentReviewId && String(r.id) === String(currentReviewId));
+
+                const highlightClass = isMyReview
+                    ? 'border-r-4 border-secondary-container bg-surface-container-low cursor-pointer hover:bg-surface-container-high'
+                    : '';
+                const badge = isMyReview
+                    ? '<span class="text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full mr-2">تقييمي</span>'
+                    : '';
+                const clickHandler = isMyReview ? `onclick="openMyReviewForm()"` : '';
+
+                html += `
+                    <div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/20 shadow-ambient hover:shadow-ambient-lg transition-all duration-300 animate-elegant ${highlightClass}" ${clickHandler}>
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-cairo font-bold text-lg">
+                                    ${DOQ.escape(name ? name.charAt(0) : 'م')}
+                                </div>
+                                <div>
+                                    <p class="font-cairo font-semibold text-on-surface text-body-md flex items-center">
+                                        ${DOQ.escape(name || 'مستخدم')}
+                                        ${badge}
+                                    </p>
+                                    <p class="text-on-surface-variant text-label-sm">${date}</p>
+                                </div>
+                            </div>
+                            <div class="flex text-secondary-container" style="font-variation-settings: 'FILL' 1;">${stars}</div>
+                        </div>
+                        <p class="text-body-lg text-on-surface-variant leading-[1.7] font-cairo">${DOQ.escape(r.comment || 'لا يوجد تعليق')}</p>
+                        ${isMyReview ? '<p class="text-xs text-secondary-container mt-2 font-medium">اضغط للتعديل أو الحذف</p>' : ''}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = `
+                <div class="text-center text-on-surface-variant py-12 bg-surface-container-low/50 rounded-2xl border border-dashed border-outline-variant">
+                    <span class="material-symbols-outlined text-4xl mb-2 opacity-50">rate_review</span>
+                    <p class="text-body-md">لا توجد تقييمات لهذا الطبق بعد. كن أول من يذوقه ويقيمه!</p>
+                </div>
+            `;
+        }
+    } catch (err) {
+        console.error('Error fetching reviews:', err);
+        container.innerHTML = '<div class="text-center text-on-surface-variant py-12 bg-surface-container-low/50 rounded-2xl border border-dashed border-outline-variant"><p class="text-body-md">حدث خطأ في تحميل التقييمات</p></div>';
+    }
+}
+
+// ============================================
+// دوال مساعدة
+// ============================================
+function getStarsHtml(rating) {
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+        html += i <= rating
+            ? `<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">star</span>`
+            : `<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 0;">star</span>`;
+    }
+    return html;
+}
+
+function resetFormToEmpty() {
+    currentReviewId = null;
+    myReviewData = null;
+    document.getElementById('reviewFormTitle').innerHTML = '<span class="w-1.5 h-8 bg-primary rounded-full"></span>أضف لمسة من رأيك';
+    document.getElementById('reviewComment').value = '';
+    setStars(0);
+    document.getElementById('saveReviewBtn').textContent = 'حفظ التقييم';
+    document.getElementById('deleteReviewBtn').classList.add('hidden');
+    document.getElementById('closeFormBtn').classList.add('hidden');
+}
+
+function showReviewForm() {
+    document.getElementById('reviewFormSection').classList.remove('hidden');
+}
+
+function hideReviewForm() {
+    document.getElementById('reviewFormSection').classList.add('hidden');
+}
+
+function closeReviewForm() {
+    if (currentReviewId) {
+        hideReviewForm();
+    }
+}
+
+function openMyReviewForm() {
+    if (!myReviewData) return;
+
+    currentReviewId = myReviewData.id;
+    document.getElementById('reviewFormTitle').innerHTML = '<span class="w-1.5 h-8 bg-secondary-container rounded-full"></span>تعديل تقييمك';
+    document.getElementById('reviewComment').value = myReviewData.comment || '';
+    setStars(myReviewData.rating);
+    document.getElementById('saveReviewBtn').textContent = 'حفظ التعديلات';
+    document.getElementById('deleteReviewBtn').classList.remove('hidden');
+    document.getElementById('closeFormBtn').classList.remove('hidden');
+
+    showReviewForm();
+    document.getElementById('reviewFormSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ============================================
+// مشاركة الطبق
+// ============================================
+function shareDish() {
+    const url = window.location.href;
+    const title = '<%= dish ? dish.name : "" %>';
+    if (navigator.share) {
+        navigator.share({
+            title: title,
+            text: `اكتشف طبق ${title} الشهي على منصة دوق!`,
+            url: url
+        }).catch(() => {});
+    } else {
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = event.currentTarget;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined text-2xl text-primary">check</span>';
+            setTimeout(() => btn.innerHTML = originalHTML, 2000);
+        }).catch(() => prompt('انسخ الرابط:', url));
+    }
+}
+
+// ============================================
+// التحقق من تقييم العميل
+// ============================================
+async function checkMyReview() {
+    if (!dishId) return;
+
+    try {
+        const res = await fetch(`/reviews/v1/api/my?id=${dishId}`, {
+            credentials: 'include'
+        });
+
+        if (res.status === 401 || res.status === 403) {
+            resetFormToEmpty();
+            showReviewForm();
+            return false;
+        }
+
+        if (!res.ok) {
+            console.warn('checkMyReview status:', res.status);
+            resetFormToEmpty();
+            showReviewForm();
+            return false;
+        }
+
+        const data = await res.json();
+        console.log('My review response:', data);
+
+        let myReview = null;
+        if (data.status === 'success' && Array.isArray(data.data) && data.data.length > 0) {
+            myReview = data.data[0];
+        }
+
+        if (myReview && myReview.id) {
+            currentReviewId = myReview.id;
+            myReviewData = myReview;
+            hideReviewForm();          // ← مهم جداً
+            console.log('تم العثور على تقييم:', myReview);
+            return true;
+        } else {
+            resetFormToEmpty();
+            showReviewForm();
+            return false;
+        }
+
+    } catch (err) {
+        console.error('خطأ في checkMyReview:', err);
+        resetFormToEmpty();
+        showReviewForm();
+        return false;
+    }
+}
+
+// ============================================
+// تفاعل النجوم
+// ============================================
+const starElements = document.querySelectorAll('#starRatingSelector span');
+starElements.forEach(star => {
+    star.addEventListener('click', (e) => {
+        setStars(e.target.getAttribute('data-value'));
+    });
+    star.addEventListener('mouseenter', (e) => {
+        highlightStars(e.target.getAttribute('data-value'), true);
+    });
+});
+
+document.getElementById('starRatingSelector').addEventListener('mouseleave', () => {
+    highlightStars(document.getElementById('selectedRating').value, false);
+});
+
+function setStars(rating) {
+    const num = parseInt(rating, 10) || 0;
+    document.getElementById('selectedRating').value = num;
+    highlightStars(num, false);
+}
+
+function highlightStars(rating, isHover) {
+    starElements.forEach(star => {
+        const val = parseInt(star.getAttribute('data-value'), 10);
+        if (val <= rating) {
+            star.style.fontVariationSettings = "'FILL' 1";
+            star.classList.remove('text-outline-variant');
+            star.classList.add('text-secondary-container');
+        } else {
+            star.style.fontVariationSettings = "'FILL' 0";
+            star.classList.remove('text-secondary-container');
+            star.classList.add('text-outline-variant');
+        }
+    });
+}
+
+// ============================================
+// إضافة / تعديل التقييم
+// ============================================
+async function submitReview(e) {
+    e.preventDefault();
+    const rating = document.getElementById('selectedRating').value;
+    const comment = document.getElementById('reviewComment').value.trim();
+    const submitBtn = document.getElementById('saveReviewBtn');
+
+    if (!rating || rating == 0) {
+        alert('يرجى اختيار التقييم من خلال النجوم.');
+        return;
+    }
+
+    try {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.7';
+        submitBtn.textContent = 'جاري الحفظ...';
+
+        let url, method, body;
+
+        if (currentReviewId) {
+            url = `/reviews/v1/api/${currentReviewId}`;
+            method = 'PATCH';
+            body = { rating: parseInt(rating, 10), comment: comment || null };
+        } else {
+            url = `/reviews/v1/api`;
+            method = 'POST';
+            body = {
+                dish_id: parseInt(dishId, 10),
+                rating: parseInt(rating, 10),
+                comment: comment || null
+            };
+        }
+
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(body)
+        });
+
+        if (res.status === 401 || res.status === 403) {
+            alert('يرجى تسجيل الدخول أولاً لحفظ تقييمك.');
+            return;
+        }
+
+        const data = await res.json();
+
+        if (data.status === 'success') {
+            // ننتظر شوية عشان الداتا تتسجل في الداتابيز
+            await new Promise(r => setTimeout(r, 300));
+
+            // نجيب تقييمي تاني
+            const found = await checkMyReview();
+
+            // نجيب القائمة
+            await fetchReviews();
+
+            // لو لقى التقييم → نخفي الفورم بقوة
+            if (found) {
+                hideReviewForm();
             }
-            return html;
+        } else {
+            alert(data.message || 'حدث خطأ غير متوقع');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('حدث خطأ في الاتصال بالخادم');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.textContent = currentReviewId ? 'حفظ التعديلات' : 'حفظ التقييم';
+    }
+}
+
+// ============================================
+// حذف التقييم
+// ============================================
+async function deleteReview() {
+    if (!currentReviewId) return;
+    if (!confirm('هل أنت متأكد من رغبتك في حذف هذا التقييم؟')) return;
+
+    try {
+        const deleteBtn = document.getElementById('deleteReviewBtn');
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = 'جاري الحذف...';
+
+        const res = await fetch(`/reviews/v1/api/${currentReviewId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+
+        if (res.status === 401 || res.status === 403) {
+            alert('يرجى تسجيل الدخول أولاً.');
+            return;
         }
 
-        function calculateAverage(reviews) {
-            if (!reviews.length) return 0;
-            const total = reviews.reduce((sum, r) => sum + r.rating, 0);
-            return total / reviews.length;
-        }
+        const data = await res.json();
 
-        // ============================================
-        // مشاركة الطبق
-        // ============================================
-        function shareDish() {
-            const url = window.location.href;
-            if (navigator.share) {
-                navigator.share({
-                    title: '<%= dish ? dish.name : '' %>',
-                    text: 'اكتشف طبق <%= dish ? dish.name : '' %> على دوق!',
-                    url: url
-                }).catch(() => {});
+        if (data.status === 'success') {
+            resetFormToEmpty();
+            showReviewForm();
+            await fetchReviews();
+        } else {
+            alert(data.message || 'حدث خطأ أثناء الحذف');
+        }
+    } catch (err) {
+        alert('حدث خطأ في الاتصال بالخادم');
+    } finally {
+        const deleteBtn = document.getElementById('deleteReviewBtn');
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = 'حذف التقييم';
+    }
+}
+
+// ============================================
+// تهيئة الصفحة
+// ============================================
+document.addEventListener('DOMContentLoaded', async function () {
+    const found = await checkMyReview();
+    await fetchReviews();
+
+    // لو لقى تقييم من الأول → نخفي الفورم
+    if (found) {
+        hideReviewForm();
+    }
+
+    window.addEventListener('scroll', () => {
+        const header = document.querySelector('header');
+        if (header) {
+            if (window.scrollY > 20) {
+                header.classList.add('shadow-ambient', 'bg-surface/90', 'backdrop-blur-md');
             } else {
-                // نسخ الرابط للحالات التي لا تدعم Web Share API
-                navigator.clipboard.writeText(url).then(() => {
-                    alert('تم نسخ رابط الطبق!');
-                }).catch(() => {
-                    prompt('انسخ الرابط:', url);
-                });
+                header.classList.remove('shadow-ambient', 'bg-surface/90', 'backdrop-blur-md');
             }
         }
+    });
+});
+</script>
 
-        // ============================================
-        // تحميل التقييمات عند تحميل الصفحة
-        // ============================================
-        document.addEventListener('DOMContentLoaded', function() {
-            fetchReviews();
-        });
-
-        // ============================================
-        // تأثيرات بسيطة
-        // ============================================
-        document.querySelectorAll('button').forEach(btn => {
-            btn.addEventListener('mousedown', () => {
-                btn.style.transform = 'scale(0.95)';
-            });
-            btn.addEventListener('mouseup', () => {
-                btn.style.transform = 'scale(1)';
-            });
-            btn.addEventListener('mouseleave', () => {
-                btn.style.transform = 'scale(1)';
-            });
-        });
-
-        window.addEventListener('scroll', () => {
-            const header = document.querySelector('header');
-            if (window.scrollY > 50) {
-                header.classList.add('shadow-md');
-            } else {
-                header.classList.remove('shadow-md');
-            }
-        });
-    </script>
-
+<script>
+const viewerRole='<%= (typeof currentUser !== "undefined" && currentUser) ? currentUser.roles : "" %>';
+let appliedCouponCode='';
+let appliedCouponDiscount=0;
+function money(value){return Number(value||0).toLocaleString('ar-EG-u-nu-latn',{maximumFractionDigits:2});}
+function showOrderAlert(text,kind='error',focusEl){
+  const box=document.getElementById('order-alert');
+  if(!box)return;
+  box.textContent=text;
+  box.className='mt-4 rounded-xl p-3 text-sm '+(kind==='success'?'bg-green-100 text-green-800':'bg-red-100 text-red-800');
+  focusEl?.focus();
+}
+function updateOrderTotal(){
+  const unit=Number(document.getElementById('order-unit')?.dataset.price||0);
+  const q=Number(document.getElementById('order-quantity')?.value)||0;
+  const gross=Number.isInteger(q)&&q>0?unit*q:0;
+  const total=Math.max(0,gross-appliedCouponDiscount);
+  const totalNode=document.getElementById('order-total');
+  if(totalNode)totalNode.textContent=money(total);
+  const hint=document.getElementById('coupon-hint');
+  if(hint&&appliedCouponCode)hint.textContent='تم تطبيق '+appliedCouponCode+' بخصم '+money(appliedCouponDiscount)+' جنيه على هذا الطبق';
+}
+function resetCoupon(){
+  appliedCouponCode='';
+  appliedCouponDiscount=0;
+  const input=document.getElementById('order-coupon');
+  const hint=document.getElementById('coupon-hint');
+  if(input)input.value='';
+  if(hint)hint.textContent='الكوبون يخص الطبق ده فقط ويستخدم مرة واحدة لكل حساب';
+}
+document.getElementById('order-quantity')?.addEventListener('input',()=>{if(appliedCouponCode)resetCoupon();updateOrderTotal();});
+async function applyDishCoupon(){
+  const code=(document.getElementById('order-coupon')?.value||'').trim().toUpperCase();
+  const quantity=Number(document.getElementById('order-quantity')?.value);
+  if(!code)return showOrderAlert('اكتب كود الخصم الأول', 'error', document.getElementById('order-coupon'));
+  if(!Number.isInteger(quantity)||quantity<1||quantity>50)return showOrderAlert('الكمية لازم تكون رقم من 1 لـ 50','error',document.getElementById('order-quantity'));
+  try{
+    const result=await DOQ.api('/platform/coupons/validate','POST',{dish_id:Number(dishId),quantity,code});
+    appliedCouponCode=result.data.code;
+    appliedCouponDiscount=Number(result.data.discount_amount||0);
+    updateOrderTotal();
+    showOrderAlert('تم تطبيق الخصم. راجع الإجمالي قبل التأكيد','success');
+  }catch(error){resetCoupon();updateOrderTotal();showOrderAlert(error.message||'الكوبون غير متاح');}
+}
+function openOrderModal(){
+  if(!viewerRole){location.assign('/auth?next='+encodeURIComponent(location.pathname));return;}
+  if(viewerRole!=='customer'){alert('الطلب متاح لحسابات العملاء بس');return;}
+  const modal=document.getElementById('order-modal');
+  if(!modal)return;
+  window.orderAttemptId=crypto.randomUUID();
+  resetCoupon();
+  const box=document.getElementById('order-alert');
+  box.className='hidden mt-4 rounded-xl p-3 text-sm';
+  const btn=document.getElementById('order-submit');
+  btn.disabled=false;
+  btn.textContent='تأكيد الطلب';
+  btn.classList.remove('opacity-60','cursor-default');
+  updateOrderTotal();
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('order-name')?.focus();
+}
+function closeOrderModal(){
+  const modal=document.getElementById('order-modal');
+  if(!modal)return;
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+async function submitOrder(){
+  const nameInput=document.getElementById('order-name');
+  const qtyInput=document.getElementById('order-quantity');
+  const btn=document.getElementById('order-submit');
+  const orderName=(nameInput?.value||'').trim();
+  const quantity=Number(qtyInput?.value);
+  if(orderName.length<2)return showOrderAlert('اكتب اسم للطلب','error',nameInput);
+  if(!Number.isInteger(quantity)||quantity<1||quantity>50)return showOrderAlert('الكمية لازم تكون رقم من 1 لـ 50','error',qtyInput);
+  btn.disabled=true;
+  try{
+    const data=await DOQ.api('/orders/api/v1','POST',{
+      dish_id:Number(dishId),quantity,order_name:orderName,coupon_code:appliedCouponCode||''
+    },{'Idempotency-Key':window.orderAttemptId||crypto.randomUUID()});
+    showOrderAlert((data.message||'تم إرسال الطلب')+' يمكنك متابعة حالته من طلباتك','success');
+    btn.textContent='تم إرسال الطلب';
+    btn.classList.add('opacity-60','cursor-default');
+  }catch(error){btn.disabled=false;showOrderAlert(error.message||'تعذر إرسال الطلب');}
+}
+</script>
 </body>
 </html>

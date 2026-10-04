@@ -1,0 +1,96 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${DB_NAME:-DOQ}
+      MYSQL_USER: ${DB_USER:-doq_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    ports:
+      - "${MYSQL_BIND_ADDRESS:-127.0.0.1}:${MYSQL_BIND_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/database.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root --password=$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ${DOQ_ENV_FILE:-.env}
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-DOQ}
+      DB_USER: ${DB_USER:-doq_user}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      WAIT_FOR_DB: "true"
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/security/csrf',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - doq_uploads:/app/public/upload
+
+  cron:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ${DOQ_ENV_FILE:-.env}
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-DOQ}
+      DB_USER: ${DB_USER:-doq_user}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      CRON_ENABLED: ${CRON_ENABLED:-true}
+      CRON_INTERVAL_SECONDS: ${CRON_INTERVAL_SECONDS:-3600}
+      DAILY_REPORT_ENABLED: ${DAILY_REPORT_ENABLED:-true}
+      PURGE_REPORTED_COMPLETED_ORDERS: ${PURGE_REPORTED_COMPLETED_ORDERS:-true}
+      COMMISSION_APPROVED: ${COMMISSION_APPROVED:-true}
+      CHEF_COMMISSION_PERCENT: ${CHEF_COMMISSION_PERCENT:-7}
+      DELIVERY_COMMISSION_PERCENT: ${DELIVERY_COMMISSION_PERCENT:-7}
+      DELIVERY_COMMISSION_BASIS: ${DELIVERY_COMMISSION_BASIS:-order_total}
+      SETTLEMENT_CADENCE: ${SETTLEMENT_CADENCE:-daily}
+      PAYOUT_LINK: ${PAYOUT_LINK:-https://ipn.eg/S/mahmoudmustafamm/instapay/0qc4FA}
+      BACKUP_ENABLED: ${BACKUP_ENABLED:-false}
+      BACKUP_DIR: /app/backups
+      MYSQLDUMP_BIN: mysqldump
+      WAIT_FOR_DB: "true"
+      RUN_MIGRATIONS: "false"
+    command: ["sh", "-c", "while true; do node tasks/cron.js; sleep $${CRON_INTERVAL_SECONDS:-3600}; done"]
+    depends_on:
+      app:
+        condition: service_healthy
+    volumes:
+      - doq_backups:/app/backups
+
+volumes:
+  mysql_data:
+  doq_backups:
+  doq_uploads:

@@ -1,0 +1,172 @@
+<!-- ============================================ -->
+<!-- HEADER الموحد - دوق (عربيات الأكل) -->
+<!-- ============================================ -->
+<header class="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 shadow-sm">
+    <div class="max-w-[1280px] mx-auto px-3 sm:px-4 lg:px-6">
+        <div class="flex items-center justify-between h-14 sm:h-16 md:h-20">
+            
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <a href="/" class="flex items-center gap-1 sm:gap-1.5 hover:opacity-80 transition-opacity group">
+                    <div class="relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-black rounded-full shadow-md group-hover:shadow-lg transition-all group-hover:scale-105">
+                        <img class="material-symbols-outlined text-white text-xl sm:text-2xl md:text-3xl" style="font-variation-settings: 'FILL' 1;" src="/assests/doq_logo.png" loading="lazy">
+                        <!-- <span class="absolute -top-1 -right-1 text-[8px] sm:text-[10px] bg-white text-black w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center font-bold text-[7px] sm:text-[8px] md:text-[10px] shadow-sm border border-black">د</span> -->
+                    </div>
+                    <span class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-on-surface font-headline-md">دوق</span>
+                    <span class="hidden md:inline-block text-[8px] sm:text-[10px] md:text-xs text-on-surface-variant font-semibold bg-surface-container-low px-1 sm:px-1.5 md:px-2 py-0.5 rounded-full border border-outline-variant/30 whitespace-nowrap">عربيات أكل</span>
+                </a>
+            </div>
+            
+            <!-- Navigation Links (Desktop) -->
+            <div class="hidden lg:flex items-center gap-1 xl:gap-2">
+                <a class="text-sm xl:text-base text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low px-2 xl:px-3 py-1.5 xl:py-2 rounded-lg whitespace-nowrap" href="/">الرئيسية</a>
+                <a class="text-sm xl:text-base text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low px-2 xl:px-3 py-1.5 xl:py-2 rounded-lg whitespace-nowrap" href="/about">من نحن</a>
+                <a class="text-sm xl:text-base text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low px-2 xl:px-3 py-1.5 xl:py-2 rounded-lg whitespace-nowrap" href="/faqs">الأسئلة الشائعة</a>
+                <a class="text-sm xl:text-base text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low px-2 xl:px-3 py-1.5 xl:py-2 rounded-lg whitespace-nowrap" href="/contect-us">اتصل بنا</a>
+            </div>
+            
+            <!-- Trailing Actions -->
+            <div class="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
+                
+                <% const isLoggedIn = login === true;%>
+                
+                <% if (isLoggedIn) { %>
+                    <div class="flex items-center gap-1 sm:gap-2">
+                        <% const roleHome = { admin: ['/admin', 'لوحة الإدارة'], chef: ['/users/orders', 'طلبات المطبخ'], delivery: ['/delivery', 'طلبات التوصيل'], customer: ['/my-orders', 'طلباتي'] }[(typeof currentUser !== 'undefined' && currentUser && currentUser.roles) || '']; %>
+                        <% if (roleHome) { %>
+                            <a href="<%= roleHome[0] %>" class="text-xs sm:text-sm font-bold text-primary hover:bg-surface-container-low px-2 sm:px-3 py-1.5 rounded-full whitespace-nowrap"><%= roleHome[1] %></a>
+                        <% } %>
+                        <a href="/notifications" aria-label="الإشعارات" class="hidden sm:block p-1.5 sm:p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors">
+                            <span class="material-symbols-outlined text-xl sm:text-2xl">notifications</span>
+                        </a>
+                        <a href="/users/profile" class="block w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full overflow-hidden border-2 border-primary hover:border-secondary transition-all hover:scale-105 active:scale-95 shadow-sm">
+                            <img src="<%= '/assests/avatar.jpeg'%>" alt="صورة المستخدم" class="w-full h-full object-cover" loading="lazy">
+                        </a>
+                    </div>
+                <% } else { %>
+                    <a href="/auth" class="text-xs sm:text-sm md:text-base bg-primary text-on-primary px-2.5 sm:px-4 md:px-6 py-1 sm:py-1.5 md:py-2 rounded-full font-bold hover:scale-105 active:scale-95 transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap">
+                        تسجيل الدخول
+                    </a>
+                <% } %>
+                
+                <button id="mobile-menu-btn" class="lg:hidden p-1.5 sm:p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors">
+                    <span class="material-symbols-outlined text-2xl sm:text-3xl">menu</span>
+                </button>
+                
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="lg:hidden hidden bg-surface/98 backdrop-blur-md shadow-2xl border-t border-outline-variant/20">
+        <div class="max-w-[1280px] mx-auto px-3 sm:px-4">
+            <div class="flex flex-col py-2 sm:py-3 gap-0.5">
+                <a class="text-sm sm:text-base text-on-surface-variant hover:text-primary hover:bg-surface-container-low px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all flex items-center gap-2.5 sm:gap-3" href="/">
+                    <span class="material-symbols-outlined text-xl sm:text-2xl text-primary">home</span>
+                    <span>الرئيسية</span>
+                </a>
+                <a class="text-sm sm:text-base text-on-surface-variant hover:text-primary hover:bg-surface-container-low px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all flex items-center gap-2.5 sm:gap-3" href="/about">
+                    <span class="material-symbols-outlined text-xl sm:text-2xl text-primary">info</span>
+                    <span>من نحن</span>
+                </a>
+                <a class="text-sm sm:text-base text-on-surface-variant hover:text-primary hover:bg-surface-container-low px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all flex items-center gap-2.5 sm:gap-3" href="/faqs">
+                    <span class="material-symbols-outlined text-xl sm:text-2xl text-primary">help</span>
+                    <span>الأسئلة الشائعة</span>
+                </a>
+                <a class="text-sm sm:text-base text-on-surface-variant hover:text-primary hover:bg-surface-container-low px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all flex items-center gap-2.5 sm:gap-3" href="/contect-us">
+                    <span class="material-symbols-outlined text-xl sm:text-2xl text-primary">contact_support</span>
+                    <span>اتصل بنا</span>
+                </a>
+                
+                <div class="h-px bg-outline-variant/20 my-1.5 sm:my-2"></div>
+                
+                <% if (isLoggedIn) { %>
+                    <a href="/users/profile" class="flex items-center gap-2.5 sm:gap-3 text-sm sm:text-base text-on-surface-variant hover:text-primary hover:bg-surface-container-low px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all">
+                        <img src="<%=  '/assests/avatar.jpeg' %>" alt="صورة المستخدم" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border-2 border-primary" loading="lazy">
+                        <div>
+                            <span class="font-semibold block text-sm sm:text-base"><%= 'حسابي' %></span>
+                            <span class="text-[10px] sm:text-xs text-on-surface-variant/60">عرض الملف الشخصي</span>
+                        </div>
+                        <span class="mr-auto material-symbols-outlined text-on-surface-variant text-xl">chevron_left</span>
+                    </a>
+                    <a href="/auth/logout" class="text-sm sm:text-base text-error hover:bg-error-container/10 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all flex items-center gap-2.5 sm:gap-3">
+                        <span class="material-symbols-outlined text-xl sm:text-2xl">logout</span>
+                        <span>تسجيل الخروج</span>
+                    </a>
+                <% } else { %>
+                    <a href="/auth" class="bg-primary text-on-primary text-center text-sm sm:text-base px-4 py-3 rounded-lg font-bold hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2.5 shadow-md mt-1">
+                        <span class="material-symbols-outlined text-xl sm:text-2xl">login</span>
+                        تسجيل الدخول
+                    </a>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- JavaScript للـ Mobile Menu -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        let isMenuOpen = false;
+        
+        if (mobileBtn && mobileMenu) {
+            mobileBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                isMenuOpen = !isMenuOpen;
+                mobileMenu.classList.toggle('hidden');
+                const icon = this.querySelector('.material-symbols-outlined');
+                if (icon) {
+                    icon.textContent = isMenuOpen ? 'close' : 'menu';
+                }
+                if (isMenuOpen) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            mobileMenu.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function() {
+                    mobileMenu.classList.add('hidden');
+                    isMenuOpen = false;
+                    document.body.style.overflow = '';
+                    const icon = mobileBtn.querySelector('.material-symbols-outlined');
+                    if (icon) {
+                        icon.textContent = 'menu';
+                    }
+                });
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (isMenuOpen && !mobileMenu.contains(e.target) && !mobileBtn.contains(e.target)) {
+                    mobileMenu.classList.add('hidden');
+                    isMenuOpen = false;
+                    document.body.style.overflow = '';
+                    const icon = mobileBtn.querySelector('.material-symbols-outlined');
+                    if (icon) {
+                        icon.textContent = 'menu';
+                    }
+                }
+            });
+        }
+    });
+</script>
+
+<style>
+    @media (max-width: 380px) {
+        .xs\:inline-block { display: inline-block !important; }
+        header .text-primary { font-size: 0.9rem !important; }
+    }
+    @media (min-width: 381px) {
+        .xs\:inline-block { display: none !important; }
+    }
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    body.no-scroll { overflow: hidden; }
+    #mobile-menu::-webkit-scrollbar { width: 3px; }
+    #mobile-menu::-webkit-scrollbar-track { background: transparent; }
+    #mobile-menu::-webkit-scrollbar-thumb { background: #e1bfb9; border-radius: 4px; }
+</style>

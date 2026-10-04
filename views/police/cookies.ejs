@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<script src="/app-client.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سياسة الكوكيز - دوق | DOQ</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#f9f9f9',
+                            text: '#333333',
+                            headings: '#4D0F0F',
+                            accent: '#F26B1D',
+                            accentHover: '#d95a12',
+                            burgundyLight: '#5e1313',
+                            cardBorder: '#eeeeee',
+                        }
+                    },
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                        tajawal: ['Tajawal', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f9f9f9; color: #333333; font-family: 'Tajawal', sans-serif; -webkit-font-smoothing: antialiased; }
+        h1, h2, h3, .heading-font { font-family: 'Cairo', sans-serif; color: #4D0F0F; }
+        .custom-bullet { position: relative; padding-right: 1.75rem; }
+        .custom-bullet::before { content: ''; position: absolute; right: 0; top: 0.65rem; width: 8px; height: 8px; border-radius: 50%; background-color: #F26B1D; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #d8c3be; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b89b94; }
+    </style>
+</head>
+<body class="min-h-screen py-8 md:py-16 px-4 sm:px-6 flex flex-col justify-between items-center selection:bg-[#F26B1D] selection:text-white">
+
+    <!-- Minimal Top Brand Bar -->
+    <header class="w-full max-w-[800px] flex items-center justify-between mb-8 px-2">
+        <a href="/" class="inline-flex items-center gap-2 group transition-transform hover:scale-105">
+            <img class="w-10 h-10 rounded-full bg-[#4D0F0F] flex items-center justify-center text-white font-bold text-xl font-cairo shadow-sm" src="/assests/doq_logo.png" alt="">
+            <div class="flex flex-col">
+                <span class="font-cairo font-black text-2xl tracking-tight text-[#4D0F0F] leading-none">دوق <span class="text-[#F26B1D] text-base font-bold">DOQ</span></span>
+                <span class="text-xs text-gray-500 font-medium">منصة عربيات أكل الشارع المصرية</span>
+            </div>
+        </a>
+        <div class="flex items-center gap-3">
+            <span class="hidden sm:inline-flex items-center gap-1 text-xs text-gray-600 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                وثيقة قانونية معتمدة
+            </span>
+            <button onclick="window.print()" class="text-xs font-semibold text-gray-600 hover:text-[#4D0F0F] bg-white hover:bg-gray-50 p-2 rounded-lg border border-gray-200 shadow-sm flex items-center gap-1 transition-all" title="طباعة الوثيقة">
+                <span class="material-symbols-outlined text-base">print</span>
+                <span class="hidden md:inline">طباعة</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container Card -->
+    <main class="w-full max-w-[800px] bg-white rounded-[10px] shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-[#eeeeee] p-6 sm:p-10 md:p-12 mb-8">
+        <div class="mb-10 text-right">
+            <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#F26B1D] bg-[#F26B1D]/10 px-3 py-1 rounded-full mb-3">
+                <span class="material-symbols-outlined text-sm">cookie</span>
+                <span>سياسة الكوكيز</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#4D0F0F] leading-tight mb-2 tracking-tight">سياسة ملفات تعريف الارتباط (الكوكيز)</h1>
+            <div class="flex items-center gap-2 text-xs sm:text-sm text-gray-500 mb-5">
+                <span class="material-symbols-outlined text-base text-gray-400">schedule</span>
+                <span>آخر تحديث: <time datetime="2026-09-03" class="font-medium text-gray-700">٣ سبتمبر ٢٠٢٦</time></span>
+                <span class="text-gray-300">•</span>
+                <span class="text-gray-500">الإصدار 1.0</span>
+            </div>
+            <div class="w-full h-[2px] bg-[#F26B1D] rounded-full"></div>
+        </div>
+
+        <article class="space-y-8 text-base sm:text-[17px] leading-relaxed text-[#333333]">
+            <section class="space-y-3">
+                <h2 class="text-xl sm:text-2xl font-bold text-[#4D0F0F] flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-[#F26B1D] rounded-full inline-block"></span>١. إيه هي الكوكيز؟
+                </h2>
+                <p class="leading-loose text-justify text-gray-700">
+                    الكوكيز ملفات صغيرة بتتخزن على جهازك (موبايل أو كمبيوتر) لما تزور منصة <strong>«دوق» (DOQ)</strong>. الهدف منها إن الموقع يتعرف عليك ويتذكر تفضيلاتك عشان تجربتك تبقى أسهل وأسرع.
+                </p>
+            </section>
+
+            <section class="space-y-3">
+                <h2 class="text-xl sm:text-2xl font-bold text-[#4D0F0F] flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-[#F26B1D] rounded-full inline-block"></span>٢. إحنا بنستخدم إيه؟
+                </h2>
+                <ul class="space-y-2.5 pr-1 text-gray-700">
+                    <li class="custom-bullet"><strong>كوكيز أساسية (Essential):</strong> ضرورية عشان الجلسة وتسجيل الدخول (JWT Token آمن داخل HttpOnly Cookie باسم <code class="bg-gray-100 px-1 rounded text-sm">session_token</code>).</li>
+                    <li class="custom-bullet"><strong>كوكيز تحسين الأداء:</strong> بتساعدنا نفهم إنت بتدور على إيه (عربيات، أطباق، مدن) عشان نظبط نتائج البحث والترتيب بنظام الـ Fair Score.</li>
+                    <li class="custom-bullet"><strong>كوكيز تفضيلات:</strong> بتخلينا نفتكر إعدادات العرض أو اللغة لو غيرتها.</li>
+                </ul>
+            </section>
+
+            <section class="space-y-3">
+                <h2 class="text-xl sm:text-2xl font-bold text-[#4D0F0F] flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-[#F26B1D] rounded-full inline-block"></span>٣. التحكم في الكوكيز
+                </h2>
+                <p class="text-gray-700 leading-loose">
+                    تقدر في أي وقت تمنع أو تمسح الكوكيز من إعدادات المتصفح بتاعك. بس لو منعت الكوكيز الأساسية، ممكن ميسمحلكش تسجل دخول أو تستخدم بعض المميزات المهمة على المنصة.
+                </p>
+            </section>
+
+            <section class="space-y-3">
+                <h2 class="text-xl sm:text-2xl font-bold text-[#4D0F0F] flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-[#F26B1D] rounded-full inline-block"></span>٤. مدة الاحتفاظ
+                </h2>
+                <p class="text-gray-700 leading-loose">
+                    كوكيز الجلسة بتنتهي لما تقفل المتصفح أو تسجل خروج. باقي الكوكيز بتفضل لفترة محددة أو لحد ما تمسحها بنفسك.
+                </p>
+            </section>
+
+            <!-- Contact Callout -->
+            <div class="bg-[#f9f9f9] border-r-4 border-[#F26B1D] rounded-lg p-4 sm:p-5 mt-6">
+                <h3 class="font-bold text-[#4D0F0F] text-base mb-1 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[#F26B1D] text-lg">mail</span>
+                    لديك استفسار؟
+                </h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                    راسلنا على: <a href="mailto:privacy@doq.com" class="text-[#F26B1D] font-semibold underline underline-offset-4 hover:text-[#d95a12] transition-colors">privacy@doq.com</a>
+                </p>
+            </div>
+        </article>
+
+        <hr class="my-10 border-t border-[#eeeeee]">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+            <div class="text-xs text-gray-500 text-center sm:text-right">بالاستمرار في استخدام منصة دوق، فإنك توافق على سياسة الكوكيز.</div>
+            <a href="/" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#4D0F0F] text-white font-cairo font-bold rounded-[8px] hover:bg-[#5e1313] active:scale-98 shadow-sm hover:shadow-md transition-all duration-200 group text-center">
+                <span>العودة للرئيسية</span>
+                <span class="material-symbols-outlined text-lg transition-transform group-hover:-translate-x-1">arrow_back</span>
+            </a>
+        </div>
+    </main>
+
+    <footer class="text-center text-xs text-gray-500 py-2">
+        <p>© 2026 دوق (DOQ) - اكتشف أحلى عربيات أكل الشارع بسهولة. جميع الحقوق محفوظة.</p>
+    </footer>
+</body>
+</html>

@@ -13,10 +13,20 @@ async function dish_get_id(req, res, next) {
     if (!id) return;
 
     const [dishes] = await pool.query(`
-        SELECT d.*, 
-               c.name as category_name,
-               u.first_name, u.last_name,
-               k.*
+        SELECT 
+            d.*,
+            d.description as dish_description,
+            c.name as category_name,
+            u.first_name, u.last_name,
+            k.phone_number,
+            k.user_id,
+            k.portfolio_url,
+            k.image_url,
+            k.address,
+            k.city,
+            k.description,
+            k.title,
+            d.image_url as dish_image
         FROM dishes d
         JOIN categories c ON d.category_id = c.id
         JOIN kitchens k ON d.kitchen_id = k.id
@@ -25,13 +35,15 @@ async function dish_get_id(req, res, next) {
     `, [id]);
 
     if (dishes.length === 0) {
-        return res.status(404).json({
+        return res.status(404).render('./errors/page_404',
+            {
             status: 'error',
-            message: 'الطبق غير موجود'
+            message: 'الطبق غير موجود',
         });
     }
 
     req.my = dishes[0];
+    if (!['admin','chef'].includes(req.user?.roles)) { delete req.my.phone_number; delete req.my.whatsapp_number; delete req.my.user_phone; delete req.my.email; }
     next();
 }
 
@@ -77,7 +89,7 @@ async function createDish_controller(req, res) {
         `INSERT INTO dishes 
         (name, description, price, image_url, category_id, kitchen_id, ingredients) 
         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [name, description || null, price, image_url || null, category_id, kitchen_id, ingredients || null]
+        [name, description || null, price, image_url , category_id, kitchen_id, ingredients || null]
     );
 
     
@@ -257,13 +269,103 @@ async function getDish_controller(req, res) {
 // 4. جلب أطباق الشيف الحالي - GET /dishes/my
 // ============================================
 async function getMyDishes_controller(req, res) {
-    console.log(req.my);
     return res.status(200).json({
         status: 'success',
         pagination: req.pagination || { page: 1, limit: 10, total: 0, total_pages: 1 },
-        query: req.query || {},   // لإعادة تعبئة حقول الفلترة
+        query: req.query || {},
         data: req.my || [],
     });
+}
+
+async function getMyDishesPaginated_controller(req, res) {
+        const page = parseInt(req.query.page) || 1;
+        const limit = Math.min(parseInt(req.query.limit) || 10, 50); // حد أقصى 50 للأمان
+        const offset = (page - 1) * limit;
+        const q = req.query.q || '';
+        const queryKitchenId = req.query.kitchen_id || '';
+
+        let selectedKitchen = null;
+        if (req.my && Array.isArray(req.my) && req.my.length > 0) {
+            if (queryKitchenId) {
+                selectedKitchen = req.my.find(k => String(k.id) === String(queryKitchenId));
+            }
+            selectedKitchen = selectedKitchen || req.my[0];
+        }
+
+        if (!selectedKitchen) {
+            return res.status(200).json({
+                status: 'success',
+                data: [],
+                pagination: { page: 1, limit: 10, total: 0, total_pages: 1 },
+                query: req.query || {},
+            });
+        }
+
+        const targetKitchenId = selectedKitchen.id;
+
+        // 3. بناء استعلام البيانات الأساسي
+        // نربط مع categories للحصول على اسم التصنيف، ومع reviews لحساب متوسط التقييم
+        let baseQuery = `
+            SELECT 
+                d.*,
+                c.name AS category_name,
+                ROUND(AVG(r.rating), 1) AS avg_rating,
+                COUNT(r.id) AS reviews_count
+            FROM dishes d
+            LEFT JOIN categories c ON d.category_id = c.id
+            LEFT JOIN reviews r ON r.dish_id = d.id
+            WHERE d.kitchen_id = ?
+        `;
+        
+        let queryParams = [targetKitchenId];
+
+        // 4. إضافة فلتر البحث النصي (اسم الطبق، الوصف، أو المكونات)
+        if (q) {
+            const searchKeyword = `%${q}%`;
+            baseQuery += ` AND (d.name LIKE ? OR d.description LIKE ? OR d.ingredients LIKE ?)`;
+            queryParams.push(searchKeyword, searchKeyword, searchKeyword);
+        }
+
+        // 5. تنفيذ استعلام البيانات مع GROUP BY و LIMIT/OFFSET
+        const dataQuery = `
+            ${baseQuery}
+            GROUP BY d.id
+            ORDER BY d.created_at DESC
+            LIMIT ? OFFSET ?
+        `;
+        
+        const dataParams = [...queryParams, limit, offset];
+        const [data] = await pool.query(dataQuery, dataParams);
+
+        // 6. بناء استعلام الـ COUNT لحساب إجمالي الصفحات (بدون GROUP BY أو LIMIT)
+        let countQuery = `
+            SELECT COUNT(DISTINCT d.id) AS total
+            FROM dishes d
+            WHERE d.kitchen_id = ?
+        `;
+        let countParams = [targetKitchenId];
+
+        if (q) {
+            const searchKeyword = `%${q}%`;
+            countQuery += ` AND (d.name LIKE ? OR d.description LIKE ? OR d.ingredients LIKE ?)`;
+            countParams.push(searchKeyword, searchKeyword, searchKeyword);
+        }
+
+        const [totalResult] = await pool.query(countQuery, countParams);
+        const total = totalResult[0]?.total || 0;
+
+        // 7. إرجاع الاستجابة بنفس الهيكل المطلوب
+        return res.status(200).json({
+            status: 'success',
+            data: data,
+                pagination: {
+                    page: page,
+                    limit: limit,
+                    total: total,
+                    total_pages: Math.ceil(total / limit)
+                },
+            query:req.query
+        });
 }
 
 // ============================================
@@ -272,13 +374,6 @@ async function getMyDishes_controller(req, res) {
 async function getMySpcificDish_controller(req, res) {
     return res.status(200).json({status:'success',data:req.my})
 }
-
-// ============================================
-// 7. جلب أطباق مطبخ معين - GET /dishes/my/:id
-// ============================================
-// async function getMySpcificDish_controller(req, res) {
-//     return res.status(200).json({status:'success',data:req.my})
-// }
 
 // ============================================
 // 7. جلب أطباق مطبخ معين - GET /kitchen/:id/my
@@ -380,8 +475,8 @@ async function updateDish_controller(req, res) {
     
         // 3. التحقق من عدم وجود طبق بنفس الاسم في نفس المطبخ
         const [existing] = await pool.query(
-            'SELECT id FROM dishes WHERE name = ? AND kitchen_id = ?',
-            [name, kitchen_id]
+            'SELECT id FROM dishes WHERE name = ? AND kitchen_id = ? AND id <>?',
+            [name, kitchen_id,id]
         );
     
         if (existing.length > 0) {
@@ -505,7 +600,8 @@ module.exports = {
     createDish_controller,
     getAllDishes_controller,
     getDish_controller,
-    getMyDishes_controller,
+    // getMyDishes_controller,
+    getMyDishesPaginated_controller,
     getMySpcificDish_controller,
     getAllDishesAdmin_controller,
     getAllDieshesForSpecificKitchenForChef_controller,

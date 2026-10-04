@@ -1,0 +1,32 @@
+services:
+  db:
+    ports: !reset []
+
+  app:
+    ports: !reset []
+    env_file: !override
+      - ${DOQ_ENV_FILE:-.env.production}
+
+  cron:
+    env_file: !override
+      - ${DOQ_ENV_FILE:-.env.production}
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOQ_DOMAIN: ${DOQ_DOMAIN:?Set DOQ_DOMAIN in the production environment}
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

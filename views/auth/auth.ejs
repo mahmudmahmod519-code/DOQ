@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
+<script src="/app-client.js"></script>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>Dhouq | بوابة الانضمام والوصول</title>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <title>دوق | بوابة الدخول</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- مكتبة توليد الـ QR Code Client-Side -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -13,199 +16,516 @@
                     colors: {
                         "primary": "#9e2016",
                         "primary-container": "#c0392b",
+                        "on-primary": "#ffffff",
                         "on-primary-container": "#ffe5e1",
                         "secondary": "#a23f00",
+                        "secondary-container": "#fc7127",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#5c2000",
+                        "surface": "#fff8f6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#fff0ee",
+                        "surface-container": "#ffe9e6",
+                        "surface-container-high": "#fce2de",
                         "on-surface": "#261816",
                         "on-surface-variant": "#59413d",
-                        "surface-container-low": "#fff0ee",
-                        "surface-container-lowest": "#ffffff",
-                        "outline-variant": "#e1bfb9"
+                        "outline": "#8d706c",
+                        "outline-variant": "#e1bfb9",
+                        "error": "#ba1a1a",
+                        "success": "#15803d",
+                        "success-container": "#dcfce7",
+                    },
+                    fontFamily: {
+                        "cairo": ["Cairo", "sans-serif"],
+                    },
+                    boxShadow: {
+                        "ambient": "0px 4px 20px rgba(192, 57, 43, 0.08)",
+                        "glow": "0px 8px 32px rgba(158, 32, 22, 0.2)",
+                        "soft": "0 10px 40px rgba(38, 24, 22, 0.08)",
                     }
                 }
             }
         }
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
-        body { font-family: 'Tajawal', sans-serif; background-color: #fff8f6; }
-        .hidden-form { display: none; opacity: 0; transform: translateY(10px); }
-        .visible-form { display: block; opacity: 1; transform: translateY(0); transition: opacity 0.4s ease, transform 0.4s ease; }
-        .alert { padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-weight: 600; text-align: right; }
-        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        body { 
+            font-family: 'Cairo', sans-serif; 
+            background-color: #fff8f6;
+            color: #261816;
+        }
+        .material-symbols-outlined { 
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; 
+            vertical-align: middle; 
+        }
+        
+        @keyframes floatUp {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+        @keyframes floatDown {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(20px) rotate(-5deg); }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+        .float-1 { animation: floatUp 6s ease-in-out infinite; }
+        .float-2 { animation: floatDown 8s ease-in-out infinite; }
+        .pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+        
+        .form-panel { 
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                        transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .form-panel.hidden-form { 
+            display: none; 
+            opacity: 0; 
+            transform: translateY(20px); 
+        }
+        .form-panel.visible-form { 
+            display: block; 
+            opacity: 1; 
+            transform: translateY(0); 
+        }
+        
+        .input-field {
+            transition: all 0.25s ease;
+        }
+        .input-field:focus {
+            box-shadow: 0 0 0 4px rgba(158, 32, 22, 0.08);
+        }
+        
+        .toast {
+            animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e1bfb9; border-radius: 10px; }
+        
+        .btn-primary-glow {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .btn-primary-glow::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.6s ease;
+        }
+        .btn-primary-glow:hover::before {
+            left: 100%;
+        }
     </style>
 </head>
 <body class="antialiased overflow-x-hidden">
-<main class="min-h-screen flex flex-col md:flex-row">
+
+<main class="min-h-screen flex flex-col lg:flex-row">
     
-    <!-- Left Panel -->
-    <section class="hidden md:flex md:w-1/2 relative bg-[#2C3E50] overflow-hidden items-center justify-center p-12">
-        <div class="absolute inset-0 z-0 bg-cover bg-center opacity-40 mix-blend-overlay" style="background-image: url('https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=1000&q=80');"></div>
-        <div class="absolute inset-0 z-10 bg-gradient-to-br from-[#2C3E50] via-[#2C3E50]/80 to-secondary/30"></div>
-        <div class="relative z-20 text-center flex flex-col items-center max-w-lg">
-            <h1 class="text-4xl font-bold text-white mb-6 leading-tight">دوق طعم البيوت، من أيدي أشهر الطهاة المحترفين حولك.</h1>
-            <div class="w-24 h-1 bg-secondary rounded-full mb-6"></div>
-            <p class="text-lg text-white/80">رحلة تذوق استثنائية تبدأ من قلب المطابخ المنزلية الأكثر تميزاً.</p>
+    <!-- اللوحة اليسرى: هوية دوق (Hero Panel) -->
+    <section class="hidden lg:flex lg:w-[55%] relative overflow-hidden items-center justify-center p-12">
+        <div class="absolute inset-0" style="background: linear-gradient(135deg, #9e2016 0%, #c0392b 35%, #a23f00 70%, #fc7127 100%);"></div>
+        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 24px 24px;"></div>
+        
+        <div class="absolute top-20 right-20 w-32 h-32 rounded-full bg-white/10 blur-2xl float-1"></div>
+        <div class="absolute bottom-32 left-16 w-48 h-48 rounded-full bg-secondary-container/20 blur-3xl float-2"></div>
+        <div class="absolute top-1/3 left-1/4 w-20 h-20 rounded-full bg-on-primary-container/30 blur-xl pulse-glow"></div>
+        
+        <div class="absolute top-24 left-24 text-white/20 float-1">
+            <span class="material-symbols-outlined" style="font-size: 80px; font-variation-settings: 'FILL' 1;">restaurant</span>
+        </div>
+        <div class="absolute bottom-24 right-32 text-white/20 float-2">
+            <span class="material-symbols-outlined" style="font-size: 100px; font-variation-settings: 'FILL' 1;">local_fire_department</span>
+        </div>
+        
+        <div class="relative z-20 text-center max-w-xl px-6">
+            <div class="inline-flex items-center gap-3 mb-8 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/20">
+                <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">local_dining</span>
+                </div>
+                <span class="text-white font-extrabold text-2xl tracking-tight">دوق</span>
+            </div>
+            
+            <h1 class="text-5xl font-black text-white mb-6 leading-[1.1] tracking-tight">
+                طعم البيوت الأصيل،<br>
+                <span class="text-on-primary-container">من قلب الحارة لمائدتك</span>
+            </h1>
+            
+            <div class="w-20 h-1.5 bg-white/40 rounded-full mb-6 mx-auto"></div>
+            
+            <p class="text-xl text-white/90 mb-10 leading-relaxed font-light">
+                انضم إلى مجتمع الذواقة، واكتشف أشهى الأطباق المحضرة بحب من أمهر الطهاة البيتيين حولك.
+            </p>
+            
+            <div class="grid grid-cols-3 gap-4 mt-12 pt-8 border-t border-white/20">
+                <div>
+                    <div class="text-3xl font-extrabold text-white">+500</div>
+                    <div class="text-xs text-white/70 mt-1">شيف بيتي</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-extrabold text-white">+2000</div>
+                    <div class="text-xs text-white/70 mt-1">طبق مميز</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-extrabold text-white">4.9★</div>
+                    <div class="text-xs text-white/70 mt-1">تقييم العملاء</div>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- Right Panel -->
-    <section class="w-full md:w-1/2 flex flex-col items-center justify-center p-6 md:p-12 bg-surface relative">
+    <!-- اللوحة اليمنى: نموذج الدخول/التسجيل -->
+    <section class="w-full lg:w-[45%] flex flex-col items-center justify-center p-6 lg:p-12 bg-surface relative min-h-screen">
+        
+        <div class="lg:hidden flex items-center gap-2 mb-8">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-glow">
+                <span class="material-symbols-outlined text-white text-2xl" style="font-variation-settings: 'FILL' 1;">local_dining</span>
+            </div>
+            <span class="text-primary font-extrabold text-2xl">دوق</span>
+        </div>
+        
         <div class="w-full max-w-md">
+            <div id="alert-container" class="fixed top-6 right-6 left-6 lg:left-auto lg:w-96 z-50 space-y-2"></div>
 
-            <div id="alert-container"></div>
-
-            <div class="bg-white rounded-2xl shadow-xl p-6 border border-slate-100 overflow-hidden">
+            <div class="bg-surface-container-lowest rounded-3xl shadow-soft p-6 md:p-8 border border-outline-variant/30">
                 
-                <!-- Tabs -->
-                <div class="flex p-1 bg-surface-container-low rounded-xl mb-6">
-                    <button class="flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 bg-primary-container text-on-primary-container shadow-sm" id="btn-login-tab" onclick="switchForm('login')">تسجيل الدخول</button>
-                    <button class="flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 text-on-surface-variant hover:bg-slate-100" id="btn-reg-tab" onclick="switchForm('register')">حساب جديد</button>
+                <!-- التبويبات -->
+                <div class="flex p-1.5 bg-surface-container rounded-2xl mb-8 relative">
+                    <button 
+                        id="btn-login-tab" 
+                        onclick="switchForm('login')"
+                        class="flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 bg-primary text-on-primary shadow-ambient relative z-10 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-lg">login</span>
+                        تسجيل الدخول
+                    </button>
+                    <button 
+                        id="btn-reg-tab" 
+                        onclick="switchForm('register')"
+                        class="flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-lg">person_add</span>
+                        حساب جديد
+                    </button>
                 </div>
 
-                <!-- Login Form -->
-                <div class="space-y-6 visible-form" id="login-form-container">
-                    <div class="text-right">
-                        <h2 class="text-xl font-bold text-on-surface mb-1">مرحباً بك مجدداً في دوق</h2>
-                        <p class="text-sm text-on-surface-variant">سجل دخولك لتصفح المطابخ أو إدارة مطبخك</p>
+                <!-- نموذج تسجيل الدخول -->
+                <div class="form-panel visible-form" id="login-form-container">
+                    <div class="text-right mb-6">
+                        <h2 class="text-2xl font-extrabold text-on-surface mb-2">مرحباً بعودتك 👋</h2>
+                        <p class="text-sm text-on-surface-variant">سجّل دخولك لتواصل رحلة التذوق</p>
                     </div>
+                    
                     <form class="space-y-4" id="login-form">
-                        <div class="relative group">
-                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">person</span>
-                            <input class="w-full pr-10 pl-3 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-right" id="login-username" name="username" placeholder="اسم المستخدم أو البريد الإلكتروني" type="text" required>
+                        <div>
+                            <label class="block text-xs font-bold text-on-surface mb-2 mr-1">البريد الإلكتروني</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline text-xl">mail</span>
+                                <input 
+                                    class="input-field w-full pr-12 pl-4 py-3.5 rounded-xl border border-outline-variant bg-surface-container-low text-sm font-medium focus:outline-none focus:border-primary text-right" 
+                                    id="login-username" 
+                                    name="username" 
+                                    placeholder="example@dhouq.com" 
+                                    type="text" 
+                                    required>
+                            </div>
                         </div>
-                        <div class="relative group">
-                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">lock</span>
-                            <input class="w-full pr-10 pl-10 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-right" id="doq-login-pass" name="password" placeholder="كلمة المرور" type="password" required>
-                            <button class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface" onclick="togglePass('doq-login-pass', this)" type="button">
-                                <span class="material-symbols-outlined text-md">visibility</span>
-                            </button>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-on-surface mb-2 mr-1">كلمة المرور</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline text-xl">lock</span>
+                                <input 
+                                    class="input-field w-full pr-12 pl-12 py-3.5 rounded-xl border border-outline-variant bg-surface-container-low text-sm font-medium focus:outline-none focus:border-primary text-right" 
+                                    id="doq-login-pass" 
+                                    name="password" 
+                                    placeholder="••••••••" 
+                                    type="password" 
+                                    required>
+                                <button class="absolute left-4 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors" onclick="togglePass('doq-login-pass', this)" type="button">
+                                    <span class="material-symbols-outlined text-xl">visibility</span>
+                                </button>
+                            </div>
                         </div>
-                        <div class="flex items-center justify-between text-xs">
-                            <label class="flex items-center gap-1 cursor-pointer text-on-surface-variant">
-                                <input class="rounded border-outline-variant text-primary focus:ring-primary" name="remember" type="checkbox"> تذكرني
-                            </label>
-                            <a class="text-primary hover:underline" href="/auth/forgetpassword">نسيت كلمة المرور؟</a>
+                        
+                        <div class="flex items-center justify-between text-sm pt-1">
+                            <a class="text-primary font-bold hover:text-primary-container transition-colors" href="/auth/forgetpassword">
+                                نسيت كلمة المرور؟
+                            </a>
                         </div>
-                        <button type="submit" id="login-btn" class="w-full py-2.5 bg-primary-container text-on-primary-container rounded-xl font-bold hover:opacity-90 transition-all shadow-md">تسجيل الدخول</button>
+                        
+                        <button type="submit" id="login-btn" class="btn-primary-glow w-full py-3.5 bg-gradient-to-l from-primary to-primary-container text-on-primary rounded-xl font-extrabold text-base shadow-glow hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined">login</span>
+                            دخول إلى دوق
+                        </button>
                     </form>
                 </div>
 
-                <!-- Register Form -->
-                <div class="space-y-6 hidden-form" id="register-form-container">
-                    <div class="text-right">
-                        <h2 class="text-xl font-bold text-on-surface mb-1">إنشاء حساب جديد</h2>
-                        <p class="text-sm text-on-surface-variant">استمتع بأشهى المأكولات المنزلية الطازجة حولك</p>
+                <!-- نموذج التسجيل -->
+                <div class="form-panel hidden-form" id="register-form-container">
+                    <div class="text-right mb-6">
+                        <h2 class="text-2xl font-extrabold text-on-surface mb-2">انضم لعائلة دوق 🍽️</h2>
+                        <p class="text-sm text-on-surface-variant">أنشئ حسابك وابدأ رحلة التذوق الآن</p>
                     </div>
+                    
                     <form class="space-y-4" id="register-form">
                         <div class="grid grid-cols-2 gap-3">
-                            <div class="relative group">
-                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">badge</span>
-                                <input class="w-full pr-9 pl-3 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all text-right" id="reg-firstname" name="first_name" placeholder="الاسم الأول" type="text" required>
+                            <div>
+                                <label class="block text-xs font-bold text-on-surface mb-2 mr-1">الاسم الأول</label>
+                                <div class="relative">
+                                    <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline text-lg">person</span>
+                                    <input 
+                                        class="input-field w-full pr-10 pl-3 py-3 rounded-xl border border-outline-variant bg-surface-container-low text-sm font-medium focus:outline-none focus:border-secondary text-right" 
+                                        id="reg-firstname" 
+                                        name="firstname" 
+                                        placeholder="أحمد" 
+                                        type="text" 
+                                        required>
+                                </div>
                             </div>
-                            <div class="relative group">
-                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">badge</span>
-                                <input class="w-full pr-9 pl-3 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all text-right" id="reg-lastname" name="last_name" placeholder="الاسم الأخير" type="text" required>
+                            <div>
+                                <label class="block text-xs font-bold text-on-surface mb-2 mr-1">الاسم الأخير</label>
+                                <div class="relative">
+                                    <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline text-lg">person</span>
+                                    <input 
+                                        class="input-field w-full pr-10 pl-3 py-3 rounded-xl border border-outline-variant bg-surface-container-low text-sm font-medium focus:outline-none focus:border-secondary text-right" 
+                                        id="reg-lastname" 
+                                        name="lastname" 
+                                        placeholder="محمد" 
+                                        type="text" 
+                                        required>
+                                </div>
                             </div>
                         </div>
-                        <div class="relative group">
-                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">call</span>
-                            <input class="w-full pr-10 pl-3 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all text-right" id="reg-phone" name="phone_number" placeholder="رقم الهاتف (مثال: 01012345678)" type="tel" required>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-on-surface mb-2 mr-1">رقم الهاتف</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline text-xl">call</span>
+                                <input 
+                                    class="input-field w-full pr-12 pl-4 py-3 rounded-xl border border-outline-variant bg-surface-container-low text-sm font-medium focus:outline-none focus:border-secondary text-right font-mono" 
+                                    id="reg-phone" 
+                                    name="phone_number" 
+                                    placeholder="01012345678" 
+                                    type="tel" 
+                                    required>
+                            </div>
                         </div>
-                        <div class="relative group">
-                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">mail</span>
-                            <input class="w-full pr-10 pl-3 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all text-right" id="reg-email" name="email" placeholder="البريد الإلكتروني" type="email" required>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-on-surface mb-2 mr-1">البريد الإلكتروني</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline text-xl">mail</span>
+                                <input 
+                                    class="input-field w-full pr-12 pl-4 py-3 rounded-xl border border-outline-variant bg-surface-container-low text-sm font-medium focus:outline-none focus:border-secondary text-right" 
+                                    id="reg-email" 
+                                    name="email" 
+                                    placeholder="example@dhouq.com" 
+                                    type="email" 
+                                    required>
+                            </div>
                         </div>
-                        <div class="relative group">
-                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">lock</span>
-                            <input class="w-full pr-10 pl-10 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all text-right" id="doq-reg-pass" name="password" placeholder="كلمة المرور" type="password" required>
-                            <button class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface" onclick="togglePass('doq-reg-pass', this)" type="button">
-                                <span class="material-symbols-outlined text-md">visibility</span>
-                            </button>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-on-surface mb-2 mr-1">كلمة المرور</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline text-xl">lock</span>
+                                <input 
+                                    class="input-field w-full pr-12 pl-12 py-3 rounded-xl border border-outline-variant bg-surface-container-low text-sm font-medium focus:outline-none focus:border-secondary text-right" 
+                                    id="doq-reg-pass" 
+                                    name="password" 
+                                    placeholder="8 أحرف على الأقل" 
+                                    type="password" 
+                                    required>
+                                <button class="absolute left-4 top-1/2 -translate-y-1/2 text-outline hover:text-secondary transition-colors" onclick="togglePass('doq-reg-pass', this)" type="button">
+                                    <span class="material-symbols-outlined text-xl">visibility</span>
+                                </button>
+                            </div>
                         </div>
-                        <div class="relative group">
-                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">key</span>
-                            <input class="w-full pr-10 pl-10 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all text-right" id="doq-reg-pass-conf" name="password_confirmation" placeholder="تأكيد كلمة المرور" type="password" required>
-                            <button class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface" onclick="togglePass('doq-reg-pass-conf', this)" type="button">
-                                <span class="material-symbols-outlined text-md">visibility</span>
-                            </button>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-on-surface mb-2 mr-1">تأكيد كلمة المرور</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline text-xl">key</span>
+                                <input 
+                                    class="input-field w-full pr-12 pl-12 py-3 rounded-xl border border-outline-variant bg-surface-container-low text-sm font-medium focus:outline-none focus:border-secondary text-right" 
+                                    id="doq-reg-pass-conf" 
+                                    name="password_confirmation" 
+                                    placeholder="أعد كتابة كلمة المرور" 
+                                    type="password" 
+                                    required>
+                                <button class="absolute left-4 top-1/2 -translate-y-1/2 text-outline hover:text-secondary transition-colors" onclick="togglePass('doq-reg-pass-conf', this)" type="button">
+                                    <span class="material-symbols-outlined text-xl">visibility</span>
+                                </button>
+                            </div>
                         </div>
-                        <div class="block border-t border-dashed border-outline-variant/60 pt-3 mt-3 text-right">
-                            <label class="block text-xs font-bold text-red-700 mb-1 flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[16px]">security</span>
-                                الرمز التعريفي:
+                        
+                        <!-- اختيار المصادقة الثنائية -->
+                        <div class="pt-2 border-t border-outline-variant/30 mt-4">
+                            <label class="flex items-center gap-2 text-xs font-extrabold text-primary mb-2 mr-1" for="enable-2fa">
+                                <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">security</span>
+                                تفعيل المصادقة الثنائية (اختياري)
                             </label>
-                            <div class="relative group">
-                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">pin</span>
-                                <input class="w-full pr-10 pl-3 py-2.5 rounded-xl border border-red-200 bg-red-50/30 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-right font-mono" id="reg-code" name="code" placeholder="أدخل 6 أرقام سرية" type="text" maxlength="6" required>
+                            <label class="flex items-center gap-3 text-sm text-on-surface-variant mb-3">
+                                <input type="checkbox" name="enable_2fa" id="enable-2fa" value="1" class="h-5 w-5 accent-primary">
+                                <span>أريد إدخال رمز من تطبيق المصادقة عند كل تسجيل دخول</span>
+                            </label>
+                            
+                            <!-- منطقة تحميل / عرض الـ QR Code -->
+                            <div id="twofa-setup" class="hidden bg-on-primary-container/20 border border-primary/20 rounded-2xl p-4 flex-col items-center justify-center min-h-[160px]">
+                                <div id="qr-loading" class="flex flex-col items-center gap-2 py-4">
+                                    <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                    <span class="text-xs text-on-surface-variant font-medium">جاري تجهيز رمز QR الأمني...</span>
+                                </div>
+
+                                <div id="qr-wrapper" class="hidden flex flex-col items-center">
+                                    <p class="text-[11px] font-bold text-on-surface-variant mb-3 text-center">امسح الكود باستخدام تطبيق Google Authenticator:</p>
+                                    <div class="p-2 bg-white rounded-xl shadow-md border border-outline-variant/40 mb-3">
+                                        <div id="qrcode"></div>
+                                    </div>
+
+                                    <button type="button" onclick="toggleManualKey()" class="text-xs text-primary font-bold hover:underline flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">key</span>
+                                        تعذر المسح؟ إظهار المفتاح اليدوي
+                                    </button>
+                                </div>
+
+                                <div id="secret-key-display" class="hidden w-full space-y-2 mt-3 pt-3 border-t border-primary/10">
+                                    <p class="text-[10px] text-on-surface-variant">المفتاح اليدوي للربط:</p>
+                                    <div class="flex items-center gap-2">
+                                        <code id="secret-key-text" class="flex-1 text-xs font-mono font-bold text-primary break-all select-all bg-white p-2 rounded-lg border border-outline-variant/30"></code>
+                                        <button type="button" id="copy-secret-btn" class="p-2 hover:bg-primary/10 bg-white border border-outline-variant/30 rounded-lg text-primary transition-colors" title="نسخ">
+                                            <span class="material-symbols-outlined text-base">content_copy</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
+                                
+                            <input type="hidden" name="secretKey" id="reg-secret-key">
                         </div>
-                        <% if (locals.currentUser && currentUser.role === 'admin') { %>
-                            <div class="block pt-2 text-right">
-                                <label class="block text-xs font-bold text-secondary mb-1.5 flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
-                                    صلاحية الحساب:
+                        
+                        <!-- الصلاحية (للأدمن فقط) -->
+                        <% if (typeof currentUser !== 'undefined' && currentUser && currentUser.roles === 'admin') { %>
+                            <div class="pt-2">
+                                <label class="flex items-center gap-2 text-xs font-bold text-secondary mb-2 mr-1">
+                                    <span class="material-symbols-outlined text-base">admin_panel_settings</span>
+                                    نوع الحساب:
                                 </label>
-                                <select name="roles" id="reg-roles" class="w-full py-2.5 pr-3 pl-10 rounded-xl border border-outline-variant bg-surface-container-low text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all font-medium text-on-surface text-right">
+                                <select name="roles" id="reg-roles" class="input-field w-full py-3 px-4 rounded-xl border border-outline-variant bg-surface-container-low text-sm font-bold focus:outline-none focus:border-secondary text-right">
                                     <option value="customer" selected>عميل</option>
                                     <option value="chef">شيف</option>
+                                    <option value="delivery">شركة دليفري</option>
                                     <option value="admin">مدير</option>
                                 </select>
                             </div>
                         <% } else { %>
-                            <input type="hidden" name="roles" id="reg-roles" value="customer">
+                            <div class="pt-2">
+                                <label class="flex items-center gap-2 text-xs font-bold text-secondary mb-2 mr-1" for="reg-roles">نوع الحساب</label>
+                                <select name="roles" id="reg-roles" class="input-field w-full py-3 px-4 rounded-xl border border-outline-variant bg-surface-container-low text-sm font-bold text-right">
+                                    <option value="customer" selected>عميل</option>
+                                    <option value="chef">شيف</option>
+                                    <option value="delivery">شركة دليفري</option>
+                                </select>
+                            </div>
                         <% } %>
-                        <button type="submit" id="register-btn" class="w-full py-2.5 bg-secondary text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-md mt-2">إنشاء الحساب</button>
+
+                        <div id="delivery-company-field" class="hidden pt-2">
+                            <label class="block text-xs font-bold text-on-surface mb-2 mr-1" for="reg-company">اسم شركة الدليفري</label>
+                            <input id="reg-company" name="company_name" maxlength="120" class="input-field w-full py-3 px-4 rounded-xl border border-outline-variant bg-surface-container-low text-sm font-medium focus:outline-none focus:border-secondary text-right" placeholder="اسم الشركة أو مكتب التوصيل">
+                        </div>
+                        
+                        <button type="submit" id="register-btn" class="btn-primary-glow w-full py-3.5 bg-gradient-to-l from-secondary to-secondary-container text-on-secondary rounded-xl font-extrabold text-base shadow-glow hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-6">
+                            <span class="material-symbols-outlined">how_to_reg</span>
+                            إنشاء حسابي
+                        </button>
                     </form>
                 </div>
 
             </div>
 
-            <footer class="mt-6 text-center space-y-2">
-                <p class="text-xs text-on-surface-variant">© 2026 دوق. جميع الحقوق محفوظة</p>
+            <!-- Footer -->
+            <footer class="mt-8 text-center space-y-3">
+                <div class="flex items-center justify-center gap-6 text-xs text-on-surface-variant">
+                    <a href="/police/privacy-policy" class="hover:text-primary transition-colors font-medium">سياسة الخصوصية</a>
+                    <span class="text-outline-variant">•</span>
+                    <a href="/police/terms-of-service" class="hover:text-primary transition-colors font-medium">شروط الاستخدام</a>
+                    <span class="text-outline-variant">•</span>
+                    <a href="/police/cookies-policy" class="hover:text-primary transition-colors font-medium">المساعدة</a>
+                </div>
+                <p class="text-xs text-on-surface-variant">© 2026 <span class="font-bold text-primary">دوق</span> — فن التذوق يبدأ من هنا</p>
             </footer>
         </div>
     </section>
 </main>
+
 <script>
-// ============================================
-// Toggle Forms
-// ============================================
+let secretGenerated = false;
+const enable2fa = document.getElementById('enable-2fa');
+const twofaSetup = document.getElementById('twofa-setup');
+if (enable2fa && twofaSetup) {
+    enable2fa.addEventListener('change', () => {
+        twofaSetup.classList.toggle('hidden', !enable2fa.checked);
+        twofaSetup.classList.toggle('flex', enable2fa.checked);
+        if (enable2fa.checked && !secretGenerated) autoGenerateSecret();
+        if (!enable2fa.checked) document.getElementById('reg-secret-key').value = '';
+    });
+}
+const roleSelect = document.getElementById('reg-roles');
+const companyField = document.getElementById('delivery-company-field');
+function syncDeliveryCompanyField() {
+    if (!roleSelect || !companyField) return;
+    const delivery = roleSelect.value === 'delivery';
+    companyField.classList.toggle('hidden', !delivery);
+    document.getElementById('reg-company')?.toggleAttribute('required', delivery);
+}
+roleSelect?.addEventListener('change', syncDeliveryCompanyField);
+syncDeliveryCompanyField();
+
+// التبديل بين النماذج
 function switchForm(type) {
     const loginForm = document.getElementById('login-form-container');
     const regForm = document.getElementById('register-form-container');
     const loginTab = document.getElementById('btn-login-tab');
     const regTab = document.getElementById('btn-reg-tab');
-    document.getElementById('alert-container').innerHTML = '';
+    
+    clearAlerts();
 
     if (type === 'login') {
         regForm.classList.remove('visible-form');
         regForm.classList.add('hidden-form');
+        
+        loginTab.className = 'flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 bg-primary text-on-primary shadow-ambient relative z-10 flex items-center justify-center gap-2';
+        regTab.className = 'flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-2';
+        
         setTimeout(() => {
             loginForm.classList.remove('hidden-form');
             loginForm.classList.add('visible-form');
-            loginTab.classList.add('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
-            loginTab.classList.remove('text-on-surface-variant');
-            regTab.classList.remove('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
-            regTab.classList.add('text-on-surface-variant');
-        }, 100);
+        }, 50);
     } else {
         loginForm.classList.remove('visible-form');
         loginForm.classList.add('hidden-form');
+        
+        regTab.className = 'flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 bg-secondary text-on-secondary shadow-ambient relative z-10 flex items-center justify-center gap-2';
+        loginTab.className = 'flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-2';
+        
         setTimeout(() => {
             regForm.classList.remove('hidden-form');
             regForm.classList.add('visible-form');
-            regTab.classList.add('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
-            regTab.classList.remove('text-on-surface-variant');
-            loginTab.classList.remove('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
-            loginTab.classList.add('text-on-surface-variant');
-        }, 100);
+            
+            // يتم تجهيز مفتاح المصادقة فقط عند اختيارها
+        }, 50);
     }
 }
 
-// ============================================
-// Toggle Password
-// ============================================
+// إظهار/إخفاء كلمة المرور
 function togglePass(id, btn) {
     const input = document.getElementById(id);
     const icon = btn.querySelector('.material-symbols-outlined');
@@ -218,28 +538,106 @@ function togglePass(id, btn) {
     }
 }
 
-// ============================================
-// Show Alert
-// ============================================
+// نظام التنبيهات (Toast)
 function showAlert(message, type) {
     const container = document.getElementById('alert-container');
-    const cls = type === 'success' ? 'alert-success' : 'alert-error';
-    container.innerHTML = `<div class="alert ${cls}">${message}</div>`;
+    const theme = type === 'success' 
+        ? 'bg-surface-container-lowest border-r-4 border-success text-on-surface' 
+        : 'bg-surface-container-lowest border-r-4 border-error text-on-surface';
+    const iconColor = type === 'success' ? 'text-success' : 'text-error';
+    const icon = type === 'success' ? 'check_circle' : 'error';
+    
+    const toast = document.createElement('div');
+    toast.className = `toast flex items-center gap-3 p-4 rounded-xl border border-outline-variant/30 ${theme} shadow-xl`;
+    
+    toast.innerHTML = `
+        <span class="material-symbols-outlined text-2xl ${iconColor}" style="font-variation-settings: 'FILL' 1;">${icon}</span>
+        <p class="font-bold text-sm flex-1 leading-snug">${message}</p>
+        <button onclick="this.parentElement.remove()" class="text-on-surface-variant hover:text-error transition-colors p-1 rounded-full hover:bg-surface-container">
+            <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
     setTimeout(() => {
-        const alert = container.querySelector('.alert');
-        if (alert) { alert.style.opacity = '0'; alert.style.transition = 'opacity 0.5s'; }
-        setTimeout(() => { if (alert && alert.parentNode) alert.remove(); }, 500);
+        toast.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentElement) toast.remove();
+        }, 400);
     }, 5000);
 }
 
-// ============================================
-// LOGIN - مع التعامل مع redirect
-// ============================================
+function clearAlerts() {
+    document.getElementById('alert-container').innerHTML = '';
+}
+
+// التوليد الآلي للرمز وQR Code
+async function autoGenerateSecret() {
+    const loading = document.getElementById('qr-loading');
+    const wrapper = document.getElementById('qr-wrapper');
+
+    try {
+        const response = await fetch('/auth/generate-secret', { method: 'POST' });
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            const secretKey = data.data.secretKey;
+            
+            document.getElementById('secret-key-text').textContent = secretKey;
+            document.getElementById('reg-secret-key').value = secretKey;
+            
+            // رسم الـ QR Code مباشرة بناءً على المفتاح المولد
+            const otpauth = data.data.otpauthUrl || `otpauth://totp/DOQ:${encodeURIComponent('المستخدم')}?secret=${secretKey}&issuer=DOQ-Platform`;
+            
+            document.getElementById('qrcode').innerHTML = '';
+            new QRCode(document.getElementById('qrcode'), {
+                text: otpauth,
+                width: 120,
+                height: 120,
+                colorDark: "#9e2016",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            loading.classList.add('hidden');
+            wrapper.classList.remove('hidden');
+            secretGenerated = true;
+        } else {
+            showAlert('❌ ' + (data.message || 'فشل تجهيز الربط الأمني'), 'error');
+        }
+    } catch (error) {
+        console.error('Generate Secret Error:', error);
+        showAlert('❌ حدث خطأ في الاتصال بالسيرفر', 'error');
+    }
+}
+
+function toggleManualKey() {
+    const display = document.getElementById('secret-key-display');
+    display.classList.toggle('hidden');
+}
+
+// نسخ الـ Secret Key
+document.getElementById('copy-secret-btn').addEventListener('click', function() {
+    const secretText = document.getElementById('secret-key-text').textContent;
+    navigator.clipboard.writeText(secretText).then(() => {
+        const btn = this;
+        const originalIcon = btn.innerHTML;
+        btn.innerHTML = '<span class="material-symbols-outlined text-base text-success">check</span>';
+        setTimeout(() => {
+            btn.innerHTML = originalIcon;
+        }, 2000);
+    });
+});
+
+// تسجيل الدخول
 document.getElementById('login-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = document.getElementById('login-btn');
-    const originalText = btn.textContent;
-    btn.textContent = 'جاري...';
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> جاري التحقق...';
     btn.disabled = true;
 
     const username = document.getElementById('login-username').value.trim();
@@ -247,60 +645,56 @@ document.getElementById('login-form').addEventListener('submit', async function(
 
     if (!username || !password) {
         showAlert('يرجى إدخال البريد الإلكتروني وكلمة المرور', 'error');
-        btn.textContent = originalText;
-        btn.disabled = false;
+        resetBtn(btn, originalHTML);
         return;
     }
 
     try {
         const response = await fetch('/auth/signin', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-csrf-token': (document.cookie.match(/(?:^|; )doq_csrf=([^;]+)/)||[])[1]||'' },
             body: JSON.stringify({ email: username, password })
         });
 
-        // ✅ التحقق من نوع الـ response
         const contentType = response.headers.get('content-type');
-
         if (contentType && contentType.includes('application/json')) {
-            // لو كان JSON
             const data = await response.json();
             if (response.ok) {
                 showAlert('✅ ' + data.message, 'success');
                 if (data.redirect) {
-                    setTimeout(() => window.location.href = data.redirect, 1000);
+                    setTimeout(() => window.location.replace(DOQ.pickRedirect(data.redirect)), 1200);
                 }
             } else {
                 showAlert('❌ ' + data.message, 'error');
             }
         } else {
-            // ✅ لو كان redirect (HTML)
             if (response.redirected) {
                 window.location.href = response.url;
-            } else {
-                // لو كان HTML عادي
-                const text = await response.text();
-                document.documentElement.innerHTML = text;
             }
         }
     } catch (error) {
         console.error('Login Error:', error);
-        showAlert('❌ حدث خطأ', 'error');
+        showAlert('❌ حدث خطأ في الاتصال', 'error');
     } finally {
-        btn.textContent = originalText;
-        btn.disabled = false;
+        resetBtn(btn, originalHTML);
     }
 });
 
-// ============================================
-// REGISTER - مع التعامل مع redirect
-// ============================================
+// التسجيل
 document.getElementById('register-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = document.getElementById('register-btn');
-    const originalText = btn.textContent;
-    btn.textContent = 'جاري...';
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> جاري إنشاء الحساب...';
     btn.disabled = true;
+
+    const wants2fa = document.getElementById('enable-2fa')?.checked === true;
+    const secretKey = document.getElementById('reg-secret-key').value;
+    if (wants2fa && !secretKey) {
+        showAlert('⚠️ جاري تهيئة مفتاح الأمان، يرجى الانتظار لحظة...', 'error');
+        resetBtn(btn, originalHTML);
+        return;
+    }
 
     const data = {
         firstname: document.getElementById('reg-firstname').value.trim(),
@@ -309,86 +703,64 @@ document.getElementById('register-form').addEventListener('submit', async functi
         email: document.getElementById('reg-email').value.trim(),
         password: document.getElementById('doq-reg-pass').value,
         password_confirmation: document.getElementById('doq-reg-pass-conf').value,
-        code: document.getElementById('reg-code').value.trim(),
-        roles: document.getElementById('reg-roles').value
+        secretKey: secretKey,
+        enable_2fa: wants2fa ? '1' : '0',
+        roles: document.getElementById('reg-roles').value,
+        company_name: document.getElementById('reg-company')?.value.trim() || ''
     };
 
-    // Validation
-    if (!data.firstname || !data.lastname || !data.phone_number || !data.email || !data.password || !data.code) {
-        showAlert('جميع الحقول مطلوبة', 'error');
-        btn.textContent = originalText;
-        btn.disabled = false;
+    if (!data.firstname || !data.lastname || !data.phone_number || !data.email || !data.password) {
+        showAlert('جميع الحقول مطلوبة لإتمام التسجيل', 'error');
+        resetBtn(btn, originalHTML);
         return;
     }
     if (data.password !== data.password_confirmation) {
         showAlert('كلمة المرور غير متطابقة', 'error');
-        btn.textContent = originalText;
-        btn.disabled = false;
+        resetBtn(btn, originalHTML);
         return;
     }
     if (data.password.length < 8) {
-        showAlert('كلمة المرور 8 أحرف على الأقل', 'error');
-        btn.textContent = originalText;
-        btn.disabled = false;
-        return;
-    }
-    if (data.code.length !== 6) {
-        showAlert('الرمز يجب أن يكون 6 أرقام', 'error');
-        btn.textContent = originalText;
-        btn.disabled = false;
+        showAlert('كلمة المرور يجب أن تكون 8 أحرف على الأقل', 'error');
+        resetBtn(btn, originalHTML);
         return;
     }
 
     try {
         const response = await fetch('/auth/signup', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-csrf-token': (document.cookie.match(/(?:^|; )doq_csrf=([^;]+)/)||[])[1]||'' },
             body: JSON.stringify(data)
         });
 
-        // ✅ التحقق من نوع الـ response
         const contentType = response.headers.get('content-type');
-
         if (contentType && contentType.includes('application/json')) {
-            // لو كان JSON
             const result = await response.json();
             if (response.ok) {
-                showAlert('✅ ' + result.message, 'success');
+                showAlert('🎉 ' + result.message, 'success');
                 if (result.redirect) {
-                    setTimeout(() => window.location.href = result.redirect, 1500);
+                    setTimeout(() => window.location.href = DOQ.pickRedirect(result.redirect), 1200);
                 }
             } else {
                 showAlert('❌ ' + result.message, 'error');
             }
         } else {
-            // ✅ لو كان redirect (HTML)
             if (response.redirected) {
                 window.location.href = response.url;
-            } else {
-                // لو كان HTML عادي
-                const text = await response.text();
-                document.documentElement.innerHTML = text;
             }
         }
     } catch (error) {
         console.error('Register Error:', error);
-        showAlert('❌ حدث خطأ', 'error');
+        showAlert('❌ حدث خطأ في الاتصال', 'error');
     } finally {
-        btn.textContent = originalText;
-        btn.disabled = false;
+        resetBtn(btn, originalHTML);
     }
 });
 
-// ============================================
-// Auto-format code
-// ============================================
-document.querySelectorAll('input[name="code"]').forEach(input => {
-    input.addEventListener('input', function() {
-        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
-    });
-});
-
-console.log('✅ Dhouq Auth System Ready');
+function resetBtn(btn, html) {
+    btn.innerHTML = html;
+    btn.disabled = false;
+}
 </script>
 </body>
 </html>
+

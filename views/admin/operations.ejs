@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>العمليات | دوق</title>
+<script src="/app-client.js"></script><script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#fff8f6] text-[#261816]">
+<%- include('../partials/role_bar', { links: [{ href: '/admin', label: 'الإدارة' }, { href: '/admin/operations', label: 'العمليات', active: true }] }) %>
+<main class="mx-auto max-w-6xl p-4 md:p-8">
+  <section class="rounded-3xl bg-[#261816] p-6 text-white shadow-xl">
+    <h1 class="text-2xl font-bold md:text-3xl">الطلبات والحسابات</h1>
+    <p class="mt-2 text-white/75">اقبل المطابخ وشركات الدليفري الجديدة<br>الطلبات الجديدة بتظهر لكل الشركات تلقائيا والتحديد اليدوي للطوارئ</p>
+    <div class="mt-4 flex flex-wrap gap-2 text-sm">
+      <span class="rounded-full bg-white/10 px-3 py-1">حسابات مستنية: <b id="count-accounts">0</b></span>
+      <span class="rounded-full bg-white/10 px-3 py-1">طلبات من غير مندوب: <b id="count-unassigned">0</b></span>
+    </div>
+  </section>
+  <div id="notice" class="mt-5 hidden rounded-xl p-4" role="status"></div>
+
+  <section class="mt-6 rounded-2xl bg-white p-5 shadow-sm">
+    <h2 class="text-xl font-bold">حسابات مستنية المراجعة</h2>
+    <div id="accounts" class="mt-4 grid gap-3"></div>
+  </section>
+
+  <section class="mt-6 rounded-2xl bg-white p-5 shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h2 class="text-xl font-bold">الطلبات</h2>
+      <select id="filter" class="rounded-xl border p-2 text-sm" aria-label="فلتر الحالة">
+        <option value="pending">مفتوحة</option><option value="accepted">مع الدليفري</option><option value="completed">اتسلمت</option><option value="cancelled">اتلغت</option><option value="">الكل</option>
+      </select>
+    </div>
+    <div id="orders" class="mt-4 grid gap-3"></div>
+  </section>
+</main>
+<script>
+const esc = v => DOQ.escape(v);
+const ROLE = { chef: 'مطبخ', delivery: 'شركة دليفري' };
+let couriers = [];
+function notice(t, ok = true) { const e = document.getElementById('notice'); e.textContent = t; e.className = 'mt-5 rounded-xl p-4 ' + (ok ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900'); scrollTo({ top: 0, behavior: 'smooth' }); }
+async function loadAccounts() {
+  const rows = (await DOQ.api('/admin/api/v1/pending-accounts')).data || [];
+  document.getElementById('count-accounts').textContent = rows.length;
+  document.getElementById('accounts').innerHTML = rows.map(u => '<article class="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4"><div><b>' + esc(u.company_name || [u.first_name, u.last_name].filter(Boolean).join(' ')) + '</b> <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900">' + esc(ROLE[u.roles] || u.roles) + '</span><p class="text-sm text-gray-600" dir="ltr">' + esc(u.email) + ' · ' + esc(u.phone_number) + '</p></div><div class="flex gap-2"><button class="rounded-lg bg-green-700 px-4 py-2 text-white" data-user="' + u.id + '" data-action="approve">قبول</button><button class="rounded-lg bg-red-100 px-4 py-2 text-red-800" data-user="' + u.id + '" data-action="reject">رفض</button></div></article>').join('') || '<p class="text-gray-600">مفيش حسابات مستنية</p>';
+}
+function courierSelect(o) {
+  if (!couriers.length) return '<p class="text-sm text-amber-800">مفيش مناديب مقبولين لسه</p>';
+  return '<div class="flex gap-2"><select class="flex-1 rounded-lg border p-2 text-sm" aria-label="اختار شركة دليفري">' + couriers.map(c => '<option value="' + c.id + '">' + esc(c.company_name || c.name) + (c.city ? ' · ' + esc(c.city) : '') + ' · معاه ' + c.active_orders + '</option>').join('') + '</select><button class="rounded-lg bg-[#9e2016] px-4 py-2 text-sm text-white" data-assign="' + esc(o.public_id) + '">إسناد طوارئ</button></div>';
+}
+async function loadOrders() {
+  const status = document.getElementById('filter').value;
+  const [orders, people] = await Promise.all([DOQ.api('/admin/api/v1/orders' + (status ? '?status=' + status : '')), DOQ.api('/admin/api/v1/delivery-users')]);
+  couriers = people.data || [];
+  const rows = orders.data || [];
+  if (status === 'pending') document.getElementById('count-unassigned').textContent = rows.filter(o => !o.delivery_id).length;
+  document.getElementById('orders').innerHTML = rows.map(o => '<article class="grid gap-3 rounded-xl border p-4 md:grid-cols-[1fr_auto] md:items-center"><div><div class="flex flex-wrap items-center gap-2"><b dir="ltr">' + esc(o.order_code) + '</b>' + statusChip(o.status) + (o.status === 'pending' && !o.delivery_id ? '<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900">محتاج مندوب</span>' : '') + '</div><p class="mt-1">' + esc(o.dish_name) + ' × ' + o.quantity + ' · ' + money(o.total_price) + '</p><p class="text-sm text-gray-600">' + esc(o.kitchen_name) + ' · ' + (o.delivery_name ? 'المندوب: ' + esc(o.delivery_name) : 'من غير مندوب') + ' · ' + when(o.created_at) + '</p></div>' + (o.status === 'pending' ? '<div class="md:w-80">' + courierSelect(o) + '</div>' : '') + '</article>').join('') || '<p class="text-gray-600">مفيش طلبات بالحالة دي</p>';
+}
+async function load() { try { await Promise.all([loadAccounts(), loadOrders()]); } catch (e) { notice(e.message, false); } }
+document.body.addEventListener('click', async e => {
+  const acc = e.target.closest('button[data-action]');
+  const asg = e.target.closest('button[data-assign]');
+  if (!acc && !asg) return;
+  const b = acc || asg; b.disabled = true;
+  try {
+    const j = acc
+      ? await DOQ.api('/admin/api/v1/pending-accounts/' + acc.dataset.user + '/' + acc.dataset.action, 'PATCH', {})
+      : await DOQ.api('/admin/api/v1/orders/' + encodeURIComponent(asg.dataset.assign) + '/assign-delivery', 'PATCH', { delivery_id: Number(asg.parentElement.querySelector('select').value) });
+    notice(j.message); load();
+  } catch (err) { notice(err.message, false); b.disabled = false; }
+});
+document.getElementById('filter').addEventListener('change', () => loadOrders().catch(e => notice(e.message, false)));
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<script src="/app-client.js"></script>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>دوق | تفعيل الحساب</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#9e2016",
+                        "primary-container": "#c0392b",
+                        "on-primary": "#ffffff",
+                        "on-primary-container": "#ffe5e1",
+                        "secondary": "#a23f00",
+                        "secondary-container": "#fc7127",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#5c2000",
+                        "surface": "#fff8f6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#fff0ee",
+                        "surface-container": "#ffe9e6",
+                        "surface-container-high": "#fce2de",
+                        "on-surface": "#261816",
+                        "on-surface-variant": "#59413d",
+                        "outline": "#8d706c",
+                        "outline-variant": "#e1bfb9",
+                        "error": "#ba1a1a",
+                        "success": "#15803d",
+                        "success-container": "#dcfce7",
+                    },
+                    fontFamily: {
+                        "cairo": ["Cairo", "sans-serif"],
+                    },
+                    boxShadow: {
+                        "ambient": "0px 4px 20px rgba(192, 57, 43, 0.08)",
+                        "glow": "0px 8px 32px rgba(158, 32, 22, 0.2)",
+                        "soft": "0 10px 40px rgba(38, 24, 22, 0.08)",
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { 
+            font-family: 'Cairo', sans-serif; 
+            background-color: #fff8f6;
+            color: #261816;
+        }
+        .material-symbols-outlined { 
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; 
+            vertical-align: middle; 
+        }
+        
+        @keyframes floatUp {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+        @keyframes floatDown {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(20px) rotate(-5deg); }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+        .float-1 { animation: floatUp 6s ease-in-out infinite; }
+        .float-2 { animation: floatDown 8s ease-in-out infinite; }
+        .pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+        
+        .toast { animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e1bfb9; border-radius: 10px; }
+        
+        .btn-primary-glow {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .btn-primary-glow::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.6s ease;
+        }
+        .btn-primary-glow:hover::before { left: 100%; }
+        
+        /* OTP Input Boxes */
+        .otp-box {
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s ease;
+        }
+        .otp-box:focus {
+            border-color: #9e2016;
+            box-shadow: 0 0 0 3px rgba(158, 32, 22, 0.15);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="antialiased overflow-x-hidden">
+
+<main class="min-h-screen flex flex-col lg:flex-row">
+    
+    <!-- اللوحة اليسرى: هوية دوق (Hero Panel) -->
+    <section class="hidden lg:flex lg:w-[55%] relative overflow-hidden items-center justify-center p-12">
+        <div class="absolute inset-0" style="background: linear-gradient(135deg, #9e2016 0%, #c0392b 35%, #a23f00 70%, #fc7127 100%);"></div>
+        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 24px 24px;"></div>
+        
+        <div class="absolute top-20 right-20 w-32 h-32 rounded-full bg-white/10 blur-2xl float-1"></div>
+        <div class="absolute bottom-32 left-16 w-48 h-48 rounded-full bg-secondary-container/20 blur-3xl float-2"></div>
+        <div class="absolute top-1/3 left-1/4 w-20 h-20 rounded-full bg-on-primary-container/30 blur-xl pulse-glow"></div>
+        
+        <div class="absolute top-24 left-24 text-white/20 float-1">
+            <span class="material-symbols-outlined" style="font-size: 80px; font-variation-settings: 'FILL' 1;">security</span>
+        </div>
+        <div class="absolute bottom-24 right-32 text-white/20 float-2">
+            <span class="material-symbols-outlined" style="font-size: 100px; font-variation-settings: 'FILL' 1;">verified_user</span>
+        </div>
+        
+        <div class="relative z-20 text-center max-w-xl px-6">
+            <div class="inline-flex items-center gap-3 mb-8 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/20">
+                <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">local_dining</span>
+                </div>
+                <span class="text-white font-extrabold text-2xl tracking-tight">دوق</span>
+            </div>
+            
+            <h1 class="text-5xl font-black text-white mb-6 leading-[1.1] tracking-tight">
+                الخطوة الأخيرة<br>
+                <span class="text-on-primary-container">لتأمين حسابك</span>
+            </h1>
+            
+            <div class="w-20 h-1.5 bg-white/40 rounded-full mb-6 mx-auto"></div>
+            
+            <p class="text-xl text-white/90 mb-10 leading-relaxed font-light">
+                أدخل رمز التحقق المكون من 6 أرقام من تطبيق المصادقة لإتمام تفعيل حسابك والبدء في رحلة التذوق.
+            </p>
+            
+            <!-- Steps Indicator -->
+            <div class="flex items-center justify-center gap-4 mt-12">
+                <div class="flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">
+                        <span class="material-symbols-outlined">check</span>
+                    </div>
+                    <span class="text-white/70 text-xs mt-2">إنشاء الحساب</span>
+                </div>
+                <div class="w-16 h-0.5 bg-white/30"></div>
+                <div class="flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-primary font-bold shadow-glow">
+                        <span class="material-symbols-outlined">pin</span>
+                    </div>
+                    <span class="text-white text-xs mt-2 font-bold">إدخال OTP</span>
+                </div>
+                <div class="w-16 h-0.5 bg-white/30"></div>
+                <div class="flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white/60 font-bold">
+                        <span class="material-symbols-outlined">celebration</span>
+                    </div>
+                    <span class="text-white/60 text-xs mt-2">التفعيل</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- اللوحة اليمنى: نموذج التحقق من OTP -->
+    <section class="w-full lg:w-[45%] flex flex-col items-center justify-center p-6 lg:p-12 bg-surface relative min-h-screen">
+        
+        <div class="lg:hidden flex items-center gap-2 mb-8">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-glow">
+                <span class="material-symbols-outlined text-white text-2xl" style="font-variation-settings: 'FILL' 1;">local_dining</span>
+            </div>
+            <span class="text-primary font-extrabold text-2xl">دوق</span>
+        </div>
+        
+        <div class="w-full max-w-md">
+            <div id="alert-container" class="fixed top-6 right-6 left-6 lg:left-auto lg:w-96 z-50 space-y-2"></div>
+
+            <div class="bg-surface-container-lowest rounded-3xl shadow-soft p-6 md:p-8 border border-outline-variant/30">
+                
+                <div class="text-right mb-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary mb-4 shadow-glow">
+                        <span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+                    </div>
+                    <h2 class="text-2xl font-extrabold text-on-surface mb-2">تفعيل الحساب 🔐</h2>
+                    <p class="text-sm text-on-surface-variant">أدخل رمز التحقق من تطبيق المصادقة</p>
+                </div>
+                
+                <form class="space-y-6" id="verify-form">
+                    
+                    <div class="bg-on-primary-container/30 border border-primary/20 rounded-xl p-4">
+                        <div class="flex items-start gap-3">
+                            <span class="material-symbols-outlined text-primary text-xl mt-0.5" style="font-variation-settings: 'FILL' 1;">info</span>
+                            <div class="text-xs text-on-surface-variant leading-relaxed">
+                                <p class="font-bold text-primary mb-1">كيف تحصل على الرمز؟</p>
+                                <ol class="list-decimal list-inside space-y-1">
+                                    <li>افتح تطبيق Google Authenticator</li>
+                                    <li>اختر حساب "DOQ" الخاص بك</li>
+                                    <li>أدخل الرمز المكون من 6 أرقام أدناه</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- حقول OTP المقسمة إنسيابياً -->
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface mb-3 text-center">رمز التحقق (OTP)</label>
+                        <div class="flex justify-center gap-2 dir-ltr" id="otp-container">
+                            <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-outline-variant bg-surface-container-low text-primary focus:outline-none" />
+                            <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-outline-variant bg-surface-container-low text-primary focus:outline-none" />
+                            <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-outline-variant bg-surface-container-low text-primary focus:outline-none" />
+                            <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-outline-variant bg-surface-container-low text-primary focus:outline-none" />
+                            <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-outline-variant bg-surface-container-low text-primary focus:outline-none" />
+                            <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-outline-variant bg-surface-container-low text-primary focus:outline-none" />
+                        </div>
+                    </div>
+                    
+                    <!-- زر الحالة والمؤشر -->
+                    <button type="submit" id="verify-btn" class="hidden btn-primary-glow w-full py-3.5 bg-gradient-to-l from-primary to-primary-container text-on-primary rounded-xl font-extrabold text-base shadow-glow hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                    </button>
+                </form>
+                
+                <!-- رابط العودة -->
+                <div class="mt-6 text-center">
+                    <a href="/auth" class="text-primary font-bold hover:text-primary-container transition-colors text-sm inline-flex items-center gap-1">
+                        <span class="material-symbols-outlined text-base">arrow_forward</span>
+                        العودة لتسجيل الدخول
+                    </a>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="mt-8 text-center space-y-3">
+                <div class="flex items-center justify-center gap-6 text-xs text-on-surface-variant">
+                    <a href="/police/privacy-policy" class="hover:text-primary transition-colors font-medium">سياسة الخصوصية</a>
+                    <span class="text-outline-variant">•</span>
+                    <a href="/police/terms-of-service" class="hover:text-primary transition-colors font-medium">شروط الاستخدام</a>
+                    <span class="text-outline-variant">•</span>
+                    <a href="/police/cookies-policy" class="hover:text-primary transition-colors font-medium">المساعدة</a>
+                </div>
+                <p class="text-xs text-on-surface-variant">© 2026 <span class="font-bold text-primary">دوق</span> — فن التذوق يبدأ من هنا</p>
+            </footer>
+        </div>
+    </section>
+</main>
+
+<script>
+// نظام التنبيهات (Toast)
+function showAlert(message, type) {
+    const container = document.getElementById('alert-container');
+    const theme = type === 'success' 
+        ? 'bg-surface-container-lowest border-r-4 border-success text-on-surface' 
+        : 'bg-surface-container-lowest border-r-4 border-error text-on-surface';
+    const iconColor = type === 'success' ? 'text-success' : 'text-error';
+    const icon = type === 'success' ? 'check_circle' : 'error';
+    
+    const toast = document.createElement('div');
+    toast.className = `toast flex items-center gap-3 p-4 rounded-xl border border-outline-variant/30 ${theme} shadow-xl`;
+    
+    toast.innerHTML = `
+        <span class="material-symbols-outlined text-2xl ${iconColor}" style="font-variation-settings: 'FILL' 1;">${icon}</span>
+        <p class="font-bold text-sm flex-1 leading-snug">${message}</p>
+        <button onclick="this.parentElement.remove()" class="text-on-surface-variant hover:text-error transition-colors p-1 rounded-full hover:bg-surface-container">
+            <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentElement) toast.remove();
+        }, 400);
+    }, 5000);
+}
+
+const otpInputs = document.querySelectorAll('.otp-box');
+let isProcessing = false;
+
+// التحكم الحركي بـ Inputs
+otpInputs.forEach((input, index) => {
+    input.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/[^0-9]/g, '');
+        e.target.value = val;
+
+        if (val && index < otpInputs.length - 1) {
+            otpInputs[index + 1].focus();
+        }
+        
+        checkAndSubmit();
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && index > 0) {
+            otpInputs[index - 1].focus();
+        }
+    });
+
+    input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasted = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+        pasted.split('').forEach((char, i) => {
+            if (otpInputs[i]) otpInputs[i].value = char;
+        });
+        if (pasted.length > 0) {
+            const nextFocus = Math.min(pasted.length, otpInputs.length - 1);
+            otpInputs[nextFocus].focus();
+        }
+        checkAndSubmit();
+    });
+});
+
+function checkAndSubmit() {
+    const fullOtp = Array.from(otpInputs).map(i => i.value).join('');
+    if (fullOtp.length === 6 && !isProcessing) {
+        startTimerAndFetch(fullOtp);
+    }
+}
+
+// دالة العداد التنازلي لمدة ثانيتين ثم إرسال الطلب
+function startTimerAndFetch(otp) {
+    isProcessing = true;
+    const btn = document.getElementById('verify-btn');
+    btn.classList.remove('hidden');
+    btn.disabled = true;
+
+    let timeLeft = 2;
+    btn.innerHTML = `جاري التحقق خلال (${timeLeft})...`;
+
+    const timer = setInterval(() => {
+        timeLeft--;
+        if (timeLeft > 0) {
+            btn.innerHTML = `جاري التحقق خلال (${timeLeft})...`;
+        } else {
+            clearInterval(timer);
+            btn.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> جاري التفعيل...';
+            executeFetch(otp);
+        }
+    }, 1000);
+}
+
+// تنفيذ الـ Fetch للسيرفر
+async function executeFetch(otp) {
+    try {
+        const response = await fetch('/auth/signup2', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ otp: otp })
+        });
+        
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            
+            if (response.ok && data.status === 'success') {
+                showAlert('✅ ' + data.message, 'success');
+                setTimeout(() => {
+                    window.location.href = DOQ.pickRedirect(data.redirect || '/');
+                }, 1200);
+            } else {
+                showAlert('❌ ' + (data.message || 'رمز التحقق غير صحيح'), 'error');
+                resetForm();
+            }
+        } else if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            showAlert('❌ حدث خطأ غير متوقع', 'error');
+            resetForm();
+        }
+    } catch (error) {
+        console.error('Verify Error:', error);
+        showAlert('❌ حدث خطأ في الاتصال بالسيرفر', 'error');
+        resetForm();
+    }
+}
+
+function resetForm() {
+    const btn = document.getElementById('verify-btn');
+    btn.classList.add('hidden');
+    btn.disabled = false;
+    isProcessing = false;
+    otpInputs.forEach(i => i.value = '');
+    otpInputs[0].focus();
+}
+
+// منع الإرسال الافتراضي للنموذج
+document.getElementById('verify-form').addEventListener('submit', (e) => e.preventDefault());
+
+window.addEventListener('load', function() {
+    setTimeout(() => {
+        otpInputs[0].focus();
+    }, 400);
+});
+</script>
+</body>
+</html>

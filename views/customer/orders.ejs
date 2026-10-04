@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>طلباتي | دوق</title>
+<script src="/app-client.js"></script><script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#fff8f6] text-[#261816]">
+<%- include('../partials/role_bar', { links: [{ href: '/dishes', label: 'الأطباق' }, { href: '/my-orders', label: 'طلباتي', active: true }] }) %>
+<main class="mx-auto max-w-5xl p-4 md:p-8">
+  <h1 class="text-2xl font-bold md:text-3xl">طلباتي</h1>
+  <p class="mt-2 text-[#59413d]">تابع كل طلب لحد ما يوصلك<br>والدفع كاش للمندوب وقت الاستلام</p>
+  <div id="notice" class="mt-5 hidden rounded-xl p-4" role="status"></div>
+  <section id="orders" class="mt-6 grid gap-4"></section>
+</main>
+<script>
+const esc = v => DOQ.escape(v);
+function notice(t, ok = true) { const e = document.getElementById('notice'); e.textContent = t; e.className = 'mt-5 rounded-xl p-4 ' + (ok ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900'); }
+function step(o) {
+  if (o.status !== 'pending') return '';
+  return Number(o.has_delivery) ? '<p class="mt-2 text-sm text-green-800">الطلب مع مندوب التوصيل وهيكلمك قريب</p>' : '<p class="mt-2 text-sm text-amber-800">المطبخ بيجهز طلبك ولسه بنحدد مندوب التوصيل</p>';
+}
+function card(o) {
+  const canCancel = o.status === 'pending' && !Number(o.has_delivery);
+  return '<article class="rounded-2xl border border-[#e1bfb9] bg-white p-5 shadow-sm">'
+    + '<div class="flex items-start justify-between gap-3"><div><b class="text-lg">' + esc(o.order_name || o.dish_name) + '</b><p class="text-sm text-[#59413d]">' + esc(o.dish_name) + ' × ' + o.quantity + ' من ' + esc(o.kitchen_name) + '</p></div>' + statusChip(o.status) + '</div>'
+    + step(o)
+    + '<div class="mt-3 flex flex-wrap justify-between gap-2 text-sm"><span>الإجمالي <b>' + money(o.total_price) + '</b>' + (Number(o.discount_amount) ? ' بعد خصم ' + money(o.discount_amount) : '') + '</span><span class="text-[#59413d]">' + when(o.created_at) + ' · <span dir="ltr">' + esc(o.order_code) + '</span></span></div>'
+    + (canCancel ? '<button class="mt-4 rounded-xl bg-red-100 px-4 py-2 text-red-800" data-id="' + esc(o.public_id) + '">إلغاء الطلب</button>' : '')
+    + '</article>';
+}
+async function load() {
+  try {
+    const rows = (await DOQ.api('/orders/api/v1/my')).data || [];
+    document.getElementById('orders').innerHTML = rows.length ? rows.map(card).join('') : '<div class="rounded-2xl border border-dashed border-[#e1bfb9] bg-white p-8 text-center">لسه ما طلبتش حاجة. <a class="font-bold text-[#9e2016] underline" href="/dishes">شوف الأطباق</a></div>';
+  } catch (e) { notice(e.message, false); }
+}
+document.getElementById('orders').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-id]'); if (!b) return;
+  if (!confirm('متأكد إنك عايز تلغي الطلب؟')) return;
+  b.disabled = true;
+  try { const j = await DOQ.api('/orders/api/v1/' + encodeURIComponent(b.dataset.id) + '/status', 'PATCH', { status: 'cancelled' }); notice(j.message); load(); }
+  catch (err) { notice(err.message, false); b.disabled = false; }
+});
+load();
+</script>
+</body>
+</html>

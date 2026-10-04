@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<script src="/app-client.js"></script>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>دوق | عربيات الأكل</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-low": "#fff0ee",
+                        "primary-fixed-dim": "#ffb4a9",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#eed4d1",
+                        "surface": "#fff8f6",
+                        "outline": "#8d706c",
+                        "on-surface": "#261816",
+                        "on-primary-container": "#ffe5e1",
+                        "on-tertiary": "#ffffff",
+                        "surface-variant": "#f7ddd9",
+                        "inverse-on-surface": "#ffedea",
+                        "on-tertiary-fixed-variant": "#004d66",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#9e2016",
+                        "primary-container": "#c0392b",
+                        "primary-fixed": "#ffdad5",
+                        "inverse-primary": "#ffb4a9",
+                        "secondary-fixed-dim": "#ffb595",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-container": "#d3eeff",
+                        "on-primary-fixed": "#410000",
+                        "tertiary-fixed": "#c0e8ff",
+                        "surface-container": "#ffe9e6",
+                        "on-surface-variant": "#59413d",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#351000",
+                        "on-background": "#261816",
+                        "on-secondary-fixed-variant": "#7c2e00",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#fce2de",
+                        "tertiary": "#005875",
+                        "secondary": "#a23f00",
+                        "outline-variant": "#e1bfb9",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#f7ddd9",
+                        "tertiary-container": "#007296",
+                        "secondary-container": "#fc7127",
+                        "on-tertiary-fixed": "#001e2b",
+                        "surface-bright": "#fff8f6",
+                        "on-secondary-container": "#5c2000",
+                        "on-error-container": "#93000a",
+                        "background": "#fff8f6",
+                        "inverse-surface": "#3c2d2a"
+                    },
+                    spacing: {
+                        "sm": "12px",
+                        "container-max": "1280px",
+                        "xs": "4px",
+                        "xl": "80px",
+                        "gutter": "24px",
+                        "md": "24px",
+                        "lg": "48px",
+                        "base": "8px"
+                    },
+                    fontFamily: {
+                        "sans": ["Tajawal", "sans-serif"],
+                        "label-sm": ["Tajawal"],
+                        "body-lg": ["Tajawal"],
+                        "headline-md": ["Tajawal"],
+                        "display-lg": ["Tajawal"],
+                        "body-md": ["Tajawal"],
+                        "display-lg-mobile": ["Tajawal"]
+                    },
+                    fontSize: {
+                        "label-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "display-md": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "800"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    },
+                    boxShadow: {
+                        'culinary': '0px 4px 20px rgba(192, 57, 43, 0.06)',
+                        'soft': '0px 2px 8px rgba(38, 24, 22, 0.04)'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .cart-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeInUp 0.4s ease backwards;
+        }
+        .cart-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0px 12px 32px rgba(158, 32, 22, 0.1);
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e1bfb9; border-radius: 10px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .category-active {
+            background: #9e2016 !important;
+            color: white !important;
+            border-color: #9e2016 !important;
+        }
+        .error-message {
+            background: #ffdad6;
+            color: #ba1a1a;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .error-message.show { display: flex; }
+        
+        #kitchensGrid {
+            min-height: 300px;
+            position: relative;
+            transition: opacity 0.3s ease, filter 0.3s ease;
+        }
+        #kitchensGrid.is-loading {
+            opacity: 0.5;
+            filter: blur(2px);
+            pointer-events: none;
+        }
+        
+        .skeleton-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(225, 191, 185, 0.3);
+        }
+        .skeleton-img {
+            height: 200px;
+            background: linear-gradient(90deg, #f7ddd9 25%, #ffe9e6 50%, #f7ddd9 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        .skeleton-line {
+            height: 12px;
+            background: linear-gradient(90deg, #f7ddd9 25%, #ffe9e6 50%, #f7ddd9 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        .skeleton-line.short { width: 50%; }
+        .skeleton-line.medium { width: 75%; }
+        
+        .page-btn-active {
+            background: #9e2016 !important;
+            color: white !important;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-sans selection:bg-secondary-container selection:text-on-secondary-container">
+
+    <!-- ✅ تم افتراض أن الـ Header مدرج هنا كما هو بدون أي تعديل -->
+    <%- include('../partials/header') %>
+
+    <!-- ✅ إضافة pt-20 md:pt-24 لتعويض مساحة الـ Header الـ fixed -->
+    <main class="min-h-screen pt-20 md:pt-24 pb-12">
+        
+        <!-- Hero Section: أنيق، متوازن، ومتناسق مع الـ Header -->
+        <section class="max-w-[1280px] mx-auto px-3 sm:px-4 lg:px-6 mb-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-primary mb-3 flex items-center justify-center gap-3">
+                    <span class="material-symbols-outlined text-4xl md:text-5xl text-secondary" style="font-variation-settings: 'FILL' 1;">food_bank</span>
+                    عربيات الأكل
+                </h1>
+                <p class="text-base md:text-lg text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
+                    سيبك من الدليفري الغالي.. وتعالى دوق أكل الشارع على أصوله! <br class="hidden md:block">
+                    اكتشف أحلى عربيات الكفتة، الشاورما، الكشري، والأكل البلدي في منطقتك.
+                </p>
+            </div>
+            
+            <div id="errorMessage" class="error-message max-w-2xl mx-auto">
+                <span class="material-symbols-outlined text-xl">error</span>
+                <span id="errorText">حدث خطأ</span>
+            </div>
+            
+            <!-- Search & Filters: بنفس ستايل الـ Header (rounded, subtle borders) -->
+            <div class="bg-surface p-4 rounded-2xl shadow-soft border border-outline-variant/20 max-w-4xl mx-auto">
+                <div class="flex flex-col md:flex-row gap-3">
+                    <div class="flex-1 relative">
+                        <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl">search</span>
+                        <input class="w-full pr-10 pl-4 py-3 rounded-xl border border-outline-variant/20 focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest text-body-md transition-all outline-none" 
+                               id="kitchenSearch" placeholder="ابحث عن عربية أو أكلة (كفتة، شاورما...)" type="text"/>
+                    </div>
+                    <div class="w-full md:w-44 relative">
+                        <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl">location_on</span>
+                        <select class="w-full pr-10 pl-8 py-3 rounded-xl border border-outline-variant/20 focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest text-body-md appearance-none outline-none cursor-pointer" id="cityFilter">
+                            <option value="">كل المدن</option>
+                            <option value="القاهرة">القاهرة</option>
+                            <option value="الجيزة">الجيزة</option>
+                            <option value="الإسكندرية">الإسكندرية</option>
+                            <option value="المنصورة">المنصورة</option>
+                            <option value="طنطا">طنطا</option>
+                            <option value="الزقازيق">الزقازيق</option>
+                            <option value="أسيوط">أسيوط</option>
+                        </select>
+                    </div>
+                    <select class="w-full md:w-36 py-3 px-4 rounded-xl border border-outline-variant/20 focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest text-body-md appearance-none outline-none cursor-pointer" id="limitFilter">
+                        <option value="10">10 عربية</option>
+                        <option value="20" selected>20 عربية</option>
+                        <option value="50">50 عربية</option>
+                    </select>
+                    <button id="searchBtn" class="bg-primary text-on-primary px-6 py-3 rounded-xl font-bold hover:bg-primary-container transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-95 duration-200">
+                        <span class="material-symbols-outlined text-xl">search</span>
+                        <span>بحث</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories Bar: بنفس ستايل الـ Badges في الـ Header -->
+        <section class="max-w-[1280px] mx-auto px-3 sm:px-4 lg:px-6 mb-8">
+            <div class="flex gap-2 overflow-x-auto py-2 no-scrollbar" id="categoriesBar">
+                <!-- سيتم تعبئتها بواسطة JavaScript -->
+            </div>
+        </section>
+
+        <!-- Content Grid -->
+        <section class="max-w-[1280px] mx-auto px-3 sm:px-4 lg:px-6">
+            <div class="mb-6 text-on-surface-variant font-label-sm flex items-center justify-between" id="resultsCount">
+                <span><span id="totalCount" class="font-bold text-on-surface">0</span> عربية</span>
+                <span id="pageInfo" class="text-xs sm:text-sm"></span>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6" id="kitchensGrid">
+                <!-- سيتم تعبئتها بواسطة JavaScript -->
+            </div>
+
+            <!-- Pagination -->
+            <div class="mt-10 flex items-center justify-between border-t border-outline-variant/20 pt-6 flex-wrap gap-4" id="paginationArea"></div>
+        </section>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <script>
+        // ============================================
+        // ✅ 1. المتغيرات العامة
+        // ============================================
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentPage = parseInt(urlParams.get('page')) || 1;
+        let currentLimit = parseInt(urlParams.get('limit')) || 20;
+        let currentQ = urlParams.get('q') || '';
+        let currentCity = urlParams.get('city') || '';
+        let currentCategory = urlParams.get('category') || '';
+        
+        let totalPages = 1;
+        let allCategories = [];
+
+        // ============================================
+        // ✅ 2. دوال التحكم في الـ UI
+        // ============================================
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            if (errorDiv && errorText) {
+                errorText.textContent = message || 'حدث خطأ غير متوقع';
+                errorDiv.classList.add('show');
+                setTimeout(() => errorDiv.classList.remove('show'), 5000);
+            }
+        }
+
+        function showSkeleton(count = 8) {
+            const grid = document.getElementById('kitchensGrid');
+            let html = '';
+            for (let i = 0; i < count; i++) {
+                html += `
+                    <div class="skeleton-card">
+                        <div class="skeleton-img"></div>
+                        <div class="p-4">
+                            <div class="skeleton-line medium"></div>
+                            <div class="skeleton-line short"></div>
+                            <div class="skeleton-line medium"></div>
+                        </div>
+                    </div>`;
+            }
+            grid.innerHTML = html;
+        }
+
+        function setLoading(loading) {
+            const grid = document.getElementById('kitchensGrid');
+            if (loading) grid.classList.add('is-loading');
+            else grid.classList.remove('is-loading');
+        }
+
+        // ============================================
+        // ✅ 3. جلب البيانات
+        // ============================================
+        async function fetchKitchens() {
+            const grid = document.getElementById('kitchensGrid');
+            const isFirstLoad = grid.children.length === 0 || grid.querySelector('.skeleton-card');
+            
+            if (isFirstLoad) showSkeleton(currentLimit > 20 ? 12 : 8);
+            else setLoading(true);
+            
+            try {
+                const params = new URLSearchParams();
+                params.set('page', currentPage);
+                params.set('limit', currentLimit);
+                if (currentQ) params.set('q', currentQ);
+                if (currentCity) params.set('city', currentCity);
+                if (currentCategory) params.set('category', currentCategory);
+                
+                const response = await fetch(`/kitchens/api/v1/paginated?${params.toString()}`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                
+                if (data.status === 'error') {
+                    showError(data.message || 'حدث خطأ أثناء جلب البيانات');
+                    renderKitchens([], {});
+                    return;
+                }
+                
+                if (data.status === 'success' && data.data) {
+                    renderKitchens(data.data.kitchens || [], data.data.pagination || {});
+                } else {
+                    renderKitchens([], {});
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showError('حدث خطأ في الاتصال بالخادم');
+                renderKitchens([], {});
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // ============================================
+        // ✅ 4. عرض الكروت
+        // ============================================
+        function renderKitchens(kitchens, pagination) {
+            const grid = document.getElementById('kitchensGrid');
+            const totalCountEl = document.getElementById('totalCount');
+            const pageInfoEl = document.getElementById('pageInfo');
+            const paginationArea = document.getElementById('paginationArea');
+            
+            const total = pagination.total || 0;
+            totalCountEl.textContent = total;
+            
+            if (total > 0) {
+                const start = ((pagination.page || 1) - 1) * (pagination.limit || 20) + 1;
+                const end = Math.min((pagination.page || 1) * (pagination.limit || 20), total);
+                pageInfoEl.textContent = `عرض ${start}-${end} من ${total}`;
+            } else {
+                pageInfoEl.textContent = '';
+            }
+            
+            totalPages = pagination.total_pages || 1;
+            grid.innerHTML = '';
+            
+            if (!kitchens || kitchens.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-12 text-center space-y-4 bg-surface-container-low rounded-2xl border border-outline-variant/20">
+                        <span class="material-symbols-outlined text-6xl text-outline-variant">search_off</span>
+                        <div>
+                            <h3 class="font-headline-md text-primary mb-2">📭 مفيش نتائج</h3>
+                            <p class="text-on-surface-variant text-body-md">
+                                ${currentQ || currentCity || currentCategory ? 'جرب تغير البحث أو الفلاتر' : 'كن أول شيف ينضم ويشارك عربيته!'}
+                            </p>
+                        </div>
+                        ${!currentQ && !currentCity && !currentCategory ? 
+                            `<a href="/auth" class="bg-primary text-on-primary px-6 py-2.5 rounded-xl font-bold hover:bg-primary-container transition-colors inline-block mt-2">سجل كطباخ</a>` : 
+                            `<button onclick="resetFilters()" class="text-primary font-bold hover:underline mt-2 flex items-center gap-1"><span class="material-symbols-outlined text-lg">refresh</span> إعادة تعيين الفلاتر</button>`}
+                    </div>`;
+                paginationArea.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            kitchens.forEach(function(kitchen, index) {
+                const avgRating = kitchen.avg_rating ? Number(kitchen.avg_rating).toFixed(1) : 'جديد';
+                const chefName = kitchen.chef_name || ((kitchen.first_name || '') + ' ' + (kitchen.last_name || '')).trim() || 'شيف';
+                const imageUrl = DOQ.safeImage(kitchen.image_url || kitchen.portfolio_url || '/assests/profile_kitchen.jpeg');
+                const dishesCount = kitchen.dishes_count || 0;
+                const description = kitchen.description || 'لا يوجد وصف';
+                
+                html += `
+                    <div class="cart-card group bg-white rounded-2xl shadow-soft overflow-hidden border border-outline-variant/10" style="animation-delay: ${index * 0.05}s">
+                        <div class="relative h-48 sm:h-52 overflow-hidden bg-surface-container-low">
+                            <img src="${imageUrl}" alt="${DOQ.escape(kitchen.title || '')}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" onerror="this.src='/assests/profile_kitchen.jpeg'">
+                            <div class="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
+                                <span class="material-symbols-outlined text-secondary text-base" style="font-variation-settings: 'FILL' 1">star</span>
+                                <span class="font-bold text-sm text-on-surface">${avgRating}</span>
+                            </div>
+                            ${dishesCount > 0 ? `<div class="absolute top-3 right-3 bg-secondary-container/95 backdrop-blur-sm text-on-secondary-container px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm">${dishesCount} طبق</div>` : ''}
+                        </div>
+                        <div class="p-4 space-y-3">
+                            <h3 class="font-headline-md text-primary font-bold text-lg line-clamp-1">${DOQ.escape(kitchen.title || '')}</h3>
+                            <div class="flex items-center gap-2 text-on-surface-variant">
+                                <span class="material-symbols-outlined text-lg text-secondary">person</span>
+                                <span class="text-sm font-medium">${DOQ.escape(chefName)}</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-on-surface-variant">
+                                <span class="material-symbols-outlined text-lg text-secondary">location_on</span>
+                                <span class="text-sm">${DOQ.escape(kitchen.city || 'غير محدد')}</span>
+                            </div>
+                            <p class="text-on-surface-variant text-sm line-clamp-2 leading-relaxed min-h-[40px]">${DOQ.escape(description)}</p>
+                            <a href="/kitchens/${kitchen.id}" class="block w-full bg-primary text-on-primary py-2.5 rounded-xl font-bold hover:bg-primary-container transition-colors shadow-sm active:scale-95 duration-200 text-center text-sm">
+                                عرض العربية
+                            </a>
+                        </div>
+                    </div>`;
+            });
+            
+            grid.innerHTML = html;
+            buildPagination(pagination);
+        }
+
+        // ============================================
+        // ✅ 5. الـ Pagination (Event Delegation)
+        // ============================================
+        function buildPagination(pagination) {
+            const paginationArea = document.getElementById('paginationArea');
+            if (!paginationArea) return;
+
+            const total = pagination.total || 0;
+            const currentPageNum = pagination.page || 1;
+            const totalPagesNum = pagination.total_pages || 1;
+            totalPages = totalPagesNum;
+
+            if (totalPagesNum <= 1 || total === 0) {
+                paginationArea.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            const prevDisabled = currentPageNum <= 1;
+            html += `
+                <button type="button" data-page="${currentPageNum - 1}" 
+                        class="pagination-btn flex items-center gap-1.5 px-4 py-2 rounded-xl border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container transition-colors text-sm font-medium ${prevDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}"
+                        ${prevDisabled ? 'disabled' : ''}>
+                    <span class="material-symbols-outlined text-lg">chevron_right</span> السابق
+                </button>`;
+
+            html += `<div class="flex items-center gap-1.5 flex-wrap justify-center">`;
+            const startPage = Math.max(1, currentPageNum - 2);
+            const endPage = Math.min(totalPagesNum, currentPageNum + 2);
+            
+            if (startPage > 1) {
+                html += `<button type="button" data-page="1" class="pagination-btn w-9 h-9 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container transition-colors text-sm font-bold">1</button>`;
+                if (startPage > 2) html += `<span class="text-on-surface-variant px-1">...</span>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                if (i === currentPageNum) {
+                    html += `<span class="w-9 h-9 flex items-center justify-center rounded-xl bg-primary text-white font-bold shadow-sm text-sm">${i}</span>`;
+                } else {
+                    html += `<button type="button" data-page="${i}" class="pagination-btn w-9 h-9 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container transition-colors text-sm font-bold">${i}</button>`;
+                }
+            }
+            
+            if (endPage < totalPagesNum) {
+                if (endPage < totalPagesNum - 1) html += `<span class="text-on-surface-variant px-1">...</span>`;
+                html += `<button type="button" data-page="${totalPagesNum}" class="pagination-btn w-9 h-9 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container transition-colors text-sm font-bold">${totalPagesNum}</button>`;
+            }
+            html += `</div>`;
+
+            const nextDisabled = currentPageNum >= totalPagesNum;
+            html += `
+                <button type="button" data-page="${currentPageNum + 1}" 
+                        class="pagination-btn flex items-center gap-1.5 px-4 py-2 rounded-xl border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container transition-colors text-sm font-medium ${nextDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}"
+                        ${nextDisabled ? 'disabled' : ''}>
+                    التالي <span class="material-symbols-outlined text-lg">chevron_left</span>
+                </button>`;
+
+            paginationArea.innerHTML = html;
+            
+            paginationArea.onclick = function(e) {
+                const btn = e.target.closest('.pagination-btn');
+                if (btn) {
+                    e.preventDefault();
+                    const page = parseInt(btn.getAttribute('data-page'), 10);
+                    if (!isNaN(page)) changePage(page);
+                }
+            };
+        }
+
+        // ============================================
+        // ✅ 6. دوال التحكم
+        // ============================================
+        function changePage(page) {
+            if (isNaN(page) || page < 1 || page > totalPages) return;
+            if (page === currentPage) return;
+            currentPage = page;
+            updateURL();
+            fetchKitchens();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateURL() {
+            const params = new URLSearchParams();
+            params.set('page', currentPage);
+            params.set('limit', currentLimit);
+            if (currentQ) params.set('q', currentQ);
+            if (currentCity) params.set('city', currentCity);
+            if (currentCategory) params.set('category', currentCategory);
+            
+            const newUrl = '/kitchens?' + params.toString();
+            if (window.location.search !== '?' + params.toString()) {
+                window.history.pushState({}, '', newUrl);
+            }
+        }
+
+        async function fetchCategories() {
+            const bar = document.getElementById('categoriesBar');
+            if (!bar) return;
+            try {
+                const response = await fetch('/categories/api/v1/all', { headers: { 'Accept': 'application/json' } });
+                const data = await response.json();
+                if (data.status === 'success' && data.data && Array.isArray(data.data)) {
+                    allCategories = data.data.filter(cat => (cat.dishes_count || 0) > 0);
+                    renderCategoriesBar();
+                } else {
+                    renderCategoriesBar();
+                }
+            } catch (error) {
+                console.error('❌ Error fetching categories:', error);
+                renderCategoriesBar();
+            }
+        }
+        
+        function renderCategoriesBar() {
+            const bar = document.getElementById('categoriesBar');
+            if (!bar) return;
+            
+            let html = `
+                <button type="button" data-category="" 
+                        class="category-btn flex-shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-all border ${!currentCategory ? 'bg-primary text-white border-primary' : 'bg-white text-on-surface-variant border-outline-variant/30 hover:border-primary hover:text-primary'}">
+                    الكل
+                </button>`;
+            
+            allCategories.forEach(function(cat) {
+                const isActive = (currentCategory === cat.name);
+                html += `
+                    <button type="button" data-category="${DOQ.escape(cat.name || '')}" 
+                            class="category-btn flex-shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-all border whitespace-nowrap ${isActive ? 'category-active' : 'bg-white text-on-surface-variant border-outline-variant/30 hover:border-primary hover:text-primary'}">
+                        ${DOQ.escape(cat.name || '')} <span class="text-xs opacity-70 mr-1">(${Number(cat.dishes_count) || 0})</span>
+                    </button>`;
+            });
+            
+            bar.innerHTML = html;
+            
+            bar.onclick = function(e) {
+                const btn = e.target.closest('.category-btn');
+                if (btn) {
+                    e.preventDefault();
+                    setCategory(btn.getAttribute('data-category'));
+                }
+            };
+        }
+
+        function setCategory(category) {
+            currentCategory = category || '';
+            currentPage = 1;
+            renderCategoriesBar();
+            updateURL();
+            fetchKitchens();
+        }
+
+        function resetFilters() {
+            currentQ = '';
+            currentCity = '';
+            currentCategory = '';
+            currentPage = 1;
+            document.getElementById('kitchenSearch').value = '';
+            document.getElementById('cityFilter').value = '';
+            renderCategoriesBar();
+            updateURL();
+            fetchKitchens();
+        }
+
+        function performSearch() {
+            currentQ = document.getElementById('kitchenSearch').value.trim();
+            currentCity = document.getElementById('cityFilter').value;
+            currentLimit = parseInt(document.getElementById('limitFilter').value) || 20;
+            currentPage = 1;
+            updateURL();
+            fetchKitchens();
+        }
+
+        function updateFiltersFromURL() {
+            const searchInput = document.getElementById('kitchenSearch');
+            const citySelect = document.getElementById('cityFilter');
+            const limitSelect = document.getElementById('limitFilter');
+            if (currentQ && searchInput) searchInput.value = currentQ;
+            if (currentCity && citySelect) citySelect.value = currentCity;
+            if (currentLimit && limitSelect) limitSelect.value = currentLimit;
+        }
+
+        // ============================================
+        // ✅ 7. تهيئة الصفحة
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            updateFiltersFromURL();
+            fetchCategories();
+            fetchKitchens();
+
+            document.getElementById('searchBtn').addEventListener('click', performSearch);
+            document.getElementById('kitchenSearch').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); performSearch(); }
+            });
+            document.getElementById('cityFilter').addEventListener('change', performSearch);
+            document.getElementById('limitFilter').addEventListener('change', performSearch);
+            
+            window.addEventListener('popstate', function() {
+                const params = new URLSearchParams(window.location.search);
+                currentPage = parseInt(params.get('page')) || 1;
+                currentLimit = parseInt(params.get('limit')) || 20;
+                currentQ = params.get('q') || '';
+                currentCity = params.get('city') || '';
+                currentCategory = params.get('category') || '';
+                updateFiltersFromURL();
+                renderCategoriesBar();
+                fetchKitchens();
+            });
+        });
+    </script>
+</body>
+</html>

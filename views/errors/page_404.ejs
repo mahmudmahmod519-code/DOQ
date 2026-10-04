@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<script src="/app-client.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title><%= '404 - أهو! ضعنا منك هنا' %> | دوق (DOQ)</title>
+  <!-- Google Fonts: Cairo & Tajawal -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Material Symbols Outlined -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              burgundy: '#4D0F0F',
+              burgundyDark: '#350909',
+              orange: '#F26B1D',
+              orangeHover: '#d95a12',
+              orangeLight: '#ff853c',
+              cream: '#FFF8F6'
+            }
+          },
+          fontFamily: {
+            cairo: ['Cairo', 'sans-serif'],
+            tajawal: ['Tajawal', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow-x: hidden; /* ✅ منع التمرير الأفقي تماماً */
+      overflow-y: hidden; /* منع التمرير الرأسي على الجسم الرئيسي */
+    }
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background-color: #4D0F0F;
+    }
+    h1, h2, h3, .font-heading {
+      font-family: 'Cairo', sans-serif;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(-1deg); }
+    }
+    @keyframes steam {
+      0% { transform: translateY(0) scaleX(1); opacity: 0; }
+      50% { opacity: 0.7; }
+      100% { transform: translateY(-18px) scaleX(1.4); opacity: 0; }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.05); }
+    }
+    .animate-cart {
+      animation: float 4s ease-in-out infinite;
+    }
+    .animate-steam-1 {
+      animation: steam 2.5s infinite ease-out;
+    }
+    .animate-steam-2 {
+      animation: steam 2.5s infinite ease-out 1.2s;
+    }
+    .glow-effect {
+      animation: pulse-glow 5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="h-screen w-screen overflow-x-hidden bg-[#4D0F0F] text-white flex flex-col justify-between items-center relative selection:bg-[#F26B1D] selection:text-white">
+
+  <!-- Ambient Light Glow in center -->
+  <!-- ✅ تم تغيير العرض من 600px ثابت إلى 80vw كحد أقصى 600px لمنع الخروج عن شاشة الموبايل -->
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] max-w-[600px] aspect-square bg-[#F26B1D]/10 rounded-full blur-[80px] pointer-events-none glow-effect"></div>
+
+  <!-- Top Simple Brand Header -->
+  <header class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center relative z-20 shrink-0">
+    <a href="/" class="flex items-center gap-2 group transition-transform duration-300 hover:scale-105">
+      <div class="w-8 h-8 rounded-xl bg-[#F26B1D] flex items-center justify-center font-cairo font-black text-base text-white shadow-lg shadow-[#F26B1D]/20">
+        د
+      </div>
+      <div class="flex flex-col">
+        <span class="font-cairo font-extrabold text-lg tracking-wide text-white group-hover:text-[#F26B1D] transition-colors">دوق <span class="text-[#F26B1D] text-sm font-bold">DOQ</span></span>
+        <span class="text-[9px] text-white/60 tracking-wider hidden sm:block">منصة الأكل البيتي والشعبي المصري</span>
+      </div>
+    </a>
+
+    <a href="/" class="flex items-center gap-1.5 text-xs font-medium text-white/70 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full border border-white/10 transition-all duration-300">
+      <span class="material-symbols-outlined text-[16px]">home</span>
+      <span>الرئيسية</span>
+    </a>
+  </header>
+
+  <!-- Main 404 Hero Content -->
+  <!-- ✅ إضافة overflow-x-hidden هنا كطبقة حماية إضافية -->
+  <main class="w-full max-w-4xl mx-auto px-4 sm:px-6 flex-1 flex flex-col items-center justify-center text-center relative z-10 overflow-x-hidden overflow-y-auto py-2">
+    
+    <!-- 404 Number Stylized in Orange -->
+    <!-- ✅ تصغير الخط قليلاً على الشاشات الصغيرة جداً (text-5xl) -->
+    <div class="relative mb-1 select-none shrink-0 w-full">
+      <span class="font-cairo font-black text-5xl sm:text-6xl md:text-7xl lg:text-[95px] leading-none text-[#F26B1D] tracking-tight drop-shadow-[0_10px_25px_rgba(242,107,29,0.35)] block break-words">
+        ٤٠٤
+      </span>
+      <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-cairo font-black text-4xl sm:text-5xl md:text-6xl lg:text-[80px] text-white/5 tracking-widest pointer-events-none">
+        404
+      </span>
+    </div>
+
+    <!-- Speech Bubble + Lost Egyptian Cart Illustration -->
+    <div class="relative w-full max-w-sm mx-auto my-1 flex flex-col items-center shrink-0">
+      
+      <!-- Playful Egyptian Speech Bubble -->
+      <div class="relative bg-white text-[#4D0F0F] px-3 py-1.5 rounded-xl shadow-xl shadow-black/25 mb-2 animate-bounce duration-1000 inline-flex items-center gap-1.5 border-2 border-[#F26B1D]">
+        <span class="text-sm">👀</span>
+        <span class="font-cairo font-extrabold text-xs sm:text-sm">أهو! ضعنا منك هنا..</span>
+        <!-- Speech bubble arrow -->
+        <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white"></div>
+      </div>
+
+      <!-- Egyptian Street Food Cart Illustration -->
+      <div class="w-48 sm:w-60 h-auto relative animate-cart">
+        <svg viewBox="0 0 320 220" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto drop-shadow-[0_15px_25px_rgba(0,0,0,0.5)]">
+          <!-- Desert Sand Dunes Silhouette (Base) -->
+          <path d="M10 200 C70 190, 130 210, 190 198 C250 188, 290 205, 315 200" stroke="#F26B1D" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round"/>
+          <path d="M30 208 C90 202, 170 214, 280 206" stroke="#ffffff" stroke-opacity="0.1" stroke-width="2" stroke-linecap="round"/>
+
+          <!-- Pyramids -->
+          <polygon points="45,195 62,175 79,195" fill="#350909" stroke="#F26B1D" stroke-opacity="0.2" stroke-width="1"/>
+          <polygon points="68,196 82,180 96,196" fill="#350909" stroke="#F26B1D" stroke-opacity="0.2" stroke-width="1"/>
+
+          <!-- Shadow -->
+          <ellipse cx="160" cy="198" rx="85" ry="10" fill="#200404" opacity="0.6"/>
+
+          <!-- Cart Body -->
+          <rect x="95" y="110" width="135" height="55" rx="8" fill="#F26B1D"/>
+          <path d="M100 110 L110 165 M125 110 L135 165 M150 110 L160 165 M175 110 L185 165 M200 110 L210 165" stroke="#4D0F0F" stroke-width="4" stroke-opacity="0.3"/>
+          <rect x="92" y="103" width="141" height="9" rx="4.5" fill="#FFF8F6"/>
+
+          <!-- Canopy Pillars -->
+          <line x1="105" y1="103" x2="105" y2="55" stroke="#FFE6A3" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="220" y1="103" x2="220" y2="55" stroke="#FFE6A3" stroke-width="3.5" stroke-linecap="round"/>
+
+          <!-- Canopy -->
+          <path d="M90 55 C90 50, 235 50, 235 55 L228 35 C228 30, 97 30, 97 35 Z" fill="#F26B1D"/>
+          <path d="M93 55 L99 34 M116 55 L120 32 M139 55 L141 31 M162 55 L162 31 M185 55 L183 32 M208 55 L204 34 M231 55 L225 35" stroke="#FFF8F6" stroke-width="7" stroke-linecap="round"/>
+          <path d="M92 55 Q99 62 106 55 Q113 62 120 55 Q127 62 134 55 Q141 62 148 55 Q155 62 162 55 Q169 62 176 55 Q183 62 190 55 Q197 62 204 55 Q211 62 218 55 Q225 62 232 55" fill="#F26B1D" stroke="#FFE6A3" stroke-width="1.5"/>
+
+          <!-- Handle -->
+          <path d="M95 125 L75 125 L75 140" stroke="#FFE6A3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- Pot -->
+          <ellipse cx="140" cy="102" rx="16" ry="6" fill="#C27D23"/>
+          <path d="M124 102 C122 88, 158 88, 156 102 Z" fill="#E59934" stroke="#8F560C" stroke-width="1.5"/>
+          <circle cx="140" cy="86" r="3" fill="#FFE6A3"/>
+          
+          <!-- Steam -->
+          <path class="animate-steam-1" d="M138 82 Q133 72 142 64" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+          <path class="animate-steam-2" d="M143 80 Q148 70 139 62" stroke="#F26B1D" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+
+          <!-- Lantern -->
+          <line x1="205" y1="58" x2="205" y2="70" stroke="#FFE6A3" stroke-width="1.5"/>
+          <polygon points="201,70 209,70 207,82 203,82" fill="#F26B1D" stroke="#FFE6A3" stroke-width="1"/>
+          <circle cx="205" cy="76" r="2" fill="#FFEAA7"/>
+
+          <!-- Wheel -->
+          <g transform="translate(195, 168)">
+            <circle cx="0" cy="0" r="28" fill="#350909" stroke="#FFE6A3" stroke-width="4"/>
+            <circle cx="0" cy="0" r="25" stroke="#F26B1D" stroke-width="2" fill="none"/>
+            <circle cx="0" cy="0" r="6" fill="#FFE6A3"/>
+            <line x1="0" y1="-25" x2="0" y2="25" stroke="#FFE6A3" stroke-width="2"/>
+            <line x1="-25" y1="0" x2="25" y2="0" stroke="#FFE6A3" stroke-width="2"/>
+            <line x1="-18" y1="-18" x2="18" y2="18" stroke="#FFE6A3" stroke-width="2"/>
+            <line x1="-18" y1="18" x2="18" y2="-18" stroke="#FFE6A3" stroke-width="2"/>
+          </g>
+
+          <!-- Support Leg -->
+          <rect x="110" y="165" width="6" height="30" rx="3" fill="#FFE6A3"/>
+
+          <!-- Face -->
+          <g transform="translate(138, 128)">
+            <circle cx="0" cy="0" r="7.5" fill="#ffffff"/>
+            <circle cx="-2.5" cy="0.5" r="3.5" fill="#4D0F0F"/>
+            <circle cx="-3.5" cy="-1" r="1.2" fill="#ffffff"/>
+            <path d="M-6 -10 Q-1 -13 4 -8" stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+            <circle cx="22" cy="0" r="7.5" fill="#ffffff"/>
+            <circle cx="19.5" cy="0.5" r="3.5" fill="#4D0F0F"/>
+            <circle cx="18.5" cy="-1" r="1.2" fill="#ffffff"/>
+            <path d="M16 -7 Q22 -12 28 -10" stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+            <path d="M3 14 Q8 10 13 15 Q17 19 20 14" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <text x="32" y="-12" fill="#F26B1D" font-family="'Cairo', sans-serif" font-weight="900" font-size="20">؟</text>
+          </g>
+        </svg>
+      </div>
+
+    </div>
+
+    <!-- Humorous Egyptian Subtitle -->
+    <div class="space-y-1 max-w-xl mx-auto mt-1 shrink-0 px-2">
+      <h2 class="font-cairo font-bold text-lg sm:text-xl md:text-2xl text-white leading-tight">
+        يبدو إن الصفحة دي <span class="text-[#F26B1D] underline decoration-[#F26B1D]/40 underline-offset-4">اتاكلت</span>!
+      </h2>
+      <p class="font-tajawal text-sm sm:text-base text-white/80 leading-relaxed font-normal">
+        أو العربية مشيت في الصحراء وتاهت من غير ما تسيب عنوان.. بس متقلقش، باقي الأكلات السخنة مستنياك في المطبخ!
+      </p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-2.5 mt-4 w-full max-w-md shrink-0 px-4">
+      <a href="/" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#F26B1D] hover:bg-[#d95a12] text-white font-cairo font-bold text-sm rounded-xl shadow-lg shadow-[#F26B1D]/25 transition-all duration-300">
+        <span class="material-symbols-outlined text-lg">arrow_forward</span>
+        <span>العودة للرئيسية</span>
+      </a>
+
+      <a href="/dishes" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/15 text-white font-cairo font-semibold text-xs rounded-xl border border-white/15 backdrop-blur-sm transition-all duration-300">
+        <span class="material-symbols-outlined text-base text-[#F26B1D]">restaurant_menu</span>
+        <span>تصفح الأطباق</span>
+      </a>
+    </div>
+
+    <!-- Quick Helpful Navigation Links -->
+    <div class="mt-4 pt-2.5 border-t border-white/10 w-full max-w-md flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-white/60 shrink-0 px-4">
+      <a href="/kitchens" class="hover:text-[#F26B1D] transition-colors">استكشف المطابخ</a>
+      <span class="text-white/20 hidden sm:inline">•</span>
+      <a href="/contect-us" class="hover:text-[#F26B1D] transition-colors">تواصل معنا</a>
+      <span class="text-white/20 hidden sm:inline">•</span>
+      <a href="/faqs" class="hover:text-[#F26B1D] transition-colors">الأسئلة الشائعة</a>
+    </div>
+
+  </main>
+
+  <!-- Absolute Edge-to-Edge Footer Locked at Bottom -->
+  <footer class="w-full text-center text-[10px] text-white/40 font-tajawal relative z-10 py-2 border-t border-white/10 bg-black/20 shrink-0">
+    <p>© <%= new Date().getFullYear() %> دوق (DOQ) - المنصة الرقمية للأكل البيتي والشعبي المصري. جميع الحقوق محفوظة.</p>
+  </footer>
+
+</body>
+</html>

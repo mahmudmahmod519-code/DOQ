@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<script src="/app-client.js"></script>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>تقييماتي - DOQ</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "surface-dim": "#eed4d1",
+            "inverse-surface": "#3c2d2a",
+            "on-background": "#261816",
+            "secondary": "#a23f00",
+            "surface-container-highest": "#f7ddd9",
+            "on-error": "#ffffff",
+            "surface-container": "#ffe9e6",
+            "inverse-on-surface": "#ffedea",
+            "surface-container-high": "#fce2de",
+            "on-primary-fixed-variant": "#8e130c",
+            "on-primary": "#ffffff",
+            "primary-container": "#c0392b",
+            "surface-tint": "#b02d21",
+            "secondary-fixed": "#ffdbcd",
+            "on-tertiary-fixed-variant": "#004d66",
+            "tertiary": "#005875",
+            "primary-fixed": "#ffdad5",
+            "primary": "#9e2016",
+            "primary-fixed-dim": "#ffb4a9",
+            "on-primary-fixed": "#410000",
+            "surface": "#fff8f6",
+            "surface-container-low": "#fff0ee",
+            "tertiary-fixed-dim": "#80d0f8",
+            "tertiary-container": "#007296",
+            "tertiary-fixed": "#c0e8ff",
+            "error-container": "#ffdad6",
+            "on-error-container": "#93000a",
+            "secondary-fixed-dim": "#ffb595",
+            "surface-container-lowest": "#ffffff",
+            "surface-bright": "#fff8f6",
+            "on-surface-variant": "#59413d",
+            "on-secondary-container": "#5c2000",
+            "outline-variant": "#e1bfb9",
+            "on-secondary": "#ffffff",
+            "background": "#fff8f6",
+            "on-primary-container": "#ffe5e1",
+            "on-tertiary-container": "#d3eeff",
+            "secondary-container": "#fc7127",
+            "inverse-primary": "#ffb4a9",
+            "on-surface": "#261816",
+            "on-secondary-fixed-variant": "#7c2e00",
+            "on-tertiary": "#ffffff",
+            "on-secondary-fixed": "#351000",
+            "outline": "#8d706c",
+            "surface-variant": "#f7ddd9",
+            "error": "#ba1a1a"
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            full: "9999px"
+          },
+          spacing: {
+            lg: "48px",
+            xs: "4px",
+            "container-max": "1280px",
+            gutter: "24px",
+            md: "24px",
+            xl: "80px",
+            base: "8px",
+            sm: "12px"
+          },
+          fontFamily: {
+            "body-lg": ["Tajawal", "sans-serif"],
+            "headline-md": ["Cairo", "sans-serif"],
+            "display-lg-mobile": ["Cairo", "sans-serif"],
+            "label-sm": ["Tajawal", "sans-serif"],
+            "body-md": ["Tajawal", "sans-serif"],
+            "display-lg": ["Cairo", "sans-serif"]
+          },
+          fontSize: {
+            "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+            "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+            "display-lg-mobile": ["32px", { lineHeight: "40px", fontWeight: "700" }],
+            "label-sm": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "500" }],
+            "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+            "display-lg": ["48px", { lineHeight: "60px", letterSpacing: "-0.02em", fontWeight: "700" }]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Tajawal', sans-serif; background-color: #fff8f6; }
+    h1, h2, h3, h4, h5, h6, .cairo-font { font-family: 'Cairo', sans-serif; }
+    .ambient-shadow { box-shadow: 0 4px 20px rgba(192, 57, 43, 0.06); }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .review-card-enter {
+      animation: fadeInUp 0.3s ease-out;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen">
+
+  <%- include('../partials/header') %>
+
+<!-- المحتوى الرئيسي -->
+<main class="max-w-[1000px] mx-auto px-4 md:px-0 pt-32 pb-32">
+
+  <!-- الهيدر -->
+  <header class="flex items-center justify-between mb-8">
+    <div class="flex items-center gap-4">
+      <button onclick="history.back()" class="p-2 bg-surface-container-lowest rounded-full ambient-shadow hover:bg-surface-container-low transition-colors text-primary">
+        <span class="material-symbols-outlined">arrow_forward</span>
+      </button>
+      <h1 class="font-headline-md text-headline-md text-on-background cairo-font">
+        <span id="page-title">تقييماتي</span>
+      </h1>
+    </div>
+    <span id="total-count" class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-4 py-2 rounded-full">0 تقييم</span>
+  </header>
+
+  <!-- الفلاتر -->
+  <div class="flex flex-wrap gap-3 mb-6 items-center">
+    <div class="flex-1 min-w-[200px]">
+      <input type="text" id="search-input" placeholder="ابحث في تقييماتك..." class="w-full px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-background">
+    </div>
+    <div class="flex gap-2 overflow-x-auto hide-scrollbar">
+      <button class="filter-chip px-4 py-2 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm whitespace-nowrap" data-rating="">الكل</button>
+      <button class="filter-chip px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-secondary-container hover:text-secondary-container font-label-sm text-label-sm whitespace-nowrap transition-all" data-rating="5">5 ★</button>
+      <button class="filter-chip px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-secondary-container hover:text-secondary-container font-label-sm text-label-sm whitespace-nowrap transition-all" data-rating="4">4 ★</button>
+      <button class="filter-chip px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-secondary-container hover:text-secondary-container font-label-sm text-label-sm whitespace-nowrap transition-all" data-rating="3">3 ★</button>
+      <button class="filter-chip px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-secondary-container hover:text-secondary-container font-label-sm text-label-sm whitespace-nowrap transition-all" data-rating="2">2 ★</button>
+      <button class="filter-chip px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-secondary-container hover:text-secondary-container font-label-sm text-label-sm whitespace-nowrap transition-all" data-rating="1">1 ★</button>
+    </div>
+    <select id="sort-order" class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-background">
+      <option value="DESC">الأحدث أولاً</option>
+      <option value="ASC">الأقدم أولاً</option>
+    </select>
+    <button id="apply-filters" class="px-6 py-2 bg-primary text-on-primary rounded-full font-label-sm hover:bg-primary/90 transition">تطبيق</button>
+  </div>
+
+  <!-- قائمة التقييمات -->
+  <div id="reviews-list" class="space-y-4">
+    <div class="text-center py-10 text-on-surface-variant">جاري تحميل تقييماتك...</div>
+  </div>
+
+  <!-- Pagination -->
+  <div id="pagination" class="flex justify-center items-center gap-4 mt-10"></div>
+
+</main>
+
+<!-- BottomNavBar (موبايل) -->
+<nav class="fixed bottom-0 w-full rounded-t-xl z-50 md:hidden shadow-[0_-4px_20px_rgba(192,57,43,0.06)] bg-surface-container shadow-lg flex justify-around items-center p-base pb-safe-bottom rtl">
+  <a class="flex flex-col items-center justify-center text-on-surface-variant font-label-sm text-label-sm active:bg-surface-variant scale-110 transition-transform duration-300" href="#">
+    <span class="material-symbols-outlined">home</span>
+    <span>الرئيسية</span>
+  </a>
+  <a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 font-label-sm text-label-sm text-primary font-bold active:bg-surface-variant scale-110 transition-transform duration-300" href="#">
+    <span class="material-symbols-outlined">explore</span>
+    <span>اكتشف</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant font-label-sm text-label-sm active:bg-surface-variant scale-110 transition-transform duration-300" href="#">
+    <span class="material-symbols-outlined">receipt_long</span>
+    <span>طلباتي</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary font-bold font-label-sm text-label-sm active:bg-surface-variant scale-110 transition-transform duration-300" href="#">
+    <span class="material-symbols-outlined">person</span>
+    <span>الحساب</span>
+  </a>
+</nav>
+
+<!-- مودال التعديل -->
+<div id="edit-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-surface-container-lowest rounded-2xl max-w-lg w-full p-6 shadow-warm-lg max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-headline-md text-headline-md text-on-background">تعديل التقييم</h3>
+      <button onclick="closeEditModal()" class="p-2 hover:bg-surface-container-low rounded-full transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <form id="edit-form" onsubmit="submitEdit(event)">
+      <input type="hidden" id="edit-review-id">
+      <div class="mb-4">
+        <label class="font-label-sm text-label-sm text-on-surface-variant block mb-2">التقييم</label>
+        <div class="flex gap-2" id="edit-stars">
+          <button type="button" class="star-btn text-3xl text-outline-variant hover:text-secondary-container transition-colors" data-value="1">☆</button>
+          <button type="button" class="star-btn text-3xl text-outline-variant hover:text-secondary-container transition-colors" data-value="2">☆</button>
+          <button type="button" class="star-btn text-3xl text-outline-variant hover:text-secondary-container transition-colors" data-value="3">☆</button>
+          <button type="button" class="star-btn text-3xl text-outline-variant hover:text-secondary-container transition-colors" data-value="4">☆</button>
+          <button type="button" class="star-btn text-3xl text-outline-variant hover:text-secondary-container transition-colors" data-value="5">☆</button>
+        </div>
+        <input type="hidden" id="edit-rating" value="5">
+      </div>
+      <div class="mb-4">
+        <label class="font-label-sm text-label-sm text-on-surface-variant block mb-2">التعليق</label>
+        <textarea id="edit-comment" rows="3" class="w-full px-4 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-background"></textarea>
+      </div>
+      <div class="flex gap-3">
+        <button type="submit" class="flex-1 px-6 py-3 bg-primary text-on-primary rounded-xl font-label-sm hover:bg-primary/90 transition">حفظ التعديلات</button>
+        <button type="button" onclick="closeEditModal()" class="px-6 py-3 border border-outline-variant rounded-xl font-label-sm hover:bg-surface-container-low transition">إلغاء</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+    <%- include('../partials/footer') %>
+
+<script>
+  let currentPage = 1;
+  const limit = 10;
+  let selectedRating = '';
+  let currentSort = 'DESC';
+
+  function renderStars(rating) {
+    const full = Math.floor(rating);
+    let html = '';
+    for (let i = 0; i < full; i++) html += `<span class="material-symbols-outlined text-secondary-container" style="font-variation-settings:'FILL' 1;">star</span>`;
+    const empty = 5 - full;
+    for (let i = 0; i < empty; i++) html += `<span class="material-symbols-outlined text-outline-variant" style="font-variation-settings:'FILL' 0;">star</span>`;
+    return html;
+  }
+
+  function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  async function fetchMyReviews() {
+    const q = document.getElementById('search-input').value.trim();
+    const rating = selectedRating;
+    const sort = document.getElementById('sort-order').value;
+
+    const params = new URLSearchParams();
+    params.set('page', currentPage);
+    params.set('limit', limit);
+    if (q) params.set('q', q);
+    if (rating) params.set('rating', rating);
+    if (sort) params.set('sort_order', sort);
+
+    const url = `/reviews/v1/api/my?${params.toString()}`;
+
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.status !== 'success') throw new Error(data.message || 'حدث خطأ');
+      renderReviews(data);
+    } catch (err) {
+      document.getElementById('reviews-list').textContent = err.message;
+    }
+  }
+
+  function renderReviews(data) {
+    const reviews = data.data || []; reviewLookup = new Map(reviews.map(r => [Number(r.id),r]));
+    const pagination = data.pagination || { total: 0, total_pages: 1 };
+
+    document.getElementById('total-count').textContent = `${pagination.total} تقييم`;
+
+    const listContainer = document.getElementById('reviews-list');
+    if (reviews.length === 0) {
+      listContainer.innerHTML = `
+        <div class="text-center py-20">
+          <span class="material-symbols-outlined text-[64px] text-outline-variant block mb-4">rate_review</span>
+          <h3 class="font-headline-md text-headline-md text-on-surface mb-2">لم تقم بكتابة أي تقييم بعد</h3>
+          <p class="font-body-md text-body-md text-on-surface-variant">شارك تجاربك مع أطباقك المفضلة</p>
+        </div>
+      `;
+    } else {
+      listContainer.innerHTML = reviews.map(r => `
+        <div class="review-card-enter bg-surface-container-lowest rounded-2xl p-6 ambient-shadow border border-outline-variant/20 hover:shadow-warm-lg transition-shadow duration-300">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h4 class="font-headline-md text-headline-md text-on-background">${DOQ.escape(r.dish_name || 'طبق')}</h4>
+              <p class="font-body-md text-body-md text-on-surface-variant">${DOQ.escape(r.kitchen_name || 'مطبخ')}</p>
+            </div>
+            <div class="flex text-secondary-container">${renderStars(r.rating)}</div>
+          </div>
+          <p class="font-body-md text-body-md text-on-background mb-3 leading-relaxed">${DOQ.escape(r.comment || '')}</p>
+          <div class="flex justify-between items-center pt-3 border-t border-surface-variant">
+            <span class="font-label-sm text-label-sm text-outline">${formatDate(r.created_at)}</span>
+            <div class="flex gap-2">
+              <button onclick="openEditModalById(${Number(r.id)})" 
+                      class="px-4 py-1.5 rounded-lg border border-secondary-container text-secondary-container font-label-sm text-label-sm hover:bg-secondary-container/10 transition-colors">
+                تعديل
+              </button>
+              <button onclick="deleteReview(${r.id})" 
+                      class="px-4 py-1.5 rounded-lg text-error hover:bg-error-container/20 font-label-sm text-label-sm transition-colors">
+                حذف
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Pagination
+    const pagContainer = document.getElementById('pagination');
+    const totalPages = pagination.total_pages || 1;
+    let pagHtml = '';
+    pagHtml += `<button onclick="changePage(${currentPage - 1})" class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low transition ${currentPage <= 1 ? 'opacity-50 pointer-events-none' : ''}">السابق</button>`;
+    pagHtml += `<span class="font-label-sm text-label-sm text-on-surface-variant">صفحة ${currentPage} من ${totalPages}</span>`;
+    pagHtml += `<button onclick="changePage(${currentPage + 1})" class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low transition ${currentPage >= totalPages ? 'opacity-50 pointer-events-none' : ''}">التالي</button>`;
+    pagContainer.innerHTML = pagHtml;
+  }
+
+  function changePage(newPage) {
+    if (newPage < 1) return;
+    const pag = document.getElementById('pagination');
+    const totalPages = parseInt(pag.querySelector('span')?.textContent?.split('من')[1]?.trim()) || 1;
+    if (newPage > totalPages) return;
+    currentPage = newPage;
+    fetchMyReviews();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ================ DELETE ================
+  async function deleteReview(id) {
+    if (!confirm('هل أنت متأكد من حذف هذا التقييم؟')) return;
+    try {
+      const res = await fetch(`/reviews/v1/api/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.status !== 'success') throw new Error(data.message);
+      fetchMyReviews();
+    } catch (err) {
+      alert('حدث خطأ أثناء الحذف: ' + err.message);
+    }
+  }
+
+  // ================ EDIT MODAL ================
+  let editReviewId = null;
+  let editRating = 5;
+
+let reviewLookup = new Map();
+function openEditModalById(id){const review=reviewLookup.get(Number(id));if(review)openEditModal(review.id,review.rating,review.comment||'');}
+  function openEditModal(id, rating, comment) {
+    editReviewId = id;
+    editRating = rating;
+    document.getElementById('edit-review-id').value = id;
+    document.getElementById('edit-rating').value = rating;
+    document.getElementById('edit-comment').value = comment || '';
+    updateEditStars(rating);
+    document.getElementById('edit-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeEditModal() {
+    document.getElementById('edit-modal').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  function updateEditStars(rating) {
+    const stars = document.querySelectorAll('#edit-stars .star-btn');
+    stars.forEach((btn, index) => {
+      const value = index + 1;
+      if (value <= rating) {
+        btn.textContent = '★';
+        btn.className = 'star-btn text-3xl text-secondary-container hover:text-secondary-container transition-colors';
+      } else {
+        btn.textContent = '☆';
+        btn.className = 'star-btn text-3xl text-outline-variant hover:text-secondary-container transition-colors';
+      }
+    });
+    document.getElementById('edit-rating').value = rating;
+  }
+
+  document.querySelectorAll('#edit-stars .star-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const value = parseInt(btn.dataset.value);
+      updateEditStars(value);
+      editRating = value;
+    });
+  });
+
+  async function submitEdit(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit-review-id').value;
+    const rating = parseInt(document.getElementById('edit-rating').value);
+    const comment = document.getElementById('edit-comment').value.trim();
+
+    const body = {};
+    if (rating) body.rating = rating;
+    if (comment) body.comment = comment;
+
+    try {
+      const res = await fetch(`/reviews/v1/api/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (data.status !== 'success') throw new Error(data.message);
+      closeEditModal();
+      fetchMyReviews();
+    } catch (err) {
+      alert('حدث خطأ أثناء التعديل: ' + err.message);
+    }
+  }
+
+  // ================ EVENTS ================
+  document.addEventListener('DOMContentLoaded', () => {
+    // فلتر النجوم
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip').forEach(c => {
+          c.className = 'filter-chip px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-secondary-container hover:text-secondary-container font-label-sm text-label-sm whitespace-nowrap transition-all';
+        });
+        chip.className = 'filter-chip px-4 py-2 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm whitespace-nowrap';
+        selectedRating = chip.dataset.rating;
+        currentPage = 1;
+        fetchMyReviews();
+      });
+    });
+
+    document.getElementById('apply-filters').addEventListener('click', () => {
+      currentPage = 1;
+      fetchMyReviews();
+    });
+
+    document.getElementById('search-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        currentPage = 1;
+        fetchMyReviews();
+      }
+    });
+
+    document.getElementById('sort-order').addEventListener('change', () => {
+      currentPage = 1;
+      fetchMyReviews();
+    });
+
+    // إغلاق المودال عند الضغط خارجها
+    document.getElementById('edit-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeEditModal();
+    });
+
+    fetchMyReviews();
+  });
+</script>
+</body>
+</html>

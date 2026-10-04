@@ -1,0 +1,45 @@
+<!-- Bottom Navigation Bar (للموبايل فقط) -->
+<nav class="fixed bottom-0 w-full rounded-t-2xl z-50 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)] bg-white border-t border-gray-100 flex justify-around items-center py-2.5 pb-safe-bottom">
+  
+  <!-- 1. الرئيسية -->
+  <a href="/" class="flex flex-col items-center justify-center text-gray-500 font-medium text-xs hover:text-primary transition-colors active:scale-95">
+    <span class="material-symbols-outlined text-[22px]">home</span>
+    <span class="text-[11px] mt-0.5">الرئيسية</span>
+  </a>
+
+  <!-- 2. زرار متغيّر بناءً على دور المستخدم -->
+  <% if (currentUser && (currentUser.roles.includes('chef') || currentUser.roles.includes('admin'))) { %>
+    <!-- يظهر للأدمن والشيف فقط -->
+    <a href="/users/dashboard" class="flex flex-col items-center justify-center text-gray-500 font-medium text-xs hover:text-primary transition-colors active:scale-95">
+      <span class="material-symbols-outlined text-[22px]">dashboard</span>
+      <span class="text-[11px] mt-0.5">لوحة التحكم</span>
+    </a>
+  <% } else { %>
+    <!-- يظهر للعملاء والزوار فقط -->
+    <a href="/kitchens" class="flex flex-col items-center justify-center text-gray-500 font-medium text-xs hover:text-primary transition-colors active:scale-95">
+      <span class="material-symbols-outlined text-[22px]">storefront</span>
+      <span class="text-[11px] mt-0.5">العربيات</span>
+    </a>
+  <% } %>
+
+  <!-- 3. الأطباق (زرار رئيسي بارز) -->
+  <a href="/dishes" class="flex flex-col items-center justify-center text-primary font-bold text-xs transition-colors active:scale-95">
+    <div class="bg-primary/10 p-2.5 rounded-full mb-0.5 shadow-sm">
+      <span class="material-symbols-outlined text-[22px] text-primary">restaurant_menu</span>
+    </div>
+    <span class="text-[11px]">الأطباق</span>
+  </a>
+
+  <!-- 4. التقييمات -->
+  <a href="/reviews" class="flex flex-col items-center justify-center text-gray-500 font-medium text-xs hover:text-primary transition-colors active:scale-95">
+    <span class="material-symbols-outlined text-[22px]">star</span>
+    <span class="text-[11px] mt-0.5">التقييمات</span>
+  </a>
+
+  <!-- 5. الحساب الشخصي -->
+  <a href="/users/profile" class="flex flex-col items-center justify-center text-gray-500 font-medium text-xs hover:text-primary transition-colors active:scale-95">
+    <span class="material-symbols-outlined text-[22px]">person</span>
+    <span class="text-[11px] mt-0.5">الحساب</span>
+  </a>
+
+</nav>

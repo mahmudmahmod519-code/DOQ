@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+<script src="/app-client.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>من نحن - دوق | Dhouq</title>
+    <title>من نحن - دوق | DOQ - عربيات أكل الشارع</title>
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -123,37 +124,7 @@
 </head>
 <body class="bg-background text-on-surface">
 
-<!-- TopNavBar -->
-<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/20 shadow-sm">
-    <nav class="flex flex-row-reverse justify-between items-center px-lg py-md max-w-container-max mx-auto h-20">
-        <!-- Brand Logo -->
-        <div class="flex items-center gap-sm">
-            <span class="text-headline-md font-bold text-primary">دوق</span>
-        </div>
-        
-        <!-- Navigation Links -->
-        <div class="hidden md:flex items-center gap-lg">
-            <a class="text-on-surface-variant hover:text-primary transition-colors" href="/">الرئيسية</a>
-            <a class="text-on-surface-variant hover:text-primary transition-colors" href="/all-portfolios">تصفح المطابخ</a>
-            <a class="text-on-surface-variant hover:text-primary transition-colors" href="/auth">انضم كطباخ</a>
-            <a class="text-primary border-b-2 border-primary pb-1 font-semibold" href="/about">من نحن</a>
-            <a class="text-on-surface-variant hover:text-primary transition-colors" href="/faqs">الأسئلة الشائعة</a>
-        </div>
-        
-        <!-- Trailing Actions -->
-        <div class="flex items-center gap-md">
-            <% if (locals.currentUser) { %>
-                <a href="/vendor-dashboard" class="bg-primary text-on-primary px-lg py-2 rounded-full font-bold hover:scale-105 active:scale-95 transition-all duration-300">
-                    لوحة التحكم
-                </a>
-            <% } else { %>
-                <a href="/auth" class="bg-primary text-on-primary px-lg py-2 rounded-full font-bold hover:scale-105 active:scale-95 transition-all duration-300">
-                    تسجيل الدخول
-                </a>
-            <% } %>
-        </div>
-    </nav>
-</header>
+<%- include('./partials/header.ejs') %>
 
 <main class="pt-20">
 
@@ -162,18 +133,17 @@
         <div class="absolute inset-0 hero-pattern"></div>
         <div class="container max-w-container-max mx-auto px-md relative z-10 text-center">
             <h1 class="font-display-lg text-display-lg mb-md text-primary leading-tight">
-                دوق طعم البيوت..<br>
-                <span class="gradient-text">حيث ينبض الأصالة في كل لقمة</span>
+                دوق.. <span class="gradient-text">طعم الشارع المصري الأصيل</span>
             </h1>
             <p class="font-body-lg text-body-lg text-on-surface-variant max-w-3xl mx-auto mb-lg">
-                نحن نؤمن أن ألذ الوجبات هي تلك التي تُصنع بحب في مطابخ المنازل. دوق هو الجسر الذي يربطك بأمهر الطهاة المنزليين المبدعين.
+                منصة تجمع عربيات أكل الشارع المصرية في مكان واحد. اكتشف أحلى الكشري والشاورما والمشويات والفطير، واقرأ تقييمات حقيقية بنظام عادل، وكل عربية ليها قصتها.
             </p>
             <div class="flex gap-md justify-center flex-wrap">
-                <a href="/all-portfolios" class="bg-primary text-white px-xl py-md rounded-xl font-headline-md hover:scale-105 transition-all duration-300 shadow-lg">
-                    استكشف المطابخ
+                <a href="/kitchens" class="bg-primary text-white px-xl py-md rounded-xl font-headline-md hover:scale-105 transition-all duration-300 shadow-lg">
+                    استكشف العربيات
                 </a>
                 <a href="/auth" class="border-2 border-primary text-primary px-xl py-md rounded-xl font-headline-md hover:bg-primary/5 transition-all duration-300">
-                    كن شيفاً معنا
+                    ابدأ عربيتك معانا
                 </a>
             </div>
         </div>
@@ -186,22 +156,22 @@
                 <div class="relative">
                     <div class="rounded-xl overflow-hidden shadow-[0px_12px_40px_rgba(192,57,43,0.12)]">
                         <img class="w-full aspect-[4/3] object-cover" 
-                             src="https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=800&q=80" 
-                             alt="مطبخ منزلي دافئ">
+                             src="/assests/background_kitchen2.jpeg" 
+                             alt="عربية أكل في شوارع مصر">
                     </div>
                     <div class="absolute -bottom-6 -right-6 glass-card p-md rounded-xl shadow-lg border border-outline-variant/30 hidden md:block">
-                        <p class="text-secondary font-bold text-headline-md">قصتنا</p>
-                        <p class="text-on-surface-variant text-label-sm">بداية شغف.. تحول لواقع</p>
+                        <p class="text-secondary font-bold text-headline-md">من الشارع</p>
+                        <p class="text-on-surface-variant text-label-sm">للقلب مباشرة</p>
                     </div>
                 </div>
                 <div class="space-y-md">
                     <h2 class="font-display-lg text-display-lg-mobile md:text-display-lg text-primary">حكاية دوق</h2>
                     <div class="w-20 h-1.5 bg-secondary rounded-full"></div>
                     <p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
-                        بدأت "دوق" من فكرة بسيطة: لماذا تظل مهارات أمهاتنا وطهاتنا المبدعين في المنازل مخفية؟ ومن هنا انطلقنا لخلق منصة تمكن الطهاة الموهوبين من مشاركة إبداعاتهم مع العالم.
+                        كلنا عارفين طعم الفول والطعمية من عربية الشارع، والكبدة والسجق اللي ريحتها بتطير العقل! ومن هنا جت فكرة <strong>دوق</strong>: ننقل تجربة عربيات أكل الشارع المصرية الأصيلة لمنصة رقمية سهلة.
                     </p>
                     <p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
-                        نحن لا نقدم مجرد طعام، بل نقدم تجربة ثقافية أصيلة. كل وجبة تُطلب من خلال دوق هي قصة دعم لشخص مبدع، واحتفال بجودة المكونات الطازجة والطهي الذي يأتي من القلب.
+                        بنوفر لعشاق أكل الشارع مكان يجمع كل العربيات المميزة، وبنخلي أي صاحب عربية يعرض أكلاته وأسعاره وصوره، ويوصل لأكبر عدد من الزبائن. <strong>دوق</strong> مش مجرد موقع، ده بيت عربيات أكل الشارع المصري!
                     </p>
                 </div>
             </div>
@@ -216,17 +186,17 @@
                     <span class="material-symbols-outlined text-primary text-5xl mb-md">visibility</span>
                     <h3 class="font-headline-md text-display-lg-mobile text-primary mb-sm">رؤيتنا</h3>
                     <p class="font-body-lg text-body-lg text-on-surface-variant">
-                        أن نصبح الوجهة الأولى عالمياً للاستمتاع بالأكل المنزلي الأصيل، وتوسيع آفاق الاقتصاد المنزلي لتمكين آلاف المبدعين من تحويل شغفهم إلى مشاريع مستدامة وناجحة.
+                        أن نكون المنصة الأولى لعربيات أكل الشارع في مصر، ونخلي اكتشاف العربيات المميزة سهل وشفاف، ونوفر فرصة حقيقية لكل صاحب عربية يعرض شغله ويوصل لزبائن أكتر.
                     </p>
                 </div>
                 <div class="bg-primary text-white p-lg rounded-xl flex flex-col justify-center relative overflow-hidden">
                     <div class="absolute top-0 right-0 p-lg opacity-10">
-                        <span class="material-symbols-outlined text-[120px]">restaurant_menu</span>
+                        <span class="material-symbols-outlined text-[120px]">food_truck</span>
                     </div>
                     <span class="material-symbols-outlined text-secondary-container text-5xl mb-md">flag</span>
                     <h3 class="font-headline-md text-display-lg-mobile mb-sm">رسالتنا</h3>
                     <p class="font-body-md text-body-md text-on-primary-container">
-                        تقديم وجبات منزلية تتجاوز توقعات العملاء في الجودة والنكهة، مع توفير بيئة تقنية متكاملة تدعم الطهاة وتضمن وصول الطعام طازجاً وبسرعة فائقة.
+                        نساعد الناس تكتشف أحلى عربيات أكل الشارع بسهولة، وندعم أصحاب العربيات بعرض عادل وشفاف، ونخلي التقييمات حقيقية بنظام Fair Score عشان محدش يتظلم.
                     </p>
                 </div>
             </div>
@@ -239,15 +209,15 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-lg text-center">
                 <div class="space-y-sm">
                     <p class="text-primary font-bold text-6xl font-display-lg stat-number" data-target="50">+50</p>
-                    <p class="text-on-surface-variant font-headline-md">شيف معتمد</p>
+                    <p class="text-on-surface-variant font-headline-md">عربية أكل</p>
                 </div>
                 <div class="space-y-sm border-y md:border-y-0 md:border-x border-outline-variant/30 py-md md:py-0">
                     <p class="text-secondary font-bold text-6xl font-display-lg stat-number" data-target="1000">+1000</p>
-                    <p class="text-on-surface-variant font-headline-md">عميل سعيد</p>
+                    <p class="text-on-surface-variant font-headline-md">عميل مبسوط</p>
                 </div>
                 <div class="space-y-sm">
                     <p class="text-primary font-bold text-6xl font-display-lg stat-number" data-target="200">+200</p>
-                    <p class="text-on-surface-variant font-headline-md">وجبة متنوعة</p>
+                    <p class="text-on-surface-variant font-headline-md">صنف أكل</p>
                 </div>
             </div>
         </div>
@@ -256,15 +226,15 @@
     <!-- Values Section -->
     <section class="py-xl">
         <div class="container max-w-container-max mx-auto px-md">
-            <h2 class="font-display-lg text-display-lg text-center text-primary mb-xl">قيمنا الراسخة</h2>
+            <h2 class="font-display-lg text-display-lg text-center text-primary mb-xl">قيمنا اللي بتميزنا</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
                 <!-- Value Card 1 -->
                 <div class="group bg-surface p-lg rounded-xl border border-outline-variant/20 hover:border-secondary transition-all duration-500 hover:shadow-xl text-center">
                     <div class="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mx-auto mb-md group-hover:scale-110 transition-transform">
                         <span class="material-symbols-outlined text-primary text-3xl">verified</span>
                     </div>
-                    <h4 class="font-headline-md text-headline-md mb-sm text-primary">الجودة والنظافة</h4>
-                    <p class="font-body-md text-body-md text-on-surface-variant">نختار المكونات بعناية ونطبق أعلى معايير السلامة الغذائية.</p>
+                    <h4 class="font-headline-md text-headline-md mb-sm text-primary">جودة وشفافية</h4>
+                    <p class="font-body-md text-body-md text-on-surface-variant">صور حقيقية وأسعار واضحة ومكونات معروفة. كل عربية بتعرض شغلها بصراحة عشان تعرف إنت بتطلب إيه.</p>
                 </div>
 
                 <!-- Value Card 2 -->
@@ -272,8 +242,8 @@
                     <div class="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mx-auto mb-md group-hover:scale-110 transition-transform">
                         <span class="material-symbols-outlined text-primary text-3xl">handshake</span>
                     </div>
-                    <h4 class="font-headline-md text-headline-md mb-sm text-primary">الثقة والأمان</h4>
-                    <p class="font-body-md text-body-md text-on-surface-variant">شفافية كاملة في الأسعار والتعامل مع الطهاة والعملاء.</p>
+                    <h4 class="font-headline-md text-headline-md mb-sm text-primary">تقييم عادل</h4>
+                    <p class="font-body-md text-body-md text-on-surface-variant">نظام Fair Score بيحمي العربيات الجديدة وبيخلي التقييمات حقيقية، مش مجرد أرقام مضللة.</p>
                 </div>
 
                 <!-- Value Card 3 -->
@@ -281,17 +251,17 @@
                     <div class="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mx-auto mb-md group-hover:scale-110 transition-transform">
                         <span class="material-symbols-outlined text-primary text-3xl">celebration</span>
                     </div>
-                    <h4 class="font-headline-md text-headline-md mb-sm text-primary">دعم المواهب المحلية</h4>
-                    <p class="font-body-md text-body-md text-on-surface-variant">تمكين الأسر المنتجة وتحويل مهاراتهم لمصدر دخل حقيقي.</p>
+                    <h4 class="font-headline-md text-headline-md mb-sm text-primary">دعم أصحاب العربيات</h4>
+                    <p class="font-body-md text-body-md text-on-surface-variant">بنساعد أصحاب عربيات أكل الشارع يعرضوا شغلهم ويوصلوا لزبائن أكتر بسهولة وبدون تعقيدات.</p>
                 </div>
 
                 <!-- Value Card 4 -->
                 <div class="group bg-surface p-lg rounded-xl border border-outline-variant/20 hover:border-secondary transition-all duration-500 hover:shadow-xl text-center">
                     <div class="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mx-auto mb-md group-hover:scale-110 transition-transform">
-                        <span class="material-symbols-outlined text-primary text-3xl">delivery_dining</span>
+                        <span class="material-symbols-outlined text-primary text-3xl">explore</span>
                     </div>
-                    <h4 class="font-headline-md text-headline-md mb-sm text-primary">التميز في التوصيل</h4>
-                    <p class="font-body-md text-body-md text-on-surface-variant">نضمن وصول طعامك ساخناً وفي الموعد المحدد دائماً.</p>
+                    <h4 class="font-headline-md text-headline-md mb-sm text-primary">اكتشاف سهل</h4>
+                    <p class="font-body-md text-body-md text-on-surface-variant">دور على العربيات حسب المدينة أو نوع الأكل، وشوف التقييمات الحقيقية قبل ما تروح.</p>
                 </div>
             </div>
         </div>
@@ -302,14 +272,14 @@
         <div class="container max-w-container-max mx-auto px-md">
             <div class="bg-gradient-to-l from-primary to-primary-container rounded-3xl p-xl text-white relative overflow-hidden">
                 <div class="relative z-10 text-center max-w-2xl mx-auto">
-                    <h2 class="font-display-lg text-display-lg-mobile md:text-display-lg mb-md">هل أنت مستعد لتجربة "دوق"؟</h2>
-                    <p class="font-body-lg text-body-lg mb-lg text-on-primary-container">انضم إلينا اليوم واستمتع بأشهى الأطباق المحضرة خصيصاً لك.</p>
+                    <h2 class="font-display-lg text-display-lg-mobile md:text-display-lg mb-md">جهز نفسك لأكلة شارع مصرية أصيلة!</h2>
+                    <p class="font-body-lg text-body-lg mb-lg text-on-primary-container">دوق.. مش مجرد أكل، ده طعم الشارع المصري الأصيل. استكشف العربيات النهاردة واكتشف أحلى الأكلات.</p>
                     <div class="flex flex-col sm:flex-row gap-md justify-center">
-                        <a href="/all-portfolios" class="bg-white text-primary px-xl py-md rounded-xl font-headline-md hover:bg-surface-bright transition-colors">
-                            استكشف المطابخ
+                        <a href="/kitchens" class="bg-white text-primary px-xl py-md rounded-xl font-headline-md hover:bg-surface-bright transition-colors">
+                            استكشف العربيات
                         </a>
                         <a href="/auth" class="bg-secondary text-white px-xl py-md rounded-xl font-headline-md hover:bg-secondary/90 transition-colors">
-                            انضم كشيف
+                            ابدأ عربيتك
                         </a>
                     </div>
                 </div>
@@ -319,24 +289,7 @@
     </section>
 
 </main>
-
-<!-- Footer -->
-<footer class="w-full mt-xl bg-surface-container border-t border-outline-variant/20">
-    <div class="flex flex-col md:flex-row justify-between items-center py-lg px-xl max-w-container-max mx-auto">
-        <div class="mb-md md:mb-0">
-            <span class="font-headline-md text-headline-md text-primary font-bold">دوق</span>
-            <p class="text-on-surface-variant text-label-sm mt-sm">فن التذوق المنزلي</p>
-        </div>
-        <div class="flex gap-lg flex-wrap justify-center">
-            <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">سياسة الخصوصية</a>
-            <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">شروط الخدمة</a>
-            <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="/contact">اتصل بنا</a>
-        </div>
-        <p class="font-label-sm text-label-sm text-on-surface-variant/70 mt-md md:mt-0">
-            © 2026 دوق. جميع الحقوق محفوظة.
-        </p>
-    </div>
-</footer>
+    <%- include('./partials/footer') %>
 
 <script>
     // ============================================

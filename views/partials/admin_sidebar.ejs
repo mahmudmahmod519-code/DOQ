@@ -1,0 +1,81 @@
+<!-- Sidebar Overlay (للموبايل فقط) -->
+<div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 hidden lg:hidden"></div>
+
+<!-- Sidebar (Drawer على الموبايل، ثابت على الديسكتوب) -->
+<aside id="sidebar" class="fixed right-0 top-0 h-full w-72 bg-surface-container-lowest shadow-xl z-50 flex flex-col justify-between py-6 transform translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+    <div class="flex flex-col gap-6">
+        <div class="flex items-center justify-between px-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white text-[22px]" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-bold text-xl text-primary leading-tight">دوق DOQ</span>
+                    <span class="text-xs text-on-surface-variant">لوحة الإدارة</span>
+                </div>
+            </div>
+            <!-- زر الإغلاق للموبايل -->
+            <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-surface-container transition-colors">
+                <span class="material-symbols-outlined text-on-surface-variant">close</span>
+            </button>
+        </div>
+
+        <% 
+            // دالة مساعدة لتحديد كلاس الرابط النشط تلقائياً
+            const getLinkClass = (page) => {
+                if (typeof activePage !== 'undefined' && activePage === page) {
+                    return "flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container font-semibold rounded-xl shadow-sm";
+                }
+                return "flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all";
+            };
+        %>
+
+        <nav class="flex flex-col gap-1 px-4">
+            <a href="/users/dashboard" class="<%= getLinkClass('admin') %>">
+                <span class="material-symbols-outlined text-[22px]">dashboard</span><span>لوحة التحكم</span>
+            </a>
+            <a href="/users" class="<%= getLinkClass('users') %>">
+                <span class="material-symbols-outlined text-[22px]">group</span><span>المستخدمين</span>
+            </a>
+            <a href="/kitchens" class="<%= getLinkClass('kitchens') %>">
+                <span class="material-symbols-outlined text-[22px]">storefront</span><span>المطابخ</span>
+            </a>
+            <a href="/dishes" class="<%= getLinkClass('dishes') %>">
+                <span class="material-symbols-outlined text-[22px]">flatware</span><span>الأطباق</span>
+            </a>
+            <a href="/categories" class="<%= getLinkClass('categories') %>">
+                <span class="material-symbols-outlined text-[22px]">category</span><span>التصنيفات</span>
+            </a>
+            <a href="/reviews" class="<%= getLinkClass('reviews') %>">
+                <span class="material-symbols-outlined text-[22px]">star</span><span>التقييمات</span>
+            </a>
+            <a href="/admin/operations" class="<%= getLinkClass('operations') %>">
+                <span class="material-symbols-outlined text-[22px]">assignment</span><span>تشغيل الحسابات والطلبات</span>
+            </a>
+        </nav>
+    </div>
+
+    <div class="px-4">
+        <a href="/auth/logout" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-error hover:bg-error-container transition-all">
+            <span class="material-symbols-outlined text-[22px]">logout</span><span>تسجيل الخروج</span>
+        </a>
+    </div>
+</aside>
+
+<!-- Script الخاص بفتح وإغلاق القائمة (يوضع هنا لضمان عمله في أي صفحة) -->
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        if (sidebar.classList.contains('translate-x-full')) {
+            sidebar.classList.remove('translate-x-full');
+            overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // منع التمرير في الخلفية
+        } else {
+            sidebar.classList.add('translate-x-full');
+            overlay.classList.add('hidden');
+            document.body.style.overflow = ''; // إعادة التمرير
+        }
+    }
+</script>

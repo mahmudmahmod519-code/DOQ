@@ -53,7 +53,7 @@ module.exports = (resourceType) => {
             next();
             
         } catch (error) {
-            console.error('Owner Check Error:', error);
+            console.error('Owner Check Error:', error && error.message);
             res.status(500).json({
                 status: 'error',
                 message: 'حدث خطأ أثناء التحقق من الملكية'

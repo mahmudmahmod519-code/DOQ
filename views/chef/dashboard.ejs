@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<script src="/app-client.js"></script>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>لوحة تحكم الشيف | دوق DOQ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#9e2016",
+            "primary-container": "#c0392b",
+            "on-primary": "#ffffff",
+            "on-primary-container": "#ffe5e1",
+            "secondary": "#a23f00",
+            "secondary-container": "#fc7127",
+            "on-secondary": "#ffffff",
+            "background": "#fff8f6",
+            "surface": "#fff8f6",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#fff0ee",
+            "surface-container": "#ffe9e6",
+            "surface-container-high": "#fce2de",
+            "on-surface": "#261816",
+            "on-surface-variant": "#59413d",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "tertiary": "#005875",
+            "tertiary-container": "#007296",
+            "outline-variant": "#e1bfb9"
+          },
+          fontFamily: {
+            sans: ["Tajawal", "sans-serif"],
+            cairo: ["Cairo", "sans-serif"],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Tajawal', sans-serif; }
+    h1, h2, h3, h4, h5, h6 { font-family: 'Cairo', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #e1bfb9; border-radius: 10px; }
+    .slide-in-left { animation: slideInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+    @keyframes slideInLeft { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased">
+
+    <%- include('../partials/chef_sidebar', { activePage: 'dashboard' }) %>
+
+
+  <!-- Main Content Wrapper -->
+  <div class="transition-all duration-300">
+    <!-- Header -->
+    <header class="fixed top-0 right-0 lg:right-72 left-0 h-16 bg-surface/80 backdrop-blur-xl shadow-sm z-40 flex items-center justify-between px-4 md:px-8 border-b border-outline-variant/20">
+      <div class="flex items-center gap-3 flex-1">
+        <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-surface-container transition-colors">
+          <span class="material-symbols-outlined text-on-surface text-[24px]">menu</span>
+        </button>
+        <div class="flex items-center gap-2 text-sm text-on-surface-variant">
+          <span class="material-symbols-outlined text-[18px] hidden sm:inline">home</span>
+          <span class="hidden sm:inline">/</span>
+          <span class="text-on-surface font-semibold">لوحة التحكم الرئيسية</span>
+        </div>
+        <div class="hidden md:flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-full mr-2">
+          <span class="w-2 h-2 rounded-full bg-secondary-container animate-pulse"></span>
+          <span class="text-xs text-on-surface-variant">مطبخك يعمل بنشاط</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold">
+          <%= (currentUser?.first_name || 'ش').charAt(0).toUpperCase() %>
+        </div>
+      </div>
+    </header>
+
+    <main class="w-full pt-20 px-4 md:px-8 lg:pr-72 pb-16 bg-surface min-h-screen">
+      <div class="flex flex-col w-full space-y-6 md:space-y-8">
+
+        <!-- Welcome Banner -->
+        <section class="relative overflow-hidden rounded-xl bg-surface-container-lowest p-5 md:p-8 shadow-sm border border-outline-variant/30">
+          <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div class="flex flex-col space-y-2">
+              <div class="flex items-center gap-2 text-secondary text-sm font-medium">
+                <span class="inline-block w-2 h-2 rounded-full bg-secondary-container animate-ping"></span>
+                <span>لوحة العمليات الحية • أداء مطبخك</span>
+              </div>
+              <h1 class="text-2xl md:text-4xl font-cairo font-bold text-primary tracking-tight">
+                أهلاً بك يا شيف 🍲
+              </h1>
+              <p class="text-on-surface-variant max-w-2xl text-sm md:text-base">
+                نظرة عامة ومباشرة على تقييمات عملائك، أداء أطباقك، ومؤشر الجودة الخاص بك.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Primary Stats (4 Cards) -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5" id="stats-grid">
+          <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 animate-pulse h-36"></div>
+          <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 animate-pulse h-36"></div>
+          <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 animate-pulse h-36"></div>
+          <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 animate-pulse h-36"></div>
+        </section>
+
+        <!-- Main Grid: Tables + Sidebar widgets -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- Left: Tables (8 cols) -->
+          <div class="lg:col-span-8 flex flex-col space-y-6">
+
+            <!-- Latest Dishes Table -->
+            <section class="rounded-xl bg-surface-container-lowest p-5 md:p-6 shadow-sm border border-outline-variant/30">
+              <div class="flex items-center justify-between mb-6">
+                <div>
+                  <h2 class="text-lg md:text-xl font-cairo font-semibold text-on-surface">أحدث الأطباق المضافة</h2>
+                  <p class="text-xs md:text-sm text-on-surface-variant">آخر ما تم إضافته إلى قائمة طعامك</p>
+                </div>
+                <a href="/dishes" class="text-sm text-primary font-medium hover:underline whitespace-nowrap">إدارة الأطباق ←</a>
+              </div>
+              <div class="overflow-x-auto -mx-5 md:-mx-6 px-5 md:px-6">
+                <table class="w-full text-sm min-w-[600px]">
+                  <thead>
+                    <tr class="border-b border-surface-container text-on-surface-variant text-right">
+                      <th class="p-3 font-medium whitespace-nowrap">اسم الطبق</th>
+                      <th class="p-3 font-medium whitespace-nowrap">السعر</th>
+                      <th class="p-3 font-medium whitespace-nowrap">التقييم</th>
+                      <th class="p-3 font-medium whitespace-nowrap">عدد التقييمات</th>
+                      <th class="p-3 font-medium whitespace-nowrap">تاريخ الإضافة</th>
+                    </tr>
+                  </thead>
+                  <tbody id="latest-dishes-body">
+                    <tr><td colspan="5" class="p-8 text-center text-on-surface-variant">جاري التحميل...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- Latest Reviews Feed -->
+            <section class="rounded-xl bg-surface-container-lowest p-5 md:p-6 shadow-sm border border-outline-variant/30">
+              <div class="flex items-center justify-between mb-6">
+                <div>
+                  <h2 class="text-lg md:text-xl font-cairo font-semibold text-on-surface">أحدث التقييمات</h2>
+                  <p class="text-xs md:text-sm text-on-surface-variant">آراء حقيقية من متذوقي أطباقك</p>
+                </div>
+                <a href="/reviews" class="text-sm text-primary font-medium hover:underline whitespace-nowrap">عرض الكل ←</a>
+              </div>
+              <div class="space-y-4" id="latest-reviews">
+                <div class="p-4 rounded-xl bg-surface-container-low animate-pulse h-20"></div>
+                <div class="p-4 rounded-xl bg-surface-container-low animate-pulse h-20"></div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Right: Top Dishes + Alerts (4 cols) -->
+          <div class="lg:col-span-4 flex flex-col space-y-6">
+
+            <!-- Top 5 Dishes by Fair Score -->
+            <section class="rounded-xl bg-surface-container-lowest p-5 md:p-6 shadow-sm border border-outline-variant/30">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-lg font-cairo font-semibold text-on-surface">أفضل 5 أطباق</h2>
+                  <p class="text-xs text-on-surface-variant">وفقاً لمؤشر Fair Score</p>
+                </div>
+                <span class="material-symbols-outlined text-[24px] text-secondary" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+              </div>
+              <div class="space-y-3" id="top-dishes">
+                <div class="p-3 rounded-xl bg-surface-container-low animate-pulse h-14"></div>
+                <div class="p-3 rounded-xl bg-surface-container-low animate-pulse h-14"></div>
+              </div>
+            </section>
+
+            <!-- Rating Distribution -->
+            <section class="rounded-xl bg-surface-container-lowest p-5 md:p-6 shadow-sm border border-outline-variant/30">
+              <h3 class="text-lg font-cairo font-semibold text-on-surface mb-4">توزيع التقييمات</h3>
+              <div class="space-y-3" id="rating-distribution">
+                <!-- filled by JS -->
+              </div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // ============================================
+    // Sidebar Toggle
+    // ============================================
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar.classList.contains('translate-x-full')) {
+            sidebar.classList.remove('translate-x-full');
+            overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        } else {
+            sidebar.classList.add('translate-x-full');
+            overlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    }
+
+    // ============================================
+    // Dashboard Logic
+    // ============================================
+    async function loadChefDashboard() {
+      try {
+        // جلب التقييمات والإحصائيات والأطباق في طلبين متوازيين
+        const [reviewsRes, dishesRes] = await Promise.all([
+          fetch('/reviews/v1/api/chef?include_stats=true&limit=5'),
+          fetch('/dishes/v1/api/my?limit=5')
+        ]);
+
+        const reviewsJson = await reviewsRes.json();
+        const dishesJson = await dishesRes.json();
+
+        if (reviewsJson.status !== 'success' || dishesJson.status !== 'success') {
+          console.error('Dashboard error:', reviewsJson.message || dishesJson.message);
+          return;
+        }
+
+        const stats = reviewsJson.data.stats || {};
+        const latestReviews = reviewsJson.data.reviews || [];
+        const topDishes = reviewsJson.data.top_dishes || [];
+        const latestDishes = dishesJson.data || [];
+        const totalDishes = dishesJson.pagination?.total || 0;
+
+        renderChefStats(stats, totalDishes);
+        renderLatestDishes(latestDishes);
+        renderLatestReviews(latestReviews);
+        renderTopDishes(topDishes);
+        renderRatingDistribution(stats.rating_distribution);
+
+      } catch (err) {
+        console.error('Failed to load dashboard:', err);
+      }
+    }
+
+    // ---------- Stats Cards ----------
+    function renderChefStats(stats, totalDishes) {
+      const grid = document.getElementById('stats-grid');
+      const totalReviews = stats.total_reviews || 0;
+      const avgRating = stats.average_rating || '0.0';
+      const fairScore = stats.fair_score || avgRating;
+
+      grid.innerHTML = `
+        <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 hover:shadow-md transition-all">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-sm text-on-surface-variant">إجمالي الأطباق</span>
+            <div class="w-11 h-11 rounded-xl bg-surface-container-high flex items-center justify-center text-primary-container">
+              <span class="material-symbols-outlined text-[24px]">soup_kitchen</span>
+            </div>
+          </div>
+          <div class="flex items-baseline justify-between">
+            <span class="text-2xl md:text-3xl font-cairo font-bold text-on-surface">${formatNumber(totalDishes)}</span>
+          </div>
+          <p class="mt-2 text-xs text-on-surface-variant/80">طبق متاح حالياً في القائمة</p>
+        </div>
+
+        <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 hover:shadow-md transition-all">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-sm text-on-surface-variant">إجمالي التقييمات</span>
+            <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-tertiary">
+              <span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">stars</span>
+            </div>
+          </div>
+          <div class="flex items-baseline justify-between">
+            <span class="text-2xl md:text-3xl font-cairo font-bold text-on-surface">${formatNumber(totalReviews)}</span>
+          </div>
+          <p class="mt-2 text-xs text-on-surface-variant/80">تقييم موثق من العملاء</p>
+        </div>
+
+        <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 hover:shadow-md transition-all">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-sm text-on-surface-variant">متوسط التقييم</span>
+            <div class="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center text-secondary">
+              <span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">star</span>
+            </div>
+          </div>
+          <div class="flex items-baseline justify-between">
+            <span class="text-2xl md:text-3xl font-cairo font-bold text-on-surface">${avgRating}</span>
+            <span class="text-sm text-secondary">★</span>\n          </div>
+          <p class="mt-2 text-xs text-on-surface-variant/80">من أصل 5.0 نجوم</p>
+        </div>
+
+        <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 hover:shadow-md transition-all">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-sm text-on-surface-variant">مؤشر الجودة</span>
+            <div class="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined text-[24px]">verified</span>
+            </div>
+          </div>
+          <div class="flex items-baseline justify-between">
+            <span class="text-2xl md:text-3xl font-cairo font-bold text-primary">${fairScore}</span>
+          </div>
+          <p class="mt-2 text-xs text-on-surface-variant/80">Fair Score (موثوق)</p>
+        </div>
+      `;
+    }
+
+    // ---------- Latest Dishes Table ----------
+    function renderLatestDishes(dishes) {
+      const tbody = document.getElementById('latest-dishes-body');
+      if (!dishes || dishes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-on-surface-variant">لم تقم بإضافة أطباق بعد</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = dishes.map(dish => `
+        <tr class="border-b border-surface-container-low hover:bg-surface-container-low/60 transition-colors">
+          <td class="p-3.5">
+            <div class="font-semibold text-on-surface whitespace-nowrap">${escapeHtml(dish.name)}</div>
+          </td>
+          <td class="p-3.5 text-on-surface whitespace-nowrap font-medium">${dish.price || 0} ج.م</td>
+          <td class="p-3.5">
+            <span class="inline-flex items-center gap-1 font-semibold text-secondary bg-surface-container px-2 py-0.5 rounded-md text-sm whitespace-nowrap">
+              ${dish.avg_rating || 'جديد'} ★
+            </span>
+          </td>
+          <td class="p-3.5 text-on-surface-variant whitespace-nowrap">${dish.reviews_count || 0}</td>
+          <td class="p-3.5 text-on-surface-variant text-xs whitespace-nowrap">${formatDate(dish.created_at)}</td>
+        </tr>
+      `).join('');
+    }
+
+    // ---------- Latest Reviews ----------
+    function renderLatestReviews(reviews) {
+      const container = document.getElementById('latest-reviews');
+      if (!reviews || reviews.length === 0) {
+        container.innerHTML = `<p class="text-center text-on-surface-variant py-6">لا توجد تقييمات جديدة بعد</p>`;
+        return;
+      }
+
+      container.innerHTML = reviews.map(r => {
+        const initials = getInitials(r.first_name + ' ' + r.last_name);
+        const stars = renderStars(r.rating);
+        return `
+          <div class="p-4 rounded-xl bg-surface-container-low flex flex-col md:flex-row md:items-center justify-between gap-4 border border-outline-variant/20">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm shrink-0">
+                ${initials}
+              </div>
+              <div class="flex flex-col min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold text-on-surface text-sm truncate">${escapeHtml(r.first_name + ' ' + r.last_name)}</span>
+                  <span class="text-xs text-on-surface-variant truncate">• ${escapeHtml(r.dish_name)}</span>
+                </div>
+                <div class="flex items-center gap-1 text-secondary my-1">
+                  ${stars}
+                </div>
+                <p class="text-sm text-on-surface-variant line-clamp-2">${escapeHtml(r.comment || 'لم يترك تعليقاً')}</p>
+              </div>
+            </div>
+            <div class="text-xs text-on-surface-variant/80 shrink-0 whitespace-nowrap">
+              ${formatDate(r.created_at)}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ---------- Top Dishes by Fair Score ----------
+    function renderTopDishes(dishes) {
+      const container = document.getElementById('top-dishes');
+      if (!dishes || dishes.length === 0) {
+        container.innerHTML = `<p class="text-center text-on-surface-variant py-4 text-sm">لا توجد بيانات كافية</p>`;
+        return;
+      }
+
+      container.innerHTML = dishes.slice(0, 5).map((dish, i) => `
+        <div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors border border-outline-variant/20">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="w-6 h-6 rounded-full ${i === 0 ? 'bg-secondary-container text-white' : 'bg-surface-container-high text-primary'} font-semibold text-xs flex items-center justify-center shrink-0">
+              ${i + 1}
+            </span>
+            <div class="min-w-0">
+              <div class="font-semibold text-on-surface text-sm truncate">${escapeHtml(dish.name)}</div>
+              <div class="text-xs text-on-surface-variant truncate">${dish.reviews_count || 0} تقييم</div>
+            </div>
+          </div>
+          <div class="text-left shrink-0">
+            <span class="font-semibold text-sm text-secondary bg-white px-2.5 py-1 rounded-lg shadow-sm whitespace-nowrap">
+              ${dish.fair_score || dish.avg_rating || '—'} ★
+            </span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ---------- Rating Distribution ----------
+    function renderRatingDistribution(dist) {
+      const container = document.getElementById('rating-distribution');
+      if (!container) return;
+
+      if (!dist) {
+        container.innerHTML = '<p class="text-center text-on-surface-variant text-sm py-4">لا توجد بيانات كافية</p>';
+        return;
+      }
+
+      let ratingsData = {};
+      let total = 0;
+
+      if (typeof dist === 'object') {
+        ratingsData = dist;
+        total = Object.values(ratingsData).reduce((a, b) => a + Number(b), 0) || 1;
+      }
+
+      if (total === 0 || Object.keys(ratingsData).length === 0) {
+        container.innerHTML = '<p class="text-center text-on-surface-variant text-sm py-4">لا توجد تقييمات بعد</p>';
+        return;
+      }
+
+      const stars = [5, 4, 3, 2, 1];
+
+      container.innerHTML = stars.map(s => {
+        const count = Number(ratingsData[s] || ratingsData[String(s)] || 0);
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        
+        return `
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-on-surface-variant w-8 flex-shrink-0 font-medium">${s} ★</span>
+            <div class="flex-1 h-2.5 bg-surface-container rounded-full overflow-hidden">
+              <div class="h-full bg-secondary-container rounded-full transition-all duration-500 ease-out" style="width: ${pct}%"></div>
+            </div>
+            <span class="text-xs text-on-surface-variant w-10 text-left flex-shrink-0 font-bold">${count}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ---------- Helpers ----------
+    function formatNumber(n) {
+      return Number(n || 0).toLocaleString('ar-EG');
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '—';
+      const d = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now - d;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 60) return `منذ ${diffMins} دقيقة`;
+      if (diffHours < 24) return `منذ ${diffHours} ساعة`;
+      if (diffDays < 7) return `منذ ${diffDays} يوم`;
+      return d.toLocaleDateString('ar-EG');
+    }
+
+    function getInitials(name) {
+      if (!name || name === 'undefined undefined') return '؟';
+      const parts = name.trim().split(' ');
+      if (parts.length >= 2) return parts[0][0] + parts[1][0];
+      return parts[0][0] || '؟';
+    }
+
+    function renderStars(rating) {
+      let html = '';
+      for (let i = 1; i <= 5; i++) {
+        const filled = i <= rating ? "style=\"font-variation-settings: 'FILL' 1;\"" : '';
+        html += `<span class="material-symbols-outlined text-[16px]" ${filled}>star</span>`;
+      }
+      return html;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Start
+    document.addEventListener('DOMContentLoaded', loadChefDashboard);
+  </script>
+</body>
+</html>

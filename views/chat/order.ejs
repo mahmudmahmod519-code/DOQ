@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<script src="/app-client.js"></script>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>محادثة الطلب | دوق DOQ</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+    
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-low": "#fff0ee",
+                        "primary-fixed-dim": "#ffb4a9",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#eed4d1",
+                        "surface": "#fff8f6",
+                        "outline": "#8d706c",
+                        "on-surface": "#261816",
+                        "on-primary-container": "#ffe5e1",
+                        "on-tertiary": "#ffffff",
+                        "surface-variant": "#f7ddd9",
+                        "inverse-on-surface": "#ffedea",
+                        "on-tertiary-fixed-variant": "#004d66",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#9e2016",
+                        "primary-container": "#c0392b",
+                        "primary-fixed": "#ffdad5",
+                        "inverse-primary": "#ffb4a9",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-container": "#d3eeff",
+                        "on-primary-fixed": "#410000",
+                        "tertiary-fixed": "#c0e8ff",
+                        "surface-container": "#ffe9e6",
+                        "on-surface-variant": "#59413d",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#351000",
+                        "on-background": "#261816",
+                        "on-secondary-fixed-variant": "#7c2e00",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#fce2de",
+                        "tertiary": "#005875",
+                        "secondary": "#a23f00",
+                        "outline-variant": "#e1bfb9",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#f7ddd9",
+                        "tertiary-container": "#007296",
+                        "secondary-container": "#fc7127",
+                        "on-tertiary-fixed": "#001e2b",
+                        "surface-bright": "#fff8f6",
+                        "on-secondary-container": "#5c2000",
+                        "on-error-container": "#93000a",
+                        "background": "#fff8f6",
+                        "inverse-surface": "#3c2d2a"
+                    },
+                    spacing: {
+                        "sm": "12px",
+                        "container-max": "1280px",
+                        "xs": "4px",
+                        "xl": "80px",
+                        "xs": "4px",
+                        "md": "24px",
+                        "lg": "48px",
+                        "base": "8px"
+                    },
+                    fontFamily: {
+                        "sans": ["Tajawal", "sans-serif"],
+                        "label-sm": ["Tajawal"],
+                        "body-lg": ["Tajawal"],
+                        "headline-md": ["Cairo"],
+                        "display-lg": ["Cairo"],
+                        "body-md": ["Tajawal"],
+                        "display-lg-mobile": ["Cairo"]
+                    },
+                    fontSize: {
+                        "label-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "display-md": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "800"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    },
+                    boxShadow: {
+                        'culinary': '0px 4px 20px rgba(192, 57, 43, 0.06)',
+                        'soft': '0px 2px 8px rgba(38, 24, 22, 0.04)'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .message-bubble {
+            animation: fadeInUp 0.3s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-container {
+            scroll-behavior: smooth;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e1bfb9; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-sans selection:bg-secondary-container selection:text-on-secondary-container">
+
+    <%- include('../partials/header') %>
+
+    <main class="min-h-screen pt-20 md:pt-24 pb-12 flex flex-col">
+        <section class="max-w-[1280px] mx-auto px-3 sm:px-4 lg:px-6 flex-1 flex flex-col">
+            <!-- Header المحادثة -->
+            <div class="bg-white rounded-2xl shadow-soft border border-outline-variant/10 mb-4 overflow-hidden">
+                <div class="p-4 border-b border-outline-variant/10 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <a href="javascript:history.back()" class="p-2 rounded-lg hover:bg-surface-container-low transition-colors text-on-surface-variant">
+                            <span class="material-symbols-outlined">arrow_forward</span>
+                        </a>
+                        <div>
+                            <h1 class="font-bold text-on-surface" id="chatTitle">محادثة الطلب</h1>
+                            <p class="text-sm text-on-surface-variant" id="chatSubtitle">كود الطلب: <span id="orderCode">—</span></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="statusChip" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900">مفتوح</span>
+                    </div>
+                </div>
+
+                <!-- رسائل النظام -->
+                <div id="systemMessages" class="px-4 py-2 hidden" role="log" aria-live="polite"></div>
+            </div>
+
+            <!-- منطقة المحادثة -->
+            <div class="bg-white rounded-2xl shadow-soft border border-outline-variant/10 flex-1 flex flex-col overflow-hidden min-h-[500px] md:min-h-[600px]">
+                <div id="messagesContainer" class="chat-container flex-1 overflow-y-auto p-4 space-y-4" role="log" aria-live="polite" aria-label="رسائل المحادثة">
+                    <!-- حالة التحميل -->
+                    <div id="loadingState" class="flex flex-col items-center justify-center h-64 text-on-surface-variant">
+                        <div class="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p>جاري تحميل المحادثة...</p>
+                    </div>
+                    
+                    <!-- حالة فارغة -->
+                    <div id="emptyState" class="hidden flex flex-col items-center justify-center h-64 text-on-surface-variant">
+                        <span class="material-symbols-outlined text-6xl mb-4">chat_bubble_outline</span>
+                        <p class="text-center">لا توجد رسائل بعد</p>
+                        <p class="text-sm text-center">كن أول من يبدأ المحادثة</p>
+                    </div>
+                </div>
+
+                <!-- مؤشر الكتابة -->
+                <div id="typingIndicator" class="hidden px-4 py-2 border-t border-outline-variant/10">
+                    <div class="flex items-center gap-2 text-sm text-on-surface-variant">
+                        <span class="material-symbols-outlined animate-pulse">record_voice_over</span>
+                        <span>يكتب رسالة...</span>
+                    </div>
+                </div>
+
+                <!-- نموذج الإرسال -->
+                <form id="messageForm" class="p-4 border-t border-outline-variant/10 bg-surface-container-low/30" onsubmit="sendMessage(event)">
+                    <div class="flex items-end gap-3">
+                        <div class="flex-1 relative">
+                            <textarea 
+                                id="messageInput" 
+                                rows="1" 
+                                maxlength="1000" 
+                                placeholder="اكتب رسالتك هنا... (حد أقصى 1000 حرف)"
+                                class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-3 pr-12 text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all resize-none text-base"
+                                aria-label="نص الرسالة"
+                            ></textarea>
+                            <div class="absolute bottom-2 left-2 text-xs text-on-surface-variant/60" id="charCount">0 / 1000</div>
+                        </div>
+                        <button 
+                            type="submit" 
+                            id="sendBtn"
+                            class="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center hover:bg-primary-container transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label="إرسال الرسالة"
+                            disabled
+                        >
+                            <span class="material-symbols-outlined text-2xl">send</span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-on-surface-variant/70 text-center mt-2">
+                        <span class="material-symbols-outlined text-[12px] align-middle">shield</span>
+                        لحماية خصوصيتك: يتم إخفاء أرقام الهواتف والروابط ومعلومات الاتصال تلقائياً
+                    </p>
+                </form>
+            </div>
+
+            <!-- معلومات الطلب -->
+            <div class="mt-4 bg-white rounded-2xl shadow-soft border border-outline-variant/10 p-4" id="orderInfo" style="display: none;">
+                <h3 class="font-bold text-on-surface mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary">receipt_long</span>
+                    تفاصيل الطلب
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm" id="orderDetails">
+                    <!-- سيتم تعبئتها بواسطة JavaScript -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <script>
+        // قراءة معرف الطلب من الرابط
+        const urlParams = new URLSearchParams(window.location.search);
+        const publicId = urlParams.get('id') || urlParams.get('publicId');
+        
+        let messages = [];
+        let currentUser = null;
+        let pollingInterval = null;
+        const POLL_INTERVAL = 5000; // 5 ثوانٍ
+
+        function showError(message) {
+            // يمكن إضافة toast notification هنا
+            console.error(message);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - d;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return 'الآن';
+            if (diffMins < 60) return `منذ ${diffMins} دقيقة`;
+            if (diffHours < 24) return `منذ ${diffHours} ساعة`;
+            if (diffDays < 7) return `منذ ${diffDays} يوم`;
+            return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function formatTime(dateStr) {
+            if (!dateStr) return '';
+            return new Date(dateStr).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&')
+                .replace(/</g, '<')
+                .replace(/>/g, '>')
+                .replace(/"/g, '"');
+        }
+
+        function renderMessage(msg) {
+            const isMine = msg.sender_id === currentUser?.id;
+            const isSystem = msg.is_system === true;
+            const time = formatTime(msg.created_at);
+            
+            if (isSystem) {
+                return `
+                    <div class="flex justify-center message-bubble" data-message-id="${msg.id}">
+                        <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 max-w-md text-center">
+                            <p class="text-sm text-amber-900">${escapeHtml(msg.body)}</p>
+                            <p class="text-xs text-amber-700/70 mt-1">${time}</p>
+                        </div>
+                    </div>`;
+            }
+            
+            const bubbleClass = isMine 
+                ? 'bg-primary text-white rounded-2xl rounded-bl-md' 
+                : 'bg-surface-container-low rounded-2xl rounded-br-md';
+            
+            const senderName = isMine ? 'أنت' : (msg.sender_name || 'المستخدم');
+            const senderRole = msg.sender_role ? ` <span class="px-2 py-0.5 rounded-full text-[10px] bg-white/30">${escapeHtml(msg.sender_role)}</span>` : '';
+            
+            return `
+                <div class="flex ${isMine ? 'justify-end' : 'justify-start'} message-bubble" data-message-id="${msg.id}">
+                    <div class="max-w-[70%] ${bubbleClass} px-4 py-3 shadow-sm">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-medium text-sm ${isMine ? 'text-white/90' : 'text-on-surface'}">${escapeHtml(senderName)}${senderRole}</span>
+                            <span class="text-xs ${isMine ? 'text-white/60' : 'text-on-surface-variant/70'}">${time}</span>
+                        </div>
+                        <p class="text-base leading-relaxed ${isMine ? 'text-white' : 'text-on-surface'} whitespace-pre-wrap">${escapeHtml(msg.body)}</p>
+                    </div>
+                </div>`;
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('messagesContainer');
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            
+            loadingState.style.display = 'none';
+            
+            if (!messages || messages.length === 0) {
+                emptyState.style.display = 'flex';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            let html = '';
+            messages.forEach(msg => {
+                html += renderMessage(msg);
+            });
+            
+            container.innerHTML = html;
+            scrollToBottom(false);
+        }
+
+        function scrollToBottom(smooth = true) {
+            const container = document.getElementById('messagesContainer');
+            if (smooth) {
+                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+            } else {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        async function fetchMessages() {
+            if (!publicId) return;
+            
+            try {
+                const response = await fetch(`/platform/chat/${publicId}`, {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.data) {
+                    const newMessages = data.data.messages || [];
+                    const order = data.data.order;
+                    
+                    // تحديث معلومات الطلب
+                    if (order) updateOrderInfo(order);
+                    
+                    // تحديث العنوان
+                    updateChatHeader(order);
+                    
+                    // التحقق من رسائل جديدة
+                    const hasNewMessages = newMessages.length > messages.length;
+                    const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
+                    
+                    messages = newMessages;
+                    renderMessages();
+                    
+                    // التمرير للأسفل فقط إذا كانت هناك رسائل جديدة
+                    if (hasNewMessages && lastMessageId) {
+                        const lastMsg = messages.find(m => m.id === lastMessageId);
+                        if (!lastMsg || messages.indexOf(lastMsg) < messages.length - 1) {
+                            scrollToBottom(true);
+                        }
+                    }
+                    
+                    return hasNewMessages;
+                }
+            } catch (err) {
+                console.error('Error fetching messages:', err);
+            }
+            return false;
+        }
+
+        function updateChatHeader(order) {
+            if (!order) return;
+            
+            document.getElementById('orderCode').textContent = order.order_code || order.public_id || '—';
+            document.getElementById('chatTitle').textContent = `محادثة: ${order.dish_name || 'طلب'}`;
+            document.getElementById('chatSubtitle').innerHTML = `كود الطلب: <span id="orderCode">${escapeHtml(order.order_code || order.public_id || '—')}</span>`;
+            
+            const statusEl = document.getElementById('statusChip');
+            const statusMap = {
+                'pending': { class: 'bg-amber-100 text-amber-900', text: 'مفتوح' },
+                'accepted': { class: 'bg-blue-100 text-blue-900', text: 'مقبول' },
+                'completed': { class: 'bg-green-100 text-green-900', text: 'مكتمل' },
+                'cancelled': { class: 'bg-red-100 text-red-900', text: 'ملغي' }
+            };
+            const status = statusMap[order.status] || { class: 'bg-gray-100 text-gray-900', text: order.status };
+            statusEl.className = `px-3 py-1 rounded-full text-xs font-bold ${status.class}`;
+            statusEl.textContent = status.text;
+        }
+
+        function updateOrderInfo(order) {
+            const container = document.getElementById('orderDetails');
+            const infoEl = document.getElementById('orderInfo');
+            
+            if (!order) {
+                infoEl.style.display = 'none';
+                return;
+            }
+            
+            infoEl.style.display = 'block';
+            
+            const details = [
+                { label: 'الطبق', value: order.dish_name || '—' },
+                { label: 'الكمية', value: order.quantity || '1' },
+                { label: 'المطبخ', value: order.kitchen_name || '—' },
+                { label: 'الإجمالي', value: order.total_price ? `${Number(order.total_price).toLocaleString('ar-EG')} ج.م` : '—' }
+            ];
+            
+            container.innerHTML = details.map(d => `
+                <div>
+                    <p class="text-xs text-on-surface-variant">${d.label}</p>
+                    <p class="font-medium text-on-surface">${escapeHtml(d.value)}</p>
+                </div>
+            `).join('');
+        }
+
+        async function sendMessage(e) {
+            e.preventDefault();
+            
+            const input = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const text = input.value.trim();
+            
+            if (!text || !publicId) return;
+            
+            sendBtn.disabled = true;
+            input.disabled = true;
+            const originalText = input.value;
+            input.value = '';
+            updateCharCount();
+            
+            try {
+                const response = await fetch(`/platform/chat/${publicId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ body: text })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    // إضافة الرسالة محلياً للعرض الفوري
+                    const optimisticMsg = {
+                        id: 'temp_' + Date.now(),
+                        body: text,
+                        sender_id: currentUser?.id,
+                        sender_name: currentUser?.first_name + ' ' + currentUser?.last_name,
+                        sender_role: currentUser?.roles,
+                        is_system: false,
+                        created_at: new Date().toISOString()
+                    };
+                    messages.push(optimisticMsg);
+                    renderMessages();
+                    scrollToBottom(true);
+                    
+                    // تحديث من الخادم
+                    await fetchMessages();
+                } else {
+                    input.value = originalText;
+                    updateCharCount();
+                    showError(data.message || 'فشل في إرسال الرسالة');
+                }
+            } catch (err) {
+                input.value = originalText;
+                updateCharCount();
+                showError('خطأ في الاتصال بالخادم');
+            } finally {
+                sendBtn.disabled = false;
+                input.disabled = false;
+                input.focus();
+            }
+        }
+
+        function updateCharCount() {
+            const input = document.getElementById('messageInput');
+            const countEl = document.getElementById('charCount');
+            const sendBtn = document.getElementById('sendBtn');
+            const len = input.value.length;
+            countEl.textContent = `${len} / 1000`;
+            sendBtn.disabled = len === 0 || len > 1000;
+        }
+
+        function startPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+            pollingInterval = setInterval(async () => {
+                const hasNew = await fetchMessages();
+                if (hasNew) {
+                    // يمكن إضافة إشعار صوتي هنا
+                }
+            }, POLL_INTERVAL);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        // تحديث عدد الأحرف
+        document.getElementById('messageInput')?.addEventListener('input', updateCharCount);
+
+        // Enter للإرسال، Shift+Enter لسطر جديد
+        document.getElementById('messageInput')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('messageForm').dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // تنظيف عند المغادرة
+        window.addEventListener('beforeunload', stopPolling);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopPolling();
+            else startPolling();
+        });
+
+        // تحميل بيانات المستخدم الحالي
+        async function loadCurrentUser() {
+            try {
+                const response = await fetch('/auth/api/v1/me', { credentials: 'include' });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'success') currentUser = data.data;
+                }
+            } catch (err) {
+                console.warn('Could not load current user');
+            }
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadCurrentUser();
+            await fetchMessages();
+            startPolling();
+        });
+    </script>
+</body>
+</html>

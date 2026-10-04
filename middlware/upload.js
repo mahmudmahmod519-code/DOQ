@@ -1,5 +1,7 @@
 const multer=require("multer");
 const fs = require("fs");
+const crypto = require('crypto');
+const path = require('path');
 
 const uploadDir = './public/upload';
 
@@ -13,7 +15,9 @@ const storage=multer.diskStorage({
     else{cb(new Error("type not image"), false)};
 
 },filename:(req,file,cb)=>{
-    cb(null,`${Date.now()}-${file.originalname}`);
+    const extension = path.extname(file.originalname || '').toLowerCase();
+    const allowed = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
+    cb(null,`${crypto.randomBytes(18).toString('hex')}${allowed.has(extension) ? extension : '.img'}`);
 }})
 
 

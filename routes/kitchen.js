@@ -12,10 +12,13 @@ const {
     deleteKitchen_controller,
     getKitchenById_controller,
     updateMyKitchen_controller,
-    uploadKitchenImage_controller,
     getKitchens_controller,
     Mykitchens_controller,
-    getKitchenById_middleware
+    getKitchenById_middleware,
+    uploadKitchenImageBackground_controller,
+    uploadKitchenImageProfile_controller,
+    getKitchensPaginated_controller,
+    listCities_controller
 } = require("../controller/kitchen");
 
 const {
@@ -23,21 +26,21 @@ const {
     myKitchen_render,
     kitchenProfile_render
 } = require("../rendering/kitchen");
+const { checkSubscription } = require("../controller/payment");
 
 
-router.use(auth,for_main('user'),(req,res,next)=>{
-    req.user=req.my;
-    next();
-});
+router.use(auth.optional);
 
-
-router.get('/',roles('customer','admin'),allRows('kitchen'),catchError(kitchens_render));//done
+router.get('/',catchError(kitchens_render));//done
 
 router.get('/my',roles('chef'),for_main('kitchen',true,false),catchError(myKitchen_render));//done
 
-router.get('/:id',roles('customer','admin'),getKitchenById_middleware,catchError(kitchenProfile_render));//done
+router.get('/:id',getKitchenById_middleware,catchError(kitchenProfile_render));//done
 
-router.get('/api/v1/my',roles('chef'),for_main('kitchen'),catchError(Mykitchens_controller));
+router.get('/api/v1/my',roles('chef'),for_main('kitchen',true,false),catchError(Mykitchens_controller));
+
+router.get('/api/v1/paginated', catchError(getKitchensPaginated_controller));
+router.get('/api/v1/cities', catchError(listCities_controller));
 
 router.get('/api/v1/:id',roles('admin'),catchError(getKitchenById_controller));//done
 
@@ -47,9 +50,11 @@ router.post("/api/v1/",roles('chef'),catchError(createKitchen_controller));//don
 
 router.delete("/api/v1/:id",roles('admin'),catchError(deleteKitchen_controller));//done
 
-router.post("/api/v1/my/upload",roles('chef'),for_main('kitchen'),upload.single('image'),catchError(uploadKitchenImage_controller));//done
+router.post("/api/v1/my/background",roles('chef'),checkSubscription,for_main('kitchen'),upload.single('background'),catchError(uploadKitchenImageBackground_controller));//done
 
-router.put("/api/v1/my",roles('chef'),for_main('kitchen'),catchError(updateMyKitchen_controller));//done
+router.post("/api/v1/my/profile",roles('chef'),checkSubscription,for_main('kitchen'),upload.single('profile'),catchError(uploadKitchenImageProfile_controller));//done
+
+router.put("/api/v1/my",roles('chef'),checkSubscription,for_main('kitchen'),catchError(updateMyKitchen_controller));//done
 
 module.exports = router;
     

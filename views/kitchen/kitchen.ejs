@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<script src="/app-client.js"></script>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title><%= kitchen ? kitchen.title : 'ملف المطبخ' %> | DOQ</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Be+Vietnam+Pro:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #9e2016;
+            --secondary: #fc7127;
+            --background: #fff8f6;
+        }
+        body {
+            font-family: 'Tajawal', 'beVietnamPro', sans-serif;
+            background-color: var(--background);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* ===== خصائص الصورة (CSS فقط) ===== */
+        .kitchen-cover-wrapper {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease;
+            cursor: pointer;
+        }
+        
+        .kitchen-cover-img {
+            transition: transform 0.6s ease, filter 0.6s ease;
+        }
+        
+        .kitchen-cover-wrapper:hover .kitchen-cover-img {
+            transform: scale(1.08);
+            filter: brightness(0.85);
+        }
+        
+        /* ===== خصائص الـ Lightbox ===== */
+        .lightbox-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            padding: 20px;
+        }
+        .lightbox-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .lightbox-overlay img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            line-height: 1;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "error-container": "#ffdad6",
+                        "primary-container": "#c0392b",
+                        "secondary-fixed": "#ffdbcd",
+                        "on-secondary-fixed-variant": "#7c2e00",
+                        "inverse-surface": "#3c2d2a",
+                        "on-tertiary-fixed": "#001e2b",
+                        "on-tertiary-container": "#d3eeff",
+                        "on-surface-variant": "#59413d",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#ffe9e6",
+                        "secondary-fixed-dim": "#ffb595",
+                        "tertiary-fixed": "#c0e8ff",
+                        "on-surface": "#261816",
+                        "on-primary-container": "#ffe5e1",
+                        "surface-container-low": "#fff0ee",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#ffb4a9",
+                        "surface-tint": "#b02d21",
+                        "outline": "#8d706c",
+                        "on-secondary-container": "#5c2000",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#ffb4a9",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed": "#410000",
+                        "surface-container-high": "#fce2de",
+                        "surface-variant": "#f7ddd9",
+                        "surface-dim": "#eed4d1",
+                        "surface-container-highest": "#f7ddd9",
+                        "surface-bright": "#fff8f6",
+                        "on-background": "#261816",
+                        "on-primary-fixed-variant": "#8e130c",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#005875",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "surface": "#fff8f6",
+                        "on-secondary-fixed": "#351000",
+                        "secondary": "#a23f00",
+                        "tertiary-fixed-dim": "#80d0f8",
+                        "background": "#fff8f6",
+                        "primary-fixed": "#ffdad5",
+                        "tertiary-container": "#007296",
+                        "outline-variant": "#e1bfb9",
+                        "inverse-on-surface": "#ffedea",
+                        "on-tertiary-fixed-variant": "#004d66",
+                        "secondary-container": "#fc7127",
+                        "primary": "#9e2016"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "xs": "4px",
+                        "xl": "80px",
+                        "container-max": "1280px",
+                        "sm": "12px",
+                        "lg": "48px",
+                        "gutter": "24px",
+                        "base": "8px",
+                        "md": "24px"
+                    },
+                    fontFamily: {
+                        "display-lg": ["beVietnamPro", "Tajawal"],
+                        "body-md": ["beVietnamPro", "Tajawal"],
+                        "headline-md": ["beVietnamPro", "Tajawal"],
+                        "display-lg-mobile": ["beVietnamPro", "Tajawal"],
+                        "body-lg": ["beVietnamPro", "Tajawal"],
+                        "label-sm": ["beVietnamPro", "Tajawal"]
+                    },
+                    fontSize: {
+                        "display-lg": ["48px", {"lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "label-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-24 md:pb-0">
+
+    <%- include('../partials/header') %>
+
+    <main class="max-w-container-max mx-auto px-4 md:px-lg mb-xl">
+
+        <% if (kitchen) { 
+            var chefName = kitchen.chefName || 'دوق';
+            var avgRatingDisplay = kitchen.display_avg_rating || 'جديد';
+            var reviewsCount = kitchen.reviews_count || 0;
+            var dishesCount = kitchen.dishes_count || 0;
+            var fairScore = kitchen.fair_score || null;
+            var imageUrl =  kitchen.image_url || '/assests/chef_avatar.jpeg';
+            var ProfileUrl = kitchen.portfolio_url || '/assests/profile_kitchen.jpeg';
+        %>
+            
+        <!-- Hero Section -->
+        <section class="relative mt-4">
+            <!-- الحاوية كلها أصبحت قابلة للضغط (cursor pointer) -->
+            <div class="w-full h-[320px] rounded-3xl overflow-hidden relative shadow-2xl kitchen-cover-wrapper"
+                 onclick="openLightboxSimple('<%= imageUrl%>')">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
+                
+                <img class="w-full h-full object-cover kitchen-cover-img" 
+                     src="<%= imageUrl %>" 
+                     alt="<%= kitchen.title %>">
+            </div>
+            
+            <!-- Kitchen Card -->
+            <div class="relative -mt-24 z-20 mx-auto max-w-4xl px-4">
+                <div class="bg-surface rounded-2xl shadow-[0px_12px_40px_rgba(192,57,43,0.12)] p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 border border-surface-container-high">
+                    
+                    <!-- Avatar -->
+                    <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-surface shadow-md overflow-hidden flex-shrink-0 bg-primary-container">
+                        <img src="<%= ProfileUrl %>" alt="<%= kitchen.title %>" class="w-full h-full object-cover">
+                    </div>
+                    
+                    <div class="flex-1 text-center md:text-right">
+                        <div class="flex flex-col md:flex-row md:items-center gap-2 mb-2">
+                            <h1 class="font-bold text-headline-md text-primary"><%= kitchen.title %></h1>
+                            <div class="flex items-center justify-center md:justify-start gap-1 text-[#ffc107]">
+                                <span class="material-symbols-outlined fill-icon text-lg">star</span>
+                                <span class="font-bold text-lg"><%= avgRatingDisplay %></span>
+                                <span class="text-on-surface-variant text-sm font-normal">(<%= reviewsCount %> تقييم)</span>
+                            </div>
+                        </div>
+                        <p class="text-on-surface-variant font-medium text-body-lg mb-4">الشيف: <%= chefName || 'غير معروف' %></p>
+                        <div class="flex flex-wrap justify-center md:justify-start gap-4">
+                            <div class="flex items-center gap-1.5 bg-surface-container-low px-3 py-1.5 rounded-full text-on-surface-variant text-label-sm border border-outline-variant">
+                                <span class="material-symbols-outlined text-[20px]">location_on</span>
+                                <%= kitchen.city || 'مدينة غير محددة' %>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </section>
+
+        <!-- About & Stats -->
+        <section class="mt-lg grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-2xl shadow-[0px_4px_20px_rgba(192,57,43,0.06)] p-8 h-full">
+                    <h3 class="font-bold text-headline-md text-primary mb-4">عن المطبخ</h3>
+                    <p class="text-on-surface-variant text-body-lg leading-relaxed">
+                        <%= kitchen.description || 'لا يوجد وصف لهذا المطبخ' %>
+                    </p>
+                    <p class="text-on-surface-variant text-body-lg leading-relaxed mt-4">
+                        <span class="font-bold text-primary">تاريخ الانضمام:</span> 
+                        <%= new Date(kitchen.created_at).toLocaleDateString('ar-EG') %>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-4">
+                <div class="bg-white rounded-2xl shadow-[0px_4px_20px_rgba(192,57,43,0.06)] p-4 flex items-center gap-4 border-r-4 border-primary">
+                    <div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+                        <span class="material-symbols-outlined">restaurant</span>
+                    </div>
+                    <div>
+                        <p class="text-on-surface-variant text-label-sm">إجمالي الأصناف</p>
+                        <p class="font-bold text-headline-md"><%= dishesCount %> صنف</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-[0px_4px_20px_rgba(192,57,43,0.06)] p-4 flex items-center gap-4 border-r-4 border-secondary">
+                    <div class="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary">
+                        <span class="material-symbols-outlined">reviews</span>
+                    </div>
+                    <div>
+                        <p class="text-on-surface-variant text-label-sm">إجمالي التقييمات</p>
+                        <p class="font-bold text-headline-md"><%= reviewsCount %></p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-[0px_4px_20px_rgba(192,57,43,0.06)] p-4 flex items-center gap-4 border-r-4 border-[#ffc107]">
+                    <div class="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-[#ffc107]">
+                        <span class="material-symbols-outlined fill-icon">star_rate</span>
+                    </div>
+                    <div>
+                        <p class="text-on-surface-variant text-label-sm">متوسط التقييم</p>
+                        <p class="font-bold text-headline-md"><%= avgRatingDisplay !== 'جديد' ? avgRatingDisplay : '0.0' %> / 5.0</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-[0px_4px_20px_rgba(192,57,43,0.06)] p-4 flex items-center gap-4 border-r-4 border-emerald-500">
+                    <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                        <span class="material-symbols-outlined">monitoring</span>
+                    </div>
+                    <div>
+                        <p class="text-on-surface-variant text-label-sm">نسبة العادلة (Fair Score)</p>
+                        <p class="font-bold text-headline-md"><%= fairScore ? fairScore : 'جديد' %></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tasting Bar (Categories) -->
+        <section class="mt-lg">
+            <div class="flex items-center gap-4 overflow-x-auto pb-4 no-scrollbar rtl" id="categoriesBar">
+                <a href="#" class="flex-shrink-0 px-6 py-2 rounded-full bg-primary text-white font-bold border-2 border-primary shadow-md" data-category="all">الكل</a>
+            </div>
+        </section>
+
+        <!-- Dishes Grid -->
+        <section class="mt-6">
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="font-bold text-headline-md text-primary">الأطباق المميزة</h3>
+                        
+                <!-- زر عرض كل الأطباق -->
+                <button id="viewAllDishesBtn" class="group flex items-center gap-2 bg-primary/10 text-primary px-5 py-2 rounded-full font-bold hover:bg-primary hover:text-white transition-all duration-300 hover:scale-105 active:scale-95 border border-primary/20 shadow-sm cursor-pointer">
+                    عرض كل الأطباق
+                    <span class="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:-translate-x-1">arrow_back</span>
+                </button>
+            </div>
+            
+            <!-- إضافة حاوية الـ Grid هنا -->
+            <div id="dishesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="text-on-surface-variant text-center py-10 col-span-full">جاري تحميل الأطباق...</div>
+            </div>
+        </section>
+
+        <!-- Customer Reviews -->
+        <section class="mt-lg">
+            <h3 class="font-bold text-headline-md text-primary mb-8 text-center md:text-right">آراء العملاء</h3>
+            <div class="space-y-6 max-w-4xl" id="reviewsContainer">
+                <div class="text-on-surface-variant text-center py-10">جاري تحميل التقييمات...</div>
+            </div>
+            <div class="mt-8 flex justify-center">
+                <button id="loadMoreReviews" class="text-primary font-bold border-2 border-primary px-8 py-2 rounded-full hover:bg-primary hover:text-white transition-all">
+                   <a href="/reviews?type=kitchen&id=<%= kitchen.id %>">تحميل المزيد من التقييمات</a>
+                </button>
+            </div>
+        </section>
+        
+        <!-- Back Button -->
+        <div class="mt-xl flex justify-center">
+            <a class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium" href="/kitchens">
+                <span class="material-symbols-outlined">arrow_forward</span>
+                العودة إلى قائمة المطابخ
+            </a>
+        </div>
+
+        <% } else { %>
+            <!-- Kitchen Not Found -->
+            <div class="text-center py-20">
+                <span class="material-symbols-outlined text-6xl text-on-surface-variant/30">storefront</span>
+                <h2 class="text-2xl font-bold text-on-surface-variant mt-4">المطبخ غير موجود</h2>
+                <a href="/kitchens" class="text-primary hover:underline mt-4 inline-block">العودة إلى المطابخ</a>
+            </div>
+        <% } %>
+
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <!-- نافذة عرض الصورة الكبيرة (Lightbox) -->
+    <div class="lightbox-overlay" id="kitchenLightbox" onclick="closeLightbox(event)">
+        <button class="lightbox-close" onclick="closeLightbox(event)">✕</button>
+        <img src="" alt="صورة المطبخ" id="lightboxImage">
+    </div>
+
+    <script>
+        // ============================================
+        // فتح وإغلاق الـ Lightbox (بسيط ومضمون)
+        // ============================================
+        function openLightboxSimple(imageUrl) {
+            var lightbox = document.getElementById('kitchenLightbox');
+            var lightboxImage = document.getElementById('lightboxImage');
+            
+            lightboxImage.src = imageUrl;
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden'; // منع السكرول
+        }
+
+        function closeLightbox(event) {
+            if (event.target !== event.currentTarget && !event.target.classList.contains('lightbox-close')) {
+                return;
+            }
+            
+            var lightbox = document.getElementById('kitchenLightbox');
+            lightbox.classList.remove('active');
+            document.body.style.overflow = ''; // رجوع السكرول
+        }
+
+        // إغلاق بـ زر Escape من الكيبورد
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeLightbox({ target: document.getElementById('kitchenLightbox'), currentTarget: document.getElementById('kitchenLightbox') });
+            }
+        });
+
+        // ============================================
+        // جلب التصنيفات من API /categories/all
+        // ============================================
+        async function fetchCategories() {
+            var bar = document.getElementById('categoriesBar');
+            if (!bar) return;
+            
+            try {
+                var response = await fetch('/categories/all', {
+                    method: 'GET',
+                    cache:"default",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                var data = await response.json();
+                
+                if (data.status === 'success' && data.data && data.data.length > 0) {
+                    var categories = data.data;
+                    var html = '';
+                    
+                    categories.forEach(function(cat) {
+                        var dishesCount = cat.dishes_count || 0;
+                        if (dishesCount > 0) {
+                            html += `
+                                <a href="#" class="flex-shrink-0 px-6 py-2 rounded-full bg-white text-on-surface-variant font-medium border-2 border-outline-variant hover:border-secondary transition-colors" data-category="${DOQ.escape(encodeURIComponent(cat.name || ''))}">
+                                    ${DOQ.escape(cat.name || '')}
+                                </a>
+                            `;
+                        }
+                    });
+                    
+                    var allBtn = bar.querySelector('[data-category="all"]');
+                    if (allBtn) {
+                        allBtn.insertAdjacentHTML('afterend', html);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            }
+        }
+
+        // ============================================
+        // جلب أطباق المطبخ من API /dishes/kitchen/:kitchenId
+        // ============================================
+        async function fetchDishes() {
+            var grid = document.getElementById('dishesGrid');
+            var kitchenId = '<%= kitchen ? kitchen.id : "" %>';
+            if (!kitchenId) {
+                grid.innerHTML = '<div class="text-on-surface-variant text-center py-10 col-span-full">لا توجد أطباق</div>';
+                return;
+            }
+            
+            try {
+                var response = await fetch('/dishes/v1/api/kitchen/' + kitchenId + '?limit=4', {
+                    method: 'GET',
+                    cache:"default",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                var data = await response.json();
+                if (data.status === 'success' && data.data && data.data.length > 0) {
+                    var dishes = data.data;
+                    var html = '';
+                    
+                    dishes.forEach(function(dish) {
+                                var imageUrl = DOQ.safeImage(dish.image_url || '/assests/dish_avatar.jpeg');
+                        var categoryName = dish.category_name || 'غير مصنف';
+                        var price = dish.price || 0;
+                        html += `
+                        <a href="/dishes/${dish.id}">
+                            <div class="group bg-white rounded-2xl overflow-hidden shadow-[0px_4px_20px_rgba(192,57,43,0.06)] hover:shadow-xl transition-all duration-300 border border-surface-container">
+                                <div class="relative h-48 overflow-hidden">
+                                    <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="${imageUrl}" alt="${DOQ.escape(dish.name || '')}">
+                                </div>
+                                <div class="p-5">
+                                    <p class="text-secondary text-label-sm mb-1">${DOQ.escape(categoryName)}</p>
+                                    <h4 class="font-bold text-body-lg text-on-surface mb-2">${DOQ.escape(dish.name || '')}</h4>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-primary font-bold text-headline-md">${price} <small class="text-xs">ج.م</small></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                        `;
+                    });
+
+                    grid.innerHTML = html;
+                } else {
+                    grid.innerHTML = '<div class="text-on-surface-variant text-center py-10 col-span-full">لا توجد أطباق في هذا المطبخ حالياً</div>';
+                }
+            } catch (error) {
+                console.error('Error fetching dishes:', error);
+                grid.innerHTML = '<div class="text-error text-center py-10 col-span-full">حدث خطأ أثناء تحميل الأطباق</div>';
+            }
+        }
+
+        // ============================================
+        // جلب تقييمات المطبخ من API /reviews/v1/api/list
+        // ============================================
+        async function fetchReviews() {
+            var container = document.getElementById('reviewsContainer');
+            var kitchenId = '<%= kitchen ? kitchen.id : "" %>';
+            if (!kitchenId) {
+                container.innerHTML = '<div class="text-on-surface-variant text-center py-10">لا توجد تقييمات</div>';
+                return;
+            }
+            
+            try {
+                var response = await fetch('/reviews/v1/api/list?type=kitchen&limit=3&id=' + kitchenId, {
+                    method: 'GET',
+                    cache:"default",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                var data = await response.json();
+                
+                if (data.status === 'success' && data.data.reviews && data.data.reviews.length > 0) {
+                    var reviews = data.data.reviews;
+                    var html = '';
+                    
+                    reviews.forEach(function(review) {
+                        var name = (review.first_name || '') + ' ' + (review.last_name || '');
+                        var stars = '';
+                        for (var i = 0; i < 5; i++) {
+                            if (i < review.rating) {
+                                stars += `<span class="material-symbols-outlined fill-icon text-[18px]">star</span>`;
+                            } else {
+                                stars += `<span class="material-symbols-outlined text-[18px]">star</span>`;
+                            }
+                        }
+                        var date = new Date(review.created_at).toLocaleDateString('ar-EG');
+                        var initial = name ? name.charAt(0) : 'م';
+                        
+                        html += `
+                            <div class="bg-white p-6 rounded-2xl shadow-[0px_4px_20px_rgba(192,57,43,0.06)] flex gap-4">
+                                <div class="w-12 h-12 rounded-full bg-primary-fixed flex-shrink-0 flex items-center justify-center text-primary font-bold">${DOQ.escape(initial)}</div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h5 class="font-bold text-on-surface">${DOQ.escape(name || 'مستخدم')}</h5>
+                                            <div class="flex text-[#ffc107] text-sm">${stars}</div>
+                                        </div>
+                                        <span class="text-on-surface-variant text-xs">${date}</span>
+                                    </div>
+                                    <p class="text-on-surface-variant text-body-md">${DOQ.escape(review.comment || 'لا يوجد تعليق')}</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="text-on-surface-variant text-center py-10">لا توجد تقييمات لهذا المطبخ</div>';
+                }
+            } catch (error) {
+                console.error('Error fetching reviews:', error);
+                container.innerHTML = '<div class="text-error text-center py-10">حدث خطأ أثناء تحميل التقييمات</div>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchCategories();
+            fetchDishes();
+            fetchReviews();
+
+            var viewAllDishesBtn = document.getElementById('viewAllDishesBtn');
+            var currentKitchenId = '<%= kitchen ? kitchen.id : "" %>';
+
+            if (viewAllDishesBtn) {
+                viewAllDishesBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    if (currentKitchenId) {
+                        sessionStorage.setItem('kitchen_id', currentKitchenId);
+                        window.location.href = '/dishes';
+                    } else {
+                        console.warn('Kitchen ID is not available');
+                    }
+                });
+            }
+        });
+
+        console.log('✅ صفحة ملف المطبخ جاهزة');
+    </script>
+
+</body>
+</html>

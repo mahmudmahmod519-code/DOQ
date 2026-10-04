@@ -1,8 +1,7 @@
+const checkLogin = require("../utiles/checkLogin");
+
 function catgories_render(req,res){
-res.render('./admin/cateogries',{
-        categories: req.paginatedData || [],
-        currentUser: req.my || null
-});
+    res.render('./admin/cateogries',checkLogin(req,res));
 }
 
 module.exports={

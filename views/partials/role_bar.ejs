@@ -1,0 +1,26 @@
+<nav class="sticky top-0 z-40 border-b border-[#e1bfb9]/60 bg-[#fff8f6]/90 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+    <a href="/" class="text-xl font-extrabold text-[#9e2016]">دوق</a>
+    <div class="flex items-center gap-1 text-sm">
+      <% (links || []).forEach(function (l) { %>
+        <a href="<%= l.href %>" class="whitespace-nowrap rounded-full px-3 py-2 hover:bg-[#ffe9e5] <%= l.active ? 'bg-[#ffe9e5] font-bold text-[#9e2016]' : '' %>"><%= l.label %></a>
+      <% }) %>
+      <a href="/notifications" class="rounded-full px-3 py-2 hover:bg-[#ffe9e5]">الإشعارات</a>
+      <a href="/auth/logout" class="rounded-full px-3 py-2 text-[#59413d] hover:bg-[#ffe9e5]">خروج</a>
+    </div>
+  </div>
+</nav>
+<style>body{font-family:'Tajawal','Cairo',system-ui,sans-serif}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script>
+  window.ORDER_STATUS = {
+    pending: { label: 'قيد التنفيذ', cls: 'bg-amber-100 text-amber-900' },
+    accepted: { label: 'اتقبل للتوصيل', cls: 'bg-blue-100 text-blue-900' },
+    completed: { label: 'اتسلم', cls: 'bg-green-100 text-green-900' },
+    cancelled: { label: 'اتلغى', cls: 'bg-red-100 text-red-800' }
+  };
+  window.statusChip = s => { const x = ORDER_STATUS[s] || { label: s, cls: 'bg-gray-100 text-gray-700' }; return '<span class="shrink-0 rounded-full px-3 py-1 text-sm font-bold ' + x.cls + '">' + DOQ.escape(x.label) + '</span>'; };
+  window.money = v => Number(v || 0).toLocaleString('ar-EG-u-nu-latn', { maximumFractionDigits: 2 }) + ' جنيه';
+  window.when = v => new Date(v).toLocaleString('ar-EG-u-nu-latn', { dateStyle: 'medium', timeStyle: 'short' });
+  window.telLink = v => v ? '<a dir="ltr" class="font-bold text-[#9e2016] underline" href="tel:' + DOQ.escape(v) + '">' + DOQ.escape(v) + '</a>' : 'مش متاح';
+</script>

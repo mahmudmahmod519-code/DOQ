@@ -1,478 +1,862 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+<script src="/app-client.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ملفي الشخصي - دوق</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet">
+    <title>ملفي الشخصي - دوق DOQ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
         tailwind.config = {
-            darkMode: "class",
             theme: {
                 extend: {
                     colors: {
-                        "on-tertiary": "#ffffff",
-                        "primary-fixed-dim": "#ffb4a9",
-                        "surface-container-highest": "#f7ddd9",
-                        "tertiary": "#005875",
-                        "on-primary-fixed": "#410000",
-                        "on-primary-container": "#ffe5e1",
-                        "surface-container-high": "#fce2de",
-                        "surface-container": "#ffe9e6",
-                        "on-surface-variant": "#59413d",
-                        "inverse-on-surface": "#ffedea",
-                        "on-secondary-fixed-variant": "#7c2e00",
-                        "tertiary-fixed-dim": "#80d0f8",
-                        "inverse-primary": "#ffb4a9",
-                        "on-secondary": "#ffffff",
-                        "on-tertiary-fixed": "#001e2b",
-                        "on-background": "#261816",
-                        "outline-variant": "#e1bfb9",
-                        "on-error-container": "#93000a",
-                        "error": "#ba1a1a",
-                        "surface-variant": "#f7ddd9",
-                        "surface-dim": "#eed4d1",
-                        "primary": "#9e2016",
-                        "surface": "#fff8f6",
-                        "inverse-surface": "#3c2d2a",
-                        "primary-container": "#c0392b",
-                        "tertiary-fixed": "#c0e8ff",
-                        "surface-container-low": "#fff0ee",
-                        "secondary-fixed": "#ffdbcd",
-                        "secondary": "#a23f00",
-                        "on-primary-fixed-variant": "#8e130c",
-                        "on-error": "#ffffff",
-                        "secondary-fixed-dim": "#ffb595",
-                        "on-surface": "#261816",
-                        "tertiary-container": "#007296",
-                        "on-tertiary-fixed-variant": "#004d66",
-                        "secondary-container": "#fc7127",
-                        "on-primary": "#ffffff",
-                        "primary-fixed": "#ffdad5",
-                        "background": "#fff8f6",
-                        "on-tertiary-container": "#d3eeff",
-                        "error-container": "#ffdad6",
-                        "surface-bright": "#fff8f6",
-                        "outline": "#8d706c",
-                        "surface-tint": "#b02d21",
-                        "on-secondary-fixed": "#351000",
+                        "primary": "#9e2016", "primary-container": "#c0392b", "on-primary": "#ffffff",
+                        "secondary": "#a23f00", "secondary-container": "#fc7127",
+                        "background": "#fff8f6", "surface": "#fff8f6",
+                        "surface-container": "#ffe9e6", "surface-container-low": "#fff0ee",
                         "surface-container-lowest": "#ffffff",
-                        "on-secondary-container": "#5c2000"
+                        "on-surface": "#261816", "on-surface-variant": "#59413d",
+                        "outline": "#8d706c", "outline-variant": "#e1bfb9",
+                        "tertiary": "#005875", "tertiary-container": "#007296", "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a", "error-container": "#ffdad6"
                     },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                    spacing: {
-                        "gutter": "24px",
-                        "xs": "4px",
-                        "lg": "48px",
-                        "base": "8px",
-                        "sm": "12px",
-                        "xl": "80px",
-                        "container-max": "1280px",
-                        "md": "24px"
-                    },
-                    fontFamily: {
-                        "body-md": ["Tajawal", "sans-serif"],
-                        "label-sm": ["Tajawal", "sans-serif"],
-                        "body-lg": ["Tajawal", "sans-serif"],
-                        "headline-md": ["Tajawal", "sans-serif"],
-                        "display-lg": ["Tajawal", "sans-serif"]
-                    }
+                    fontFamily: { "cairo": ["Cairo", "sans-serif"], "tajawal": ["Tajawal", "sans-serif"] }
                 }
             }
         }
     </script>
     <style>
-        .action-card:hover {
-            border-color: #9e2016;
-            transform: translateX(-4px);
-            box-shadow: 0 4px 15px rgba(158, 32, 22, 0.08);
-        }
-        .role-admin { background: #dc3545; color: white; }
-        .role-chef { background: #fd7e14; color: white; }
-        .role-customer { background: #0d6efd; color: white; }
-        .fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .slide-in-from-right {
-            animation: slideInRight 0.3s ease-out forwards;
-        }
-        @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(50px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        .animate-spin {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
+        body { font-family: 'Tajawal', sans-serif; background-color: #fff8f6; }
+        .cairo-font { font-family: 'Cairo', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .material-symbols-filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .tab-active { background: linear-gradient(135deg, #9e2016 0%, #c0392b 100%); color: white; box-shadow: 0 4px 12px rgba(158, 32, 22, 0.25); }
+        .tab-inactive { background: white; color: #59413d; border: 1px solid #e1bfb9; }
+        .tab-inactive:hover { background: #fff0ee; color: #9e2016; }
+        .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(225, 191, 185, 0.3); }
+        .gradient-cover { background: linear-gradient(135deg, #9e2016 0%, #c0392b 50%, #fc7127 100%); }
+        .star-filled { color: #fc7127; font-variation-settings: 'FILL' 1; }
+        .star-empty { color: #e1bfb9; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-background text-on-surface">
+<body class="bg-background text-on-surface min-h-screen">
 
-    
-<!-- Top Navigation Bar -->
-<nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md shadow-[0px_4px_20px_rgba(192,57,43,0.06)] px-gutter py-4">
-    <div class="max-w-container-max mx-auto flex justify-between items-center">
-        <div class="flex items-center gap-8">
-            <span class="font-display-lg text-[32px] text-primary font-extrabold tracking-tight">دوق</span>
-            <div class="hidden md:flex gap-6">
-                <a href="/" class="text-primary border-b-2 border-primary pb-1 font-body-md">الرئيسية</a>
-                <a href="/all-portfolios" class="text-on-surface-variant hover:text-primary transition-colors font-body-md">استكشف</a>
-                <a href="/about" class="text-on-surface-variant hover:text-primary transition-colors font-body-md">عن دوق</a>
-            </div>
-        </div>
-        <div class="flex items-center gap-4">
-            <% if (user && user.roles === 'admin') { %>
-                <a href="/users/dashboard" class="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-all font-label-sm">
-                    <span class="material-symbols-outlined text-[20px]">dashboard</span>
-                    لوحة التحكم
-                </a>
-            <% } %>
-            <a href="/auth/logout" class="flex items-center gap-2 px-4 py-2 bg-error/10 text-error rounded-full hover:bg-error/20 transition-all font-label-sm">
-                <span class="material-symbols-outlined text-[20px]">logout</span>
-                تسجيل الخروج
-            </a>
-        </div>
-    </div>
-</nav>
+    <%- include('../partials/header.ejs') %>
 
-<main class="pt-[80px]">
-
-    <!-- Hero Header Section -->
-    <div class="relative h-[300px] w-full" style="background-image: url('https://images.unsplash.com/photo-1547928576-a4a33237eceb?auto=format&fit=crop&w=1920&q=80'); background-size: cover; background-position: center;">
-        <div class="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
-    </div>
-
-    <!-- Profile Intro Section -->
-    <div class="max-w-container-max mx-auto px-gutter -mt-24 relative z-10">
-        <div class="bg-surface-container-lowest rounded-3xl p-8 shadow-[0px_4px_20px_rgba(192,57,43,0.06)] border border-outline-variant/20 flex flex-col md:flex-row items-center md:items-end gap-6">
-            
-            <!-- Circular Avatar -->
-            <div id="userAvatarContainer" class="w-[120px] h-[120px] rounded-full bg-primary flex items-center justify-center text-white text-[48px] font-bold border-4 border-surface shadow-xl">
-                <span><%= user ? user.first_name.charAt(0).toUpperCase() : '?' %></span>
-            </div>
-
-            <div class="flex-1 text-center md:text-right">
-                <div class="flex flex-col md:flex-row md:items-center gap-3">
-                    <h1 class="text-headline-md text-on-surface font-extrabold">
-                        <%= user ? user.first_name + ' ' + user.last_name : 'مستخدم' %>
-                    </h1>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-bold role-<%= user ? user.roles : 'customer' %>">
-                        <span class="material-symbols-outlined text-[16px] ml-1">verified</span>
-                        <% if (user && user.roles === 'admin') { %>مسؤول النظام<% } 
-                           else if (user && user.roles === 'chef') { %>طباخ محترف<% } 
-                           else { %>عميل مميز<% } %>
-                    </span>
-                </div>
-                <div class="flex flex-wrap justify-center md:justify-start gap-4 mt-3 text-on-surface-variant font-label-sm">
-                    <div class="flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[18px]">mail</span>
-                        <span><%= user ? user.email : '' %></span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[18px]">call</span>
-                        <span><%= user ? user.phone_number : '' %></span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[18px]">calendar_today</span>
-                        <span>انضم في <%= user ? new Date(user.created_at).toLocaleDateString('ar-EG') : '' %></span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Stats -->
-            <div class="bg-surface-container-low px-8 py-4 rounded-2xl text-center border border-outline-variant/10">
-                <span class="block text-display-lg-mobile text-primary font-bold"><%= reviews ? reviews.length : 0 %></span>
-                <span class="text-label-sm text-on-surface-variant">إجمالي التقييمات</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Actions & Content Grid -->
-    <div class="max-w-container-max mx-auto px-gutter mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8 pb-xl">
+    <main class="pb-16">
+        <% const userRole = currentUser?.roles || 'customer'; %>
         
-        <!-- Left Column: Actions & Form -->
-        <div class="lg:col-span-1 space-y-8">
-            
-            <!-- Quick Actions -->
-            <section class="bg-surface-container rounded-3xl p-6">
-                <h2 class="font-headline-md text-on-surface mb-6 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-secondary">bolt</span>
-                    إجراءات سريعة
-                </h2>
-                <div class="grid grid-cols-1 gap-3">
-                    <a class="action-card flex items-center justify-between p-4 bg-surface rounded-2xl border border-outline-variant/30 transition-all" href="/all-portfolios">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined text-primary">restaurant</span>
-                            <span class="font-body-md font-bold">استكشف المطابخ</span>
+        <!-- HERO SECTION -->
+        <div class="relative h-56 md:h-72 w-full gradient-cover overflow-hidden">
+            <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 20% 50%, white 1px, transparent 1px); background-size: 30px 30px;"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+        </div>
+
+        <!-- PROFILE HEADER -->
+        <div class="max-w-6xl mx-auto px-4 -mt-20 relative z-10">
+            <div class="glass-card rounded-3xl p-6 md:p-8 shadow-xl fade-in">
+                <div class="flex flex-col md:flex-row items-center md:items-end gap-6">
+                    <div class="relative -mt-16 md:-mt-20">
+                        <div class="w-32 h-32 md:w-40 md:h-40 rounded-full bg-white p-1 shadow-2xl">
+                            <img  
+                                class="w-full h-full rounded-full object-cover"
+                                src="<%= currentUser.portfolio_url || '/assests/avatar.jpeg' %>" 
+                                alt="<%= currentUser?.first_name ? currentUser.first_name.charAt(0).toUpperCase() : '?' %>">
                         </div>
-                        <span class="material-symbols-outlined text-on-surface-variant">chevron_left</span>
-                    </a>
-                    <a class="action-card flex items-center justify-between p-4 bg-surface rounded-2xl border border-outline-variant/30 transition-all" href="/all-portfolios?tab=dishes">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined text-primary">flatware</span>
-                            <span class="font-body-md font-bold">تصفح الأطباق</span>
+                        <div class="absolute -bottom-1 -right-1 w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center border-4 border-background">
+                            <% if (userRole === 'admin') { %>
+                                <span class="material-symbols-outlined text-[24px] text-error" style="font-variation-settings: 'FILL' 1;">admin_panel_settings</span>
+                            <% } else if (userRole === 'chef') { %>
+                                <span class="material-symbols-outlined text-[24px] text-secondary-container" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+                            <% } else { %>
+                                <span class="material-symbols-outlined text-[24px] text-tertiary" style="font-variation-settings: 'FILL' 1;">person</span>
+                            <% } %>
                         </div>
-                        <span class="material-symbols-outlined text-on-surface-variant">chevron_left</span>
-                    </a>
-                    <a class="action-card flex items-center justify-between p-4 bg-surface rounded-2xl border border-outline-variant/30 transition-all" href="/top-kitchens">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined text-primary">stars</span>
-                            <span class="font-body-md font-bold">أشهر المطابخ</span>
+                    </div>
+
+                    <div class="flex-1 text-center md:text-right md:pb-2">
+                        <h1 class="text-2xl md:text-4xl font-cairo font-bold text-on-surface mb-2">
+                            <%= currentUser?.first_name || '' %> <%= currentUser?.last_name || '' %>
+                        </h1>
+                        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold mb-3 <%= 
+                            userRole === 'admin' ? 'bg-red-100 text-red-700' : 
+                            (userRole === 'chef' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700') 
+                        %>">
+                            <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+                            <%= userRole === 'admin' ? 'مسؤول النظام' : (userRole === 'chef' ? 'طباخ محترف' : 'عميل مميز') %>
                         </div>
-                        <span class="material-symbols-outlined text-on-surface-variant">chevron_left</span>
-                    </a>
-                    <% if (user && user.roles === 'chef') { %>
-                        <a class="action-card flex items-center justify-between p-4 bg-surface rounded-2xl border border-outline-variant/30 transition-all" href="/vendor-dashboard">
-                            <div class="flex items-center gap-3">
-                                <span class="material-symbols-outlined text-primary">kitchen</span>
-                                <span class="font-body-md font-bold">إدارة مطبخي</span>
+                        <div class="flex flex-wrap justify-center md:justify-start gap-4 text-on-surface-variant text-sm">
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[18px] text-primary" style="font-variation-settings: 'FILL' 0;">mail</span>
+                                <span><%= currentUser?.email || '' %></span>
                             </div>
-                            <span class="material-symbols-outlined text-on-surface-variant">chevron_left</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[18px] text-primary" style="font-variation-settings: 'FILL' 0;">call</span>
+                                <span><%= currentUser?.phone_number || 'غير محدد' %></span>
+                            </div>
+                            <% if (currentUser?.city) { %>
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[18px] text-primary" style="font-variation-settings: 'FILL' 0;">location_on</span>
+                                <span><%= currentUser.city %></span>
+                            </div>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <a href="/users/settings" class="flex items-center justify-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-primary-container transition-all shadow-lg">
+                            <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">settings</span>
+                            <span class="text-sm">الإعدادات</span>
                         </a>
-                    <% } %>
-                </div>
-            </section>
-
-            <!-- Edit Profile Form -->
-            <section class="bg-white rounded-3xl p-8 shadow-sm border border-outline-variant/10">
-                <h2 class="font-headline-md text-on-surface mb-6 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">edit_square</span>
-                    تعديل الحساب
-                </h2>
-                <form id="editProfileForm" class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-1">
-                            <label class="text-label-sm font-bold text-on-surface-variant">الاسم الأول</label>
-                            <input id="first_name" class="bg-surface border-outline-variant/20 focus:border-primary focus:ring-primary rounded-xl p-3 font-body-md" type="text" value="<%= user ? user.first_name : '' %>">
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-label-sm font-bold text-on-surface-variant">اسم العائلة</label>
-                            <input id="last_name" class="bg-surface border-outline-variant/20 focus:border-primary focus:ring-primary rounded-xl p-3 font-body-md" type="text" value="<%= user ? user.last_name : '' %>">
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-label-sm font-bold text-on-surface-variant">رقم الجوال</label>
-                        <input id="phone_number" class="bg-surface border-outline-variant/20 focus:border-primary focus:ring-primary rounded-xl p-3 font-body-md" type="tel" value="<%= user ? user.phone_number : '' %>">
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-label-sm font-bold text-on-surface-variant">البريد الإلكتروني (للقراءة فقط)</label>
-                        <input id="email" class="bg-surface-container-low border-outline-variant/10 text-on-surface-variant rounded-xl p-3 font-body-md cursor-not-allowed" readonly type="email" value="<%= user ? user.email : '' %>">
-                    </div>
-                    <% if (user && user.roles === 'admin') { %>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-label-sm font-bold text-on-surface-variant">الدور</label>
-                            <select id="roles" class="bg-surface border-outline-variant/20 focus:border-primary focus:ring-primary rounded-xl p-3 font-body-md">
-                                <option value="customer" <%= user.roles === 'customer' ? 'selected' : '' %>>عميل</option>
-                                <option value="chef" <%= user.roles === 'chef' ? 'selected' : '' %>>طباخ</option>
-                                <option value="admin" <%= user.roles === 'admin' ? 'selected' : '' %>>مسؤول</option>
-                            </select>
-                        </div>
-                    <% } %>
-                    <div id="alertContainer" class="hidden p-3 rounded-xl text-sm font-semibold"></div>
-                    <div class="flex flex-col gap-3 pt-4">
-                        <button id="saveBtn" class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-md" type="submit">
-                            💾 حفظ التغييرات
-                        </button>
-                        <button class="w-full bg-surface-container-high text-on-surface-variant py-3 rounded-xl font-bold hover:bg-surface-variant transition-colors" type="reset">
-                            إلغاء التعديلات
-                        </button>
-                    </div>
-                </form>
-            </section>
-        </div>
-
-        <!-- Right Column: Reviews List -->
-        <div class="lg:col-span-2">
-            <section class="bg-surface-container-lowest rounded-3xl p-8 border border-outline-variant/10 min-h-[600px]">
-                <div class="flex items-center justify-between mb-8">
-                    <h2 class="font-headline-md text-on-surface flex items-center gap-2">
-                        <span>⭐</span>
-                        تقييماتي على الأطباق
-                    </h2>
-                    <div class="text-label-sm text-primary font-bold"><%= reviews ? reviews.length : 0 %> تقييم</div>
-                </div>
-
-                <!-- Reviews List -->
-                <div class="space-y-6" id="reviewsContainer">
-                    <% if (reviews && reviews.length > 0) { %>
-                        <% reviews.forEach(function(review) { %>
-                            <div class="group bg-surface rounded-2xl p-6 border border-outline-variant/10 hover:border-primary/30 transition-all flex flex-col md:flex-row gap-6">
-                                <div class="flex-1">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <h3 class="font-headline-md text-[18px] text-on-surface mb-1"><%= review.dish_name || 'طبق' %></h3>
-                                            <p class="text-label-sm text-secondary font-bold"><%= review.kitchen_name || 'مطبخ' %></p>
-                                        </div>
-                                        <span class="text-label-sm text-on-surface-variant"><%= new Date(review.created_at).toLocaleDateString('ar-EG') %></span>
-                                    </div>
-                                    <div class="flex items-center gap-1 my-2">
-                                        <% for (var i = 0; i < 5; i++) { %>
-                                            <span class="material-symbols-outlined <%= i < review.rating ? 'text-secondary' : 'text-outline' %>" style=`<%= i < review.rating ? 'font-variation-settings: \"FILL\" 1;' : '' %>`>star</span>
-                                        <% } %>
-                                    </div>
-                                    <p class="text-body-md text-on-surface-variant italic">"<%= review.comment || 'لا يوجد تعليق' %>"</p>
-                                </div>
+                        <div class="bg-surface-container-low px-6 py-3 rounded-xl border border-outline-variant/30 text-center">
+                            <div class="text-2xl font-cairo font-bold text-primary" id="mainStat">-</div>
+                            <div class="text-xs text-on-surface-variant">
+                                <%= userRole === 'chef' ? 'إجمالي الأطباق' : 'التقييمات' %>
                             </div>
-                        <% }); %>
-                    <% } else { %>
-                        <div class="flex flex-col items-center justify-center py-20 text-center">
-                            <div class="text-[64px] mb-4">📭</div>
-                            <h3 class="text-headline-md text-on-surface-variant">لم تقم بتقييم أي طبق بعد</h3>
-                            <p class="text-body-md text-outline mt-2">ابدأ رحلة التذوق وشاركنا رأيك في الأطباق المفضلة لديك!</p>
-                            <a href="/all-portfolios" class="mt-6 px-8 py-3 bg-primary text-white rounded-full font-bold hover:scale-105 transition-all">
-                                استكشف الأطباق الآن
-                            </a>
                         </div>
-                    <% } %>
-                </div>
-            </section>
-        </div>
-    </div>
-</main>
-
-<!-- Footer -->
-<footer class="bg-surface-container-lowest border-t border-outline-variant/30 py-lg mt-8">
-    <div class="max-w-container-max mx-auto px-gutter">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div class="flex flex-col items-center md:items-start gap-2">
-                <span class="font-headline-md text-primary font-extrabold">دوق</span>
-                <p class="text-label-sm text-on-surface-variant">© 2026 دوق. فن التذوق المنزلي.</p>
-            </div>
-            <div class="flex gap-8 flex-wrap justify-center">
-                <a class="text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">سياسة الخصوصية</a>
-                <a class="text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">شروط الخدمة</a>
-                <a class="text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="/contact">تواصل معنا</a>
-                <a class="text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="/faqs">مركز المساعدة</a>
-            </div>
-            <div class="flex gap-4">
-                <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center hover:bg-primary/10 transition-colors cursor-pointer">
-                    <span class="material-symbols-outlined text-primary text-[20px]">public</span>
-                </div>
-                <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center hover:bg-primary/10 transition-colors cursor-pointer">
-                    <span class="material-symbols-outlined text-primary text-[20px]">share</span>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- TABS -->
+        <div class="max-w-6xl mx-auto px-4 mt-8">
+            <div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2" id="tabsContainer"></div>
+        </div>
+
+        <!-- TAB CONTENT -->
+        <div class="max-w-6xl mx-auto px-4 mt-6" id="tabContent">
+            <div class="text-center py-12"><div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div></div>
+        </div>
+    </main>
+
+    <!-- ========================================== -->
+    <!-- Edit Review Modal (تمت إضافته) -->
+    <!-- ========================================== -->
+    <div id="editReviewModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-surface-container-lowest rounded-2xl max-w-md w-full p-6 shadow-2xl border border-outline-variant/30 fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-cairo font-bold text-on-surface">تعديل التقييم</h3>
+                <button onclick="closeEditModal()" class="p-2 hover:bg-surface-container rounded-full transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form id="editReviewForm">
+                <input type="hidden" id="editReviewId">
+                
+                <!-- Star Rating Selector -->
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-on-surface-variant mb-2">التقييم</label>
+                    <div class="flex gap-1 flex-row-reverse justify-end" id="editStarContainer">
+                        <!-- Stars will be generated by JS -->
+                    </div>
+                    <input type="hidden" id="editRating" required>
+                </div>
+
+                <!-- Comment -->
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-on-surface-variant mb-2">التعليق</label>
+                    <textarea id="editComment" rows="3" class="w-full bg-surface-container-low border border-outline-variant rounded-xl p-3 focus:border-primary focus:ring-1 focus:ring-primary resize-none" placeholder="اكتب تعليقك الجديد هنا..."></textarea>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary-container transition-all">حفظ التعديلات</button>
+                    <button type="button" onclick="closeEditModal()" class="flex-1 bg-surface-container text-on-surface-variant py-3 rounded-xl font-bold hover:bg-surface-container-high transition-colors">إلغاء</button>
+                </div>
+            </form>
+        </div>
     </div>
-</footer>
 
-<script>
-    // ============================================
-    // Toast Notification
-    // ============================================
-    function showAlert(message, type) {
-        var container = document.getElementById('alertContainer');
-        container.classList.remove('hidden');
-        var bgColor = type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-800 border-red-200';
-        container.className = 'p-3 rounded-xl text-sm font-semibold ' + bgColor + ' border';
-        container.textContent = message;
-        
-        setTimeout(function() {
-            container.classList.add('hidden');
-        }, 5000);
-    }
+    <%- include('../partials/footer.ejs') %>
 
-    // ============================================
-    // Update Profile - PUT /users/
-    // ============================================
-    document.getElementById('editProfileForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        var btn = document.getElementById('saveBtn');
-        var originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></div> جاري الحفظ...';
+    <script>
+        const currentUser = <%- JSON.stringify(currentUser || null) %>;
+        const userRole = currentUser?.roles || 'customer';
+        let currentTab = 'overview';
+        let currentReviewsData = []; // متغير عالمي لحفظ بيانات التقييمات الحالية لاستخدامها في التعديل
 
-        var data = {
-            first_name: document.getElementById('first_name').value.trim(),
-            last_name: document.getElementById('last_name').value.trim(),
-            phone_number: document.getElementById('phone_number').value.trim()
+        const tabsConfig = {
+            customer: [
+                { id: 'overview', label: 'نظرة عامة', icon: 'dashboard' },
+                { id: 'reviews', label: 'تقييماتي', icon: 'rate_review' },
+                { id: 'activity', label: 'النشاط', icon: 'history' }
+            ],
+            chef: [
+                { id: 'overview', label: 'نظرة عامة', icon: 'dashboard' },
+                { id: 'kitchen', label: 'مطبخي', icon: 'storefront' },
+                { id: 'dishes', label: 'أطباقي', icon: 'flatware' }
+            ],
+            admin: [
+                { id: 'overview', label: 'نظرة عامة', icon: 'dashboard' },
+                { id: 'stats', label: 'الإحصائيات', icon: 'analytics' }
+            ]
         };
 
-        var rolesSelect = document.getElementById('roles');
-        if (rolesSelect) {
-            data.roles = rolesSelect.value;
+        function renderTabs() {
+            const container = document.getElementById('tabsContainer');
+            const tabs = tabsConfig[userRole] || tabsConfig.customer;
+            container.innerHTML = tabs.map(tab => `
+                <button onclick="switchTab('${tab.id}')" id="tab-${tab.id}"
+                        class="tab-${tab.id === currentTab ? 'active' : 'inactive'} 
+                               flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all">
+                    <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' ${tab.id === currentTab ? '1' : '0'};">${tab.icon}</span>
+                    ${tab.label}
+                </button>
+            `).join('');
         }
 
-        fetch('/users', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        })
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(result) {
-            if (result.status === 'success') {
-                showAlert('✅ ' + (result.message || 'تم تحديث البيانات بنجاح'), 'success');
-                // Update avatar and name in header
-                var avatar = document.getElementById('userAvatarContainer');
-                if (avatar) {
-                    var avatarSpan = avatar.querySelector('span');
-                    if (avatarSpan) {
-                        avatarSpan.textContent = data.first_name.charAt(0).toUpperCase();
+        function switchTab(tabId) {
+            currentTab = tabId;
+            renderTabs();
+            renderContent();
+        }
+
+        async function renderContent() {
+            const container = document.getElementById('tabContent');
+            container.innerHTML = '<div class="text-center py-12"><div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div></div>';
+
+            if (currentTab === 'overview') await renderOverview(container);
+            else if (currentTab === 'reviews') await renderCustomerReviews(container);
+            else if (currentTab === 'kitchen') await renderChefKitchen(container);
+            else if (currentTab === 'dishes') await renderChefDishes(container);
+            else if (currentTab === 'activity') await renderCustomerActivity(container);
+            else if (currentTab === 'stats') await renderAdminStats(container);
+        }
+
+        async function renderOverview(container) {
+            if (userRole === 'customer') {
+                try {
+                    const res = await fetch('/reviews/v1/api/my?page=1&limit=5');
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        const reviews = data.data || [];
+                        const total = data.pagination?.total || 0;
+                        document.getElementById('mainStat').textContent = total;
+                        const avgRating = reviews.length > 0 ? (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1) : '0.0';
+
+                        container.innerHTML = `
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-in">
+                                <div class="lg:col-span-2 glass-card rounded-3xl p-6 md:p-8 border border-outline-variant/30">
+                                    <h2 class="font-cairo font-bold text-2xl text-on-surface mb-4 flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">waving_hand</span>
+                                        أهلاً بك، ${DOQ.escape(currentUser.first_name || '')}! 👋
+                                    </h2>
+                                    <p class="text-on-surface-variant mb-6 leading-relaxed">
+                                        هنا يمكنك متابعة جميع تقييماتك للأطباق، واكتشاف أطباق جديدة، والتواصل مع أفضل المطابخ في دوق.
+                                    </p>
+                                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                        <a href="/dishes" class="bg-primary/10 hover:bg-primary/20 text-primary p-4 rounded-2xl transition-all flex flex-col items-center gap-2">
+                                            <span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 0;">restaurant</span>
+                                            <span class="text-sm font-bold">تصفح الأطباق</span>
+                                        </a>
+                                        <a href="/kitchens" class="bg-secondary-container/10 hover:bg-secondary-container/20 text-secondary p-4 rounded-2xl transition-all flex flex-col items-center gap-2">
+                                            <span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 0;">storefront</span>
+                                            <span class="text-sm font-bold">استكشف المطابخ</span>
+                                        </a>
+                                        <a href="/reviews/my-reviews" class="bg-tertiary/10 hover:bg-tertiary/20 text-tertiary p-4 rounded-2xl transition-all flex flex-col items-center gap-2">
+                                            <span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 0;">rate_review</span>
+                                            <span class="text-sm font-bold">كل تقييماتي</span>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="glass-card rounded-3xl p-6 border border-outline-variant/30">
+                                    <h3 class="font-cairo font-bold text-lg text-on-surface mb-4 flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">insights</span>
+                                        إحصائياتي
+                                    </h3>
+                                    <div class="space-y-3">
+                                        <div class="bg-surface-container-low p-4 rounded-2xl">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-on-surface-variant text-sm">التقييمات</span>
+                                                <span class="font-cairo font-bold text-2xl text-primary">${total}</span>
+                                            </div>
+                                        </div>
+                                        <div class="bg-surface-container-low p-4 rounded-2xl">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-on-surface-variant text-sm">متوسط التقييم</span>
+                                                <span class="font-cairo font-bold text-2xl text-secondary">${avgRating}</span>
+                                            </div>
+                                        </div>
+                                        <div class="bg-surface-container-low p-4 rounded-2xl">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-on-surface-variant text-sm">تاريخ الانضمام</span>
+                                                <span class="font-cairo font-bold text-sm text-tertiary">${new Date(currentUser.created_at).toLocaleDateString('ar-EG', {year: 'numeric', month: 'short'})}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6 glass-card rounded-3xl p-6 md:p-8 border border-outline-variant/30 fade-in">
+                                <div class="flex items-center justify-between mb-6">
+                                    <h3 class="font-cairo font-bold text-xl text-on-surface flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">rate_review</span>
+                                        آخر تقييماتي
+                                    </h3>
+                                    ${reviews.length > 0 ? `<a href="/reviews/my-reviews" class="text-primary text-sm font-bold hover:underline">عرض الكل ←</a>` : ''}
+                                </div>
+                                ${reviews.length === 0 ? `
+                                    <div class="text-center py-12">
+                                        <span class="material-symbols-outlined text-6xl text-outline-variant mb-3" style="font-variation-settings: 'FILL' 0;">rate_review</span>
+                                        <p class="text-on-surface-variant mb-4">لم تقم بتقييم أي طبق بعد</p>
+                                        <a href="/dishes" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-primary-container transition-all">
+                                            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">restaurant</span>
+                                            ابدأ التقييم الآن
+                                        </a>
+                                    </div>
+                                ` : `
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        ${reviews.map(r => `
+                                            <div class="bg-surface-container-low p-4 rounded-2xl border border-outline-variant/20 hover:border-primary/30 transition-all">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="w-12 h-12 rounded-xl bg-surface overflow-hidden flex-shrink-0">
+                                                        ${r.dish_image ? `<img src="${DOQ.safeImage(r.dish_image)}" class="w-full h-full object-cover">` : 
+                                                        `<div class="w-full h-full flex items-center justify-center"><span class="material-symbols-outlined text-outline-variant" style="font-variation-settings: 'FILL' 0;">restaurant</span></div>`}
+                                                    </div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="flex items-center justify-between mb-1">
+                                                            <h4 class="font-bold text-on-surface truncate">${DOQ.escape(r.dish_name || 'طبق')}</h4>
+                                                            <div class="flex gap-0.5">${renderStars(r.rating)}</div>
+                                                        </div>
+                                                        <p class="text-xs text-secondary font-medium mb-1">${DOQ.escape(r.kitchen_name || '')}</p>
+                                                        <p class="text-sm text-on-surface-variant line-clamp-2">"${DOQ.escape(r.comment || 'لا يوجد تعليق')}"</p>
+                                                        <p class="text-xs text-outline mt-2">${new Date(r.created_at).toLocaleDateString('ar-EG')}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                `}
+                            </div>
+                        `;
                     }
+                } catch (err) {
+                    container.innerHTML = '<div class="text-center py-12 text-error">حدث خطأ في تحميل البيانات</div>';
                 }
-                var nameHeader = document.querySelector('.text-headline-md.text-on-surface');
-                if (nameHeader) {
-                    nameHeader.textContent = data.first_name + ' ' + data.last_name;
+            } else if (userRole === 'chef') {
+                try {
+                    const [kRes, dRes] = await Promise.all([
+                        fetch('/kitchens/api/v1/my'),
+                        fetch('/dishes/v1/api/my?limit=1')
+                    ]);
+                    const kData = await kRes.json();
+                    const dData = await dRes.json();
+                    const kitchen = kData.data?.[0] || kData.data;
+                    const dishesCount = dData.pagination?.total || 0;
+                    document.getElementById('mainStat').textContent = dishesCount;
+
+                    container.innerHTML = `
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-in">
+                            <div class="lg:col-span-2 glass-card rounded-3xl p-6 md:p-8 border border-outline-variant/30">
+                                <h2 class="font-cairo font-bold text-2xl text-on-surface mb-4 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-secondary-container" style="font-variation-settings: 'FILL' 0;">storefront</span>
+                                    ${DOQ.escape(kitchen?.title || 'مطبخي')}
+                                </h2>
+                                <p class="text-on-surface-variant mb-6">${DOQ.escape(kitchen?.description || 'لا يوجد وصف')}</p>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                                    <div class="bg-surface-container-low p-3 rounded-xl text-center">
+                                        <div class="text-2xl font-cairo font-bold text-primary">${dishesCount}</div>
+                                        <div class="text-xs text-on-surface-variant">طبق</div>
+                                    </div>
+                                    <div class="bg-surface-container-low p-3 rounded-xl text-center">
+                                        <div class="text-2xl font-cairo font-bold text-secondary">-</div>
+                                        <div class="text-xs text-on-surface-variant">تقييم</div>
+                                    </div>
+                                    <div class="bg-surface-container-low p-3 rounded-xl text-center">
+                                        <div class="text-2xl font-cairo font-bold text-tertiary">${DOQ.escape(kitchen?.city || '-')}</div>
+                                        <div class="text-xs text-on-surface-variant">المدينة</div>
+                                    </div>
+                                    <div class="bg-surface-container-low p-3 rounded-xl text-center">
+                                        <div class="text-2xl font-cairo font-bold text-primary">نشط</div>
+                                        <div class="text-xs text-on-surface-variant">الحالة</div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-3">
+                                    <a href="/kitchens/my" class="bg-primary text-white px-5 py-2.5 rounded-xl font-bold hover:bg-primary-container transition-all flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">edit</span>
+                                        تعديل المطبخ
+                                    </a>
+                                    <a href="/dishes" class="bg-surface-container text-on-surface px-5 py-2.5 rounded-xl font-bold hover:bg-surface-container-high transition-all flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">flatware</span>
+                                        إدارة الأطباق
+                                    </a>
+                                    <a href="/users/dashboard" class="bg-surface-container text-on-surface px-5 py-2.5 rounded-xl font-bold hover:bg-surface-container-high transition-all flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+                                        لوحة التحكم
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="glass-card rounded-3xl p-6 border border-outline-variant/30">
+                                <h3 class="font-cairo font-bold text-lg text-on-surface mb-4 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">bolt</span>
+                                    إجراءات سريعة
+                                </h3>
+                                <div class="space-y-2">
+                                    <a href="/dishes" class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl hover:bg-surface-container transition-all">
+                                        <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">add_circle</span>
+                                        <span class="font-bold text-sm">إضافة طبق جديد</span>
+                                    </a>
+                                    <a href="/reviews" class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl hover:bg-surface-container transition-all">
+                                        <span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 0;">star</span>
+                                        <span class="font-bold text-sm">عرض التقييمات</span>
+                                    </a>
+                                    <a href="/payment" class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl hover:bg-surface-container transition-all">
+                                        <span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 0;">account_balance_wallet</span>
+                                        <span class="font-bold text-sm">الاشتراكات</span>
+                                    </a>
+                                    <a href="/users/settings" class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl hover:bg-surface-container transition-all">
+                                        <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">settings</span>
+                                        <span class="font-bold text-sm">الإعدادات</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } catch (err) {
+                    container.innerHTML = '<div class="text-center py-12 text-error">حدث خطأ في تحميل البيانات</div>';
                 }
-            } else {
-                showAlert('❌ ' + (result.message || 'حدث خطأ أثناء التحديث'), 'error');
+            } else if (userRole === 'admin') {
+                document.getElementById('mainStat').textContent = 'Admin';
+                container.innerHTML = `
+                    <div class="glass-card rounded-3xl p-8 border border-outline-variant/30 fade-in">
+                        <h2 class="font-cairo font-bold text-2xl text-on-surface mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">admin_panel_settings</span>
+                            لوحة تحكم المسؤول
+                        </h2>
+                        <p class="text-on-surface-variant mb-6">مرحباً بك في لوحة الإدارة. يمكنك إدارة المستخدمين والمطابخ والأطباق.</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <a href="/users" class="bg-error/10 hover:bg-error/20 text-error p-5 rounded-2xl transition-all flex flex-col items-center gap-2">
+                                <span class="material-symbols-outlined text-[36px]" style="font-variation-settings: 'FILL' 0;">group</span>
+                                <span class="text-sm font-bold">المستخدمين</span>
+                            </a>
+                            <a href="/kitchens" class="bg-secondary-container/10 hover:bg-secondary-container/20 text-secondary p-5 rounded-2xl transition-all flex flex-col items-center gap-2">
+                                <span class="material-symbols-outlined text-[36px]" style="font-variation-settings: 'FILL' 0;">storefront</span>
+                                <span class="text-sm font-bold">المطابخ</span>
+                            </a>
+                            <a href="/dishes" class="bg-primary/10 hover:bg-primary/20 text-primary p-5 rounded-2xl transition-all flex flex-col items-center gap-2">
+                                <span class="material-symbols-outlined text-[36px]" style="font-variation-settings: 'FILL' 0;">flatware</span>
+                                <span class="text-sm font-bold">الأطباق</span>
+                            </a>
+                            <a href="/reviews" class="bg-tertiary/10 hover:bg-tertiary/20 text-tertiary p-5 rounded-2xl transition-all flex flex-col items-center gap-2">
+                                <span class="material-symbols-outlined text-[36px]" style="font-variation-settings: 'FILL' 0;">rate_review</span>
+                                <span class="text-sm font-bold">التقييمات</span>
+                            </a>
+                        </div>
+                    </div>
+                `;
             }
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        })
-        .catch(function(error) {
-            console.error('Update Error:', error);
-            showAlert('❌ حدث خطأ في الاتصال بالخادم', 'error');
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+        }
+
+        async function renderCustomerReviews(container) {
+            try {
+                const res = await fetch('/reviews/v1/api/my?page=1&limit=20');
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const reviews = data.data || [];
+                    const pagination = data.pagination || {};
+                    
+                    // حفظ البيانات في المتغير العالمي لاستخدامها في التعديل
+                    currentReviewsData = reviews; 
+
+                    container.innerHTML = `
+                        <div class="glass-card rounded-3xl p-6 md:p-8 border border-outline-variant/30 fade-in">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="font-cairo font-bold text-2xl text-on-surface flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">rate_review</span>
+                                    جميع تقييماتي (${pagination.total || 0})
+                                </h2>
+                            </div>
+                            ${reviews.length === 0 ? `
+                                <div class="text-center py-16">
+                                    <span class="material-symbols-outlined text-7xl text-outline-variant mb-4" style="font-variation-settings: 'FILL' 0;">rate_review</span>
+                                    <h3 class="text-xl font-bold text-on-surface mb-2">لا توجد تقييمات بعد</h3>
+                                    <p class="text-on-surface-variant mb-6">ابدأ بتقييم الأطباق التي جربتها!</p>
+                                    <a href="/dishes" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-primary-container transition-all">
+                                        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">restaurant</span>
+                                        تصفح الأطباق
+                                    </a>
+                                </div>
+                            ` : `
+                                <div class="space-y-4">
+                                    ${reviews.map(r => `
+                                        <div class="bg-surface-container-low p-5 rounded-2xl border border-outline-variant/20 hover:border-primary/30 transition-all">
+                                            <div class="flex items-start gap-4">
+                                                <div class="w-16 h-16 rounded-xl bg-surface overflow-hidden flex-shrink-0">
+                                                    ${r.dish_image ? `<img src="${DOQ.safeImage(r.dish_image)}" class="w-full h-full object-cover">` : 
+                                                    `<div class="w-full h-full flex items-center justify-center"><span class="material-symbols-outlined text-outline-variant text-[32px]" style="font-variation-settings: 'FILL' 0;">restaurant</span></div>`}
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="flex items-start justify-between mb-2 flex-wrap gap-2">
+                                                        <div>
+                                                            <h4 class="font-cairo font-bold text-lg text-on-surface">${DOQ.escape(r.dish_name || 'طبق')}</h4>
+                                                            <p class="text-sm text-secondary font-medium">${DOQ.escape(r.kitchen_name || '')}</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-2">
+                                                            <div class="flex gap-0.5">${renderStars(r.rating)}</div>
+                                                            <span class="text-sm font-bold text-primary">${r.rating}/5</span>
+                                                        </div>
+                                                    </div>
+                                                    ${r.comment ? `<p class="text-on-surface-variant bg-surface p-3 rounded-xl mb-2 leading-relaxed">"${DOQ.escape(r.comment)}"</p>` : ''}
+                                                    <div class="flex items-center justify-between">
+                                                        <span class="text-xs text-outline">${new Date(r.created_at).toLocaleDateString('ar-EG', {year: 'numeric', month: 'long', day: 'numeric'})}</span>
+                                                        <div class="flex gap-2">
+                                                            <button onclick="openEditModal(${r.id})" class="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-bold hover:bg-primary/20 transition-all flex items-center gap-1">
+                                                                <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">edit</span>
+                                                                تعديل
+                                                            </button>
+                                                            <button onclick="deleteReview(${r.id})" class="text-xs bg-error/10 text-error px-3 py-1.5 rounded-lg font-bold hover:bg-error/20 transition-all flex items-center gap-1">
+                                                                <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">delete</span>
+                                                                حذف
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                ${pagination.total_pages > 1 ? `
+                                    <div class="flex justify-center gap-2 mt-6">
+                                        ${Array.from({length: pagination.total_pages}, (_, i) => i + 1).map(p => `
+                                            <button onclick="loadReviewsPage(${p})" class="w-10 h-10 rounded-lg ${p === pagination.page ? 'bg-primary text-white' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'} font-bold transition-all">${p}</button>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            `}
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                container.innerHTML = '<div class="text-center py-12 text-error">حدث خطأ في تحميل التقييمات</div>';
+            }
+        }
+
+        async function renderChefKitchen(container) {
+            try {
+                const res = await fetch('/kitchens/api/v1/my');
+                const data = await res.json();
+                const kitchen = data.data?.[0] || data.data;
+                if (!kitchen) {
+                    container.innerHTML = `
+                        <div class="glass-card rounded-3xl p-8 border border-outline-variant/30 text-center fade-in">
+                            <span class="material-symbols-outlined text-7xl text-outline-variant mb-4" style="font-variation-settings: 'FILL' 0;">storefront</span>
+                            <h3 class="text-xl font-bold text-on-surface mb-2">لا يوجد مطبخ مرتبط بحسابك</h3>
+                            <p class="text-on-surface-variant mb-6">أنشئ مطبخك الآن وابدأ في إضافة أطباقك!</p>
+                            <a href="/kitchens/create" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-primary-container transition-all">
+                                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">add_business</span>
+                                إنشاء مطبخ جديد
+                            </a>
+                        </div>
+                    `;
+                    return;
+                }
+                container.innerHTML = `
+                    <div class="glass-card rounded-3xl overflow-hidden border border-outline-variant/30 fade-in">
+                        ${kitchen.image_url ? `
+                            <div class="h-48 bg-cover bg-center" style="background-image: url('${DOQ.safeImage(kitchen.image_url)}')">
+                                <div class="w-full h-full bg-gradient-to-t from-black/60 to-transparent"></div>
+                            </div>
+                        ` : '<div class="h-48 gradient-cover"></div>'}
+                        <div class="p-6 md:p-8">
+                            <div class="flex items-start justify-between mb-6 flex-wrap gap-4">
+                                <div>
+                                    <h2 class="font-cairo font-bold text-2xl md:text-3xl text-on-surface mb-2">${DOQ.escape(kitchen.title || '')}</h2>
+                                    <div class="flex items-center gap-4 text-on-surface-variant text-sm flex-wrap">
+                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">location_on</span>${DOQ.escape(kitchen.city || 'غير محدد')}</span>
+                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">call</span>${DOQ.escape(kitchen.phone_number || '-')}</span>
+                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">calendar_today</span>${new Date(kitchen.created_at).toLocaleDateString('ar-EG')}</span>
+                                    </div>
+                                </div>
+                                <a href="/kitchens/my" class="bg-primary text-white px-5 py-2.5 rounded-xl font-bold hover:bg-primary-container transition-all flex items-center gap-2">
+                                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">edit</span>
+                                    تعديل
+                                </a>
+                            </div>
+                            ${kitchen.description ? `<p class="text-on-surface-variant leading-relaxed mb-6 bg-surface-container-low p-4 rounded-2xl">${DOQ.escape(kitchen.description)}</p>` : ''}
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div class="bg-surface-container-low p-4 rounded-2xl text-center">
+                                    <span class="material-symbols-outlined text-3xl text-primary mb-1" style="font-variation-settings: 'FILL' 0;">flatware</span>
+                                    <div class="text-xs text-on-surface-variant">الأطباق</div>
+                                </div>
+                                <div class="bg-surface-container-low p-4 rounded-2xl text-center">
+                                    <span class="material-symbols-outlined text-3xl text-secondary mb-1" style="font-variation-settings: 'FILL' 0;">star</span>
+                                    <div class="text-xs text-on-surface-variant">التقييمات</div>
+                                </div>
+                                <div class="bg-surface-container-low p-4 rounded-2xl text-center">
+                                    <span class="material-symbols-outlined text-3xl text-tertiary mb-1" style="font-variation-settings: 'FILL' 0;">verified</span>
+                                    <div class="text-xs text-on-surface-variant">Fair Score</div>
+                                </div>
+                                <div class="bg-surface-container-low p-4 rounded-2xl text-center">
+                                    <span class="material-symbols-outlined text-3xl text-primary mb-1" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                    <div class="text-xs text-on-surface-variant">نشط</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                container.innerHTML = '<div class="text-center py-12 text-error">حدث خطأ في تحميل بيانات المطبخ</div>';
+            }
+        }
+
+        async function renderChefDishes(container) {
+            try {
+                const res = await fetch('/dishes/v1/api/my?page=1&limit=12');
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const dishes = data.data || [];
+                    const pagination = data.pagination || {};
+                    container.innerHTML = `
+                        <div class="glass-card rounded-3xl p-6 md:p-8 border border-outline-variant/30 fade-in">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="font-cairo font-bold text-2xl text-on-surface flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">flatware</span>
+                                    أطباقي (${pagination.total || 0})
+                                </h2>
+                                <a href="/dishes" class="bg-primary text-white px-4 py-2 rounded-xl font-bold hover:bg-primary-container transition-all flex items-center gap-2 text-sm">
+                                    <span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">add</span>
+                                    إضافة طبق
+                                </a>
+                            </div>
+                            ${dishes.length === 0 ? `
+                                <div class="text-center py-16">
+                                    <span class="material-symbols-outlined text-7xl text-outline-variant mb-4" style="font-variation-settings: 'FILL' 0;">flatware</span>
+                                    <h3 class="text-xl font-bold text-on-surface mb-2">لا توجد أطباق بعد</h3>
+                                    <p class="text-on-surface-variant mb-6">ابدأ بإضافة أطباقك المميزة!</p>
+                                    <a href="/dishes" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-primary-container transition-all">
+                                        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">add_circle</span>
+                                        إضافة أول طبق
+                                    </a>
+                                </div>
+                            ` : `
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    ${dishes.map(d => `
+                                        <div class="bg-surface-container-low rounded-2xl overflow-hidden border border-outline-variant/20 hover:border-primary/30 transition-all">
+                                            <div class="h-40 bg-surface overflow-hidden">
+                                                ${d.image_url ? `<img src="${DOQ.safeImage(d.image_url)}" class="w-full h-full object-cover">` : 
+                                                `<div class="w-full h-full flex items-center justify-center"><span class="material-symbols-outlined text-outline-variant text-[48px]" style="font-variation-settings: 'FILL' 0;">restaurant</span></div>`}
+                                            </div>
+                                            <div class="p-4">
+                                                <h4 class="font-bold text-on-surface mb-1 truncate">${DOQ.escape(d.name || 'طبق')}</h4>
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-primary font-bold">${d.price || 0} ج.م</span>
+                                                    <span class="text-xs text-on-surface-variant">${d.reviews_count || 0} تقييم</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `}
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                container.innerHTML = '<div class="text-center py-12 text-error">حدث خطأ في تحميل الأطباق</div>';
+            }
+        }
+
+        async function renderCustomerActivity(container) {
+            container.innerHTML = `
+                <div class="glass-card rounded-3xl p-8 border border-outline-variant/30 text-center fade-in">
+                    <span class="material-symbols-outlined text-7xl text-outline-variant mb-4" style="font-variation-settings: 'FILL' 0;">history</span>
+                    <h3 class="text-xl font-bold text-on-surface mb-2">سجل النشاط</h3>
+                    <p class="text-on-surface-variant">سيتم عرض آخر نشاطاتك هنا قريباً (طلبات، مفضلة، إلخ)</p>
+                </div>
+            `;
+        }
+
+        async function renderAdminStats(container) {
+            container.innerHTML = `
+                <div class="glass-card rounded-3xl p-8 border border-outline-variant/30 text-center fade-in">
+                    <span class="material-symbols-outlined text-7xl text-outline-variant mb-4" style="font-variation-settings: 'FILL' 0;">analytics</span>
+                    <h3 class="text-xl font-bold text-on-surface mb-2">إحصائيات المنصة</h3>
+                    <p class="text-on-surface-variant">يمكنك الوصول إلى لوحة تحكم المسؤول الكاملة</p>
+                    <a href="/users/dashboard" class="inline-flex items-center gap-2 bg-error text-white px-6 py-3 rounded-xl font-bold hover:bg-error/90 transition-all mt-4">
+                        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">admin_panel_settings</span>
+                        لوحة تحكم الأدمن
+                    </a>
+                </div>
+            `;
+        }
+
+        function renderStars(rating) {
+            let html = '';
+            for (let i = 1; i <= 5; i++) {
+                html += `<span class="material-symbols-outlined text-[16px] ${i <= rating ? 'star-filled' : 'star-empty'}" style="font-variation-settings: 'FILL' ${i <= rating ? '1' : '0'};">star</span>`;
+            }
+            return html;
+        }
+
+        // ==========================================
+        // دوال تعديل وحذف التقييم (تم تحديثها)
+        // ==========================================
+        
+        function openEditModal(reviewId) {
+            const review = currentReviewsData.find(r => r.id === reviewId);
+            if (!review) return;
+
+            document.getElementById('editReviewId').value = review.id;
+            document.getElementById('editRating').value = review.rating;
+            document.getElementById('editComment').value = review.comment || '';
+            
+            renderEditStars(review.rating);
+            document.getElementById('editReviewModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editReviewModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function renderEditStars(currentRating) {
+            const container = document.getElementById('editStarContainer');
+            container.innerHTML = '';
+            for (let i = 5; i >= 1; i--) {
+                const star = document.createElement('span');
+                star.className = `material-symbols-outlined text-[32px] cursor-pointer transition-colors ${i <= currentRating ? 'text-secondary' : 'text-outline-variant'}`;
+                star.style.fontVariationSettings = `'FILL' ${i <= currentRating ? 1 : 0}`;
+                star.textContent = 'star';
+                star.onclick = () => {
+                    document.getElementById('editRating').value = i;
+                    renderEditStars(i); // إعادة رسم النجوم لتحديث الشكل
+                };
+                container.appendChild(star);
+            }
+        }
+
+        // إرسال طلب التعديل للـ Backend
+        document.getElementById('editReviewForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const reviewId = document.getElementById('editReviewId').value;
+            const rating = parseInt(document.getElementById('editRating').value);
+            const comment = document.getElementById('editComment').value;
+
+            if (!rating) {
+                alert('يرجى اختيار تقييم');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/reviews/v1/api/${reviewId}`, {
+                    method: 'PATCH', // استخدام PATCH للتحديث الجزئي كما هو معرف في الـ Controller
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rating, comment })
+                });
+                
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('تم تحديث التقييم بنجاح');
+                    closeEditModal();
+                    renderContent(); // إعادة تحميل المحتوى لعرض التعديلات
+                } else {
+                    alert('حدث خطأ: ' + (data.message || 'فشل في تحديث التقييم'));
+                }
+            } catch (err) {
+                alert('حدث خطأ في الاتصال');
+            }
         });
-    });
 
-    // ============================================
-    // Reset Form
-    // ============================================
-    document.querySelector('button[type="reset"]').addEventListener('click', function() {
-        document.getElementById('first_name').value = '<%= user ? user.first_name : "" %>';
-        document.getElementById('last_name').value = '<%= user ? user.last_name : "" %>';
-        document.getElementById('phone_number').value = '<%= user ? user.phone_number : "" %>';
-        var rolesSelect = document.getElementById('roles');
-        if (rolesSelect) {
-            rolesSelect.value = '<%= user ? user.roles : "customer" %>';
+        async function deleteReview(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا التقييم؟')) return;
+            try {
+                const res = await fetch(`/reviews/v1/api/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('تم الحذف بنجاح');
+                    renderContent();
+                } else {
+                    alert('حدث خطأ: ' + (data.message || ''));
+                }
+            } catch (err) { alert('حدث خطأ في الاتصال'); }
         }
-        showAlert('🔄 تم إعادة تعيين النموذج', 'success');
-    });
 
-    // ============================================
-    // Floating Navbar Effect
-    // ============================================
-    window.addEventListener('scroll', function() {
-        var nav = document.querySelector('nav');
-        if (window.scrollY > 20) {
-            nav.classList.add('shadow-md');
-        } else {
-            nav.classList.remove('shadow-md');
+        async function loadReviewsPage(page) {
+            currentTab = 'reviews';
+            renderTabs();
+            const container = document.getElementById('tabContent');
+            container.innerHTML = '<div class="text-center py-12"><div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div></div>';
+            try {
+                const res = await fetch(`/reviews/v1/api/my?page=${page}&limit=20`);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const reviews = data.data || [];
+                    const pagination = data.pagination || {};
+                    
+                    currentReviewsData = reviews; // تحديث البيانات عند تغيير الصفحة
+
+                    container.innerHTML = `
+                        <div class="glass-card rounded-3xl p-6 md:p-8 border border-outline-variant/30 fade-in">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="font-cairo font-bold text-2xl text-on-surface flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">rate_review</span>
+                                    جميع تقييماتي (${pagination.total || 0})
+                                </h2>
+                            </div>
+                            <div class="space-y-4">
+                                ${reviews.map(r => `
+                                    <div class="bg-surface-container-low p-5 rounded-2xl border border-outline-variant/20 hover:border-primary/30 transition-all">
+                                        <div class="flex items-start gap-4">
+                                            <div class="w-16 h-16 rounded-xl bg-surface overflow-hidden flex-shrink-0">
+                                                ${r.dish_image ? `<img src="${DOQ.safeImage(r.dish_image)}" class="w-full h-full object-cover">` : 
+                                                `<div class="w-full h-full flex items-center justify-center"><span class="material-symbols-outlined text-outline-variant text-[32px]" style="font-variation-settings: 'FILL' 0;">restaurant</span></div>`}
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="flex items-start justify-between mb-2 flex-wrap gap-2">
+                                                    <div>
+                                                        <h4 class="font-cairo font-bold text-lg text-on-surface">${DOQ.escape(r.dish_name || 'طبق')}</h4>
+                                                        <p class="text-sm text-secondary font-medium">${DOQ.escape(r.kitchen_name || '')}</p>
+                                                    </div>
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="flex gap-0.5">${renderStars(r.rating)}</div>
+                                                        <span class="text-sm font-bold text-primary">${r.rating}/5</span>
+                                                    </div>
+                                                </div>
+                                                ${r.comment ? `<p class="text-on-surface-variant bg-surface p-3 rounded-xl mb-2 leading-relaxed">"${DOQ.escape(r.comment)}"</p>` : ''}
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-xs text-outline">${new Date(r.created_at).toLocaleDateString('ar-EG', {year: 'numeric', month: 'long', day: 'numeric'})}</span>
+                                                    <div class="flex gap-2">
+                                                        <button onclick="openEditModal(${r.id})" class="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-bold hover:bg-primary/20 transition-all flex items-center gap-1">
+                                                            <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">edit</span>
+                                                            تعديل
+                                                        </button>
+                                                        <button onclick="deleteReview(${r.id})" class="text-xs bg-error/10 text-error px-3 py-1.5 rounded-lg font-bold hover:bg-error/20 transition-all flex items-center gap-1">
+                                                            <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">delete</span>
+                                                            حذف
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ${pagination.total_pages > 1 ? `
+                                <div class="flex justify-center gap-2 mt-6">
+                                    ${Array.from({length: pagination.total_pages}, (_, i) => i + 1).map(p => `
+                                        <button onclick="loadReviewsPage(${p})" class="w-10 h-10 rounded-lg ${p === pagination.page ? 'bg-primary text-white' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'} font-bold transition-all">${p}</button>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                container.innerHTML = '<div class="text-center py-12 text-error">حدث خطأ في تحميل التقييمات</div>';
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-    });
-</script>
 
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTabs();
+            renderContent();
+        });
+    </script>
 </body>
 </html>

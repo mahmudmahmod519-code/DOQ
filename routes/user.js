@@ -1,40 +1,61 @@
-const router=require("express").Router();
+﻿const router=require("express").Router();
 const roles=require('../middlware/roles');
-const my_data=require('../middlware/for_main');
+const for_main=require('../middlware/for_main');
 const allRows=require('../middlware/allRows');
 const auth=require('../middlware/auth');
+const upload = require("../middlware/upload");
 const catchError=require('../utiles/catchError');
+
+const { getChefOrders_controller } = require('../controller/orders');
 
 const {
     deleteUser_controller,
     changePortfolio_controller,
-    getSpcificUser_controller
+    getSpcificUser_controller,
+    getUnifiedChefDashboard,
+    uploadImageProfile_controller,
+    createUser_controller
 }=require("../controller/user");
 
 const {
-    admin_render,
-    portfolio_render
+    portfolio_render,
+    dashboard_render,
+    setting_render,
+    users_render
 }=require("../rendering/user");
 
 router.use(auth);
 
-//render users page can delete and update data for any user in the same page
-//get any user and info in the same page as form
-router.get('/dashboard',roles('admin'),allRows('user'),my_data('user'),catchError(admin_render));
 
 //render my portfolio can update data in the same page
 //don't add api return my portfolio will use middleware in the same render
 // isOwner
-router.get('/',my_data('user'),catchError(portfolio_render));
+router.get('/profile',for_main('review',true,true),catchError(portfolio_render));
 
-router.delete('/:id',roles('admin'),catchError(deleteUser_controller));
+//update in it
+router.get('/orders',roles('chef'),(req,res)=>res.render('./chef/orders',{...require('../utiles/checkLogin')(req,res),pageTitle:'طلبات المطبخ | دوق'}));
+router.get('/orders/api',roles('chef'),catchError(getChefOrders_controller));
 
+router.get('/dashboard',roles('chef','admin'),
+// getUnifiedChefDashboard,
+catchError(dashboard_render));
+
+router.get('/',roles('admin'),catchError(users_render))
+
+router.get('/settings',catchError(setting_render))
+
+router.post('/api/v1', roles('admin'), catchError(createUser_controller));
+
+router.delete('/api/v1/:id',roles('admin'),catchError(deleteUser_controller));
 
 //change data if admin and if any user
-router.put('/',my_data('user'),catchError(changePortfolio_controller));
-router.put('/:id',roles('admin'),my_data('user'),catchError(changePortfolio_controller));
+router.put('/api/v1/',catchError(changePortfolio_controller));
 
-router.get('/:id',roles('admin'),catchError(getSpcificUser_controller));
+router.put('/api/v1/:id',roles('admin'),catchError(changePortfolio_controller));
+
+router.get('/api/v1/:id',roles('admin'),catchError(getSpcificUser_controller));
+
+router.post("/api/v1/my/profile",upload.single('profile'),catchError(uploadImageProfile_controller));//done
 
 
 module.exports=router;

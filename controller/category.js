@@ -175,6 +175,24 @@ async function getCategoriesWithCount_controller(req, res) {
     });
 }
 
+
+async function getCategoriesWithCount() {
+    const [categories] = await pool.query(`
+        SELECT 
+            c.id,
+            c.name,
+            c.description,
+            c.created_at,
+            COUNT(d.id) AS dishes_count
+        FROM categories c
+        LEFT JOIN dishes d ON c.id = d.category_id
+        GROUP BY c.id
+        ORDER BY c.name ASC
+    `);
+    return categories;
+}
+
+
 module.exports={
     createCategory_controller,
     getAllCategories_controller,
@@ -182,4 +200,5 @@ module.exports={
     updateCategory_controller,
     deleteCategory_controller,
     getCategoriesWithCount_controller,
+    getCategoriesWithCount
 }

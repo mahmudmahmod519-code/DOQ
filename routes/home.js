@@ -3,12 +3,11 @@ const {
     about_render,
     content_render,
     fqs_render,
-    home_render
+    getLandingPage_render
 }=require("../rendering/home");
 const catchError=require('../utiles/catchError');
-const allRows=require("../middlware/allRows");
 
-router.get('/',allRows('kitchen'),catchError(home_render)); //static & dynamic (optional)
+router.get('',catchError(getLandingPage_render)); //static & dynamic (optional)
 router.get('/about',catchError(about_render));//static
 router.get('/faqs',catchError(fqs_render));//static
 router.get('/contect-us',catchError(content_render));//static

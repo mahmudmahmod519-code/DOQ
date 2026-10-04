@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<script src="/app-client.js"></script>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+    <title>دوق - منيو الأطباق</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface": "#fff8f6",
+                        "surface-dim": "#eed4d1",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#fff0ee",
+                        "surface-container": "#ffe9e6",
+                        "surface-container-high": "#fce2de",
+                        "on-surface": "#261816",
+                        "on-surface-variant": "#59413d",
+                        "outline": "#8d706c",
+                        "outline-variant": "#e1bfb9",
+                        "primary": "#9e2016",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#c0392b",
+                        "secondary": "#a23f00",
+                        "secondary-container": "#fc7127",
+                        "on-secondary-container": "#5c2000",
+                        "background": "#fff8f6",
+                        "on-background": "#261816",
+                    },
+                    borderRadius: {
+                        "sm": "0.25rem",
+                        "DEFAULT": "0.5rem",
+                        "md": "0.75rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "cairo": ["Cairo", "sans-serif"],
+                    },
+                    boxShadow: {
+                        "menu": "0 1px 3px rgba(38, 24, 22, 0.04), 0 4px 12px rgba(38, 24, 22, 0.08), 0 8px 24px rgba(38, 24, 22, 0.04)",
+                        "menu-hover": "0 4px 8px rgba(38, 24, 22, 0.06), 0 12px 24px rgba(38, 24, 22, 0.12), 0 16px 32px rgba(38, 24, 22, 0.08)",
+                        "glow": "0px 4px 24px rgba(158, 32, 22, 0.15)"
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body { 
+            font-family: 'Cairo', sans-serif; 
+            background-color: #fff8f6; 
+            color: #261816; 
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+        }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        
+        .dish-card { 
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s ease; 
+            background-color: #ffffff;
+            border: 1px solid rgba(225, 191, 185, 0.4);
+        }
+        .dish-card:hover { 
+            transform: translateY(-4px) rotate(0.5deg); 
+            box-shadow: 0 12px 32px rgba(158, 32, 22, 0.12); 
+            border-color: rgba(158, 32, 22, 0.2);
+        }
+
+        .menu-item-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            position: relative;
+        }
+        .menu-item-header::after {
+            content: '';
+            flex: 1;
+            border-bottom: 2px dotted #e1bfb9;
+            margin: 0 12px;
+            position: relative;
+            top: -4px;
+            opacity: 0.8;
+        }
+
+        .slider-container { position: relative; height: 40px; width: 100%; display: flex; align-items: center; }
+        .slider-track-bg { position: absolute; width: 100%; height: 6px; background-color: #f7ddd9; border-radius: 999px; }
+        .slider-track-active { position: absolute; height: 6px; background: linear-gradient(90deg, #9e2016 0%, #fc7127 100%); border-radius: 999px; }
+        
+        .slider-threshold-mark { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 2px; height: 14px; background-color: #8d706c; opacity: 0.5; border-radius: 2px; }
+        .slider-threshold-label { position: absolute; top: -18px; transform: translateX(-50%); font-size: 10px; font-weight: 700; color: #8d706c; white-space: nowrap; }
+        
+        .slider-thumb {
+            position: absolute; width: 26px; height: 26px; background-color: #ffffff; border-radius: 50%; cursor: grab; z-index: 10;
+            display: flex; align-items: center; justify-content: center; transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s;
+            user-select: none; touch-action: none;
+        }
+        .slider-thumb:active { cursor: grabbing; transform: scale(1.2); }
+        .slider-thumb.min { border: 3px solid #9e2016; box-shadow: 0px 4px 12px rgba(158, 32, 22, 0.3); }
+        .slider-thumb.max { border: 3px solid #fc7127; box-shadow: 0px 4px 12px rgba(252, 113, 39, 0.3); }
+        .slider-thumb::after { content: ''; width: 8px; height: 8px; border-radius: 50%; }
+        .slider-thumb.min::after { background-color: #9e2016; }
+        .slider-thumb.max::after { background-color: #fc7127; }
+
+        .preset-btn {
+            padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; background-color: #fff0ee; color: #59413d;
+            border: 1px solid #e1bfb9; cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
+        }
+        .preset-btn:hover { background-color: #fce2de; border-color: #9e2016; color: #9e2016; transform: translateY(-1px); }
+        .preset-btn.active { background-color: #9e2016; color: white; border-color: #9e2016; box-shadow: 0 4px 12px rgba(158, 32, 22, 0.25); }
+
+        .page-btn { min-width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; border: 1px solid #e1bfb9; color: #59413d; background: #fff; }
+        .page-btn:hover:not(.disabled) { background: #fce2de; border-color: #9e2016; color: #9e2016; }
+        .page-btn.active { background: #9e2016; color: white; border-color: #9e2016; box-shadow: 0 4px 12px rgba(158, 32, 22, 0.3); }
+        .page-btn.disabled { opacity: 0.4; pointer-events: none; cursor: not-allowed; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e1bfb9; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased flex flex-col min-h-screen">
+
+    <%- include('../partials/header') %>
+
+    <main class="flex-grow pt-20 md:pt-24">
+        <!-- Hero Section -->
+        <section class="relative px-4 py-12 md:py-20 bg-gradient-to-b from-surface-container to-background mb-8 overflow-hidden">
+            <div class="max-w-5xl mx-auto text-center relative z-10">
+                <div class="inline-flex items-center gap-2 bg-secondary-container/20 text-on-secondary-container px-4 py-1.5 rounded-full text-sm font-bold mb-6 border border-secondary-container/30">
+                    <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">restaurant_menu</span>
+                    منيو دوق
+                </div>
+                <h1 class="text-3xl md:text-5xl lg:text-6xl font-extrabold text-primary mb-6 leading-tight drop-shadow-sm">
+                    اختار وجبتك،<br class="md:hidden"> وسيب الباقي علينا
+                </h1>
+                <p class="text-lg md:text-xl text-on-surface-variant mb-10 max-w-2xl mx-auto leading-relaxed">
+                    كل أطباقنا محضرة يومياً بمكونات طازجة، لتعطيك طعم البيت الأصيل في كل لقمة.
+                </p>
+                
+                <!-- لوحة الفلاتر المتقدمة -->
+                <div class="bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-menu border border-outline-variant/30 max-w-4xl mx-auto relative">
+                    <div class="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-outline-variant/30 rounded-tl-lg"></div>
+                    <div class="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-outline-variant/30 rounded-br-lg"></div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-start">
+                        <!-- البحث والتصنيف -->
+                        <div class="md:col-span-7 space-y-5">
+                            <div>
+                                <label class="block text-sm font-bold text-on-surface-variant mb-2">ابحث في المنيو</label>
+                                <div class="relative">
+                                    <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline text-2xl">search</span>
+                                    <input class="w-full pl-4 pr-12 py-3.5 rounded-xl border border-outline-variant/40 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-base outline-none font-medium" 
+                                           placeholder="مثال: كشري، طواجن، مشويات..." type="text" id="searchInput">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-on-surface-variant mb-2">القسم</label>
+                                <div class="relative">
+                                    <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline text-2xl">category</span>
+                                    <select class="w-full pl-4 pr-12 py-3.5 rounded-xl border border-outline-variant/40 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-base outline-none font-medium appearance-none" id="categoryFilter">
+                                        <option value="">كل الأقسام</option>
+                                    </select>
+                                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline pointer-events-none">expand_more</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- شريط السعر الذكي -->
+                        <div class="md:col-span-5 flex flex-col justify-center h-full">
+                            <label class="block text-sm font-bold text-on-surface-variant mb-4 w-full text-center">نطاق السعر (ج.م)</label>
+                            
+                            <div class="px-3">
+                                <div class="slider-container" id="priceSliderContainer">
+                                    <div class="slider-track-bg"></div>
+                                    <div id="activeTrack" class="slider-track-active"></div>
+                                    <div class="slider-threshold-mark" id="thresholdMark" style="left: 70%;">
+                                        <span class="slider-threshold-label">500</span>
+                                    </div>
+                                    <div id="thumbMin" class="slider-thumb min" data-type="min"></div>
+                                    <div id="thumbMax" class="slider-thumb max" data-type="max"></div>
+                                </div>
+
+                                <div class="flex justify-between items-center mt-8 bg-surface-container px-4 py-3 rounded-2xl border border-outline-variant/30">
+                                    <div class="text-center flex-1">
+                                        <span class="text-xs text-on-surface-variant block mb-1 font-medium">من</span>
+                                        <span class="text-xl font-extrabold text-primary" id="displayMin">0</span>
+                                    </div>
+                                    <span class="material-symbols-outlined text-outline-variant mx-2 text-sm">remove</span>
+                                    <div class="text-center flex-1">
+                                        <span class="text-xs text-on-surface-variant block mb-1 font-medium">إلى</span>
+                                        <span class="text-xl font-extrabold text-secondary" id="displayMax">10,000</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap gap-2 mt-4 justify-center">
+                                    <button class="preset-btn" data-min="0" data-max="100">أقل من 100</button>
+                                    <button class="preset-btn" data-min="100" data-max="300">100 - 300</button>
+                                    <button class="preset-btn" data-min="300" data-max="500">300 - 500</button>
+                                    <button class="preset-btn" data-min="500" data-max="10000">500 +</button>
+                                    <button class="preset-btn" data-min="0" data-max="10000">الكل</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="absolute top-0 left-0 w-64 h-64 bg-secondary-fixed/30 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+            <div class="absolute bottom-0 right-0 w-80 h-80 bg-primary-fixed/30 rounded-full blur-3xl translate-x-1/3 translate-y-1/3 pointer-events-none"></div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- شريط تنبيه فلتر المطبخ (يظهر فقط عند الحاجة) -->
+        <!-- ========================================== -->
+        <div id="kitchenFilterBanner" class="hidden max-w-7xl mx-auto px-4 md:px-6 lg:px-8 mb-6">
+            <div class="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm backdrop-blur-sm">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">storefront</span>
+                    <div class="text-right">
+                        <h3 class="font-bold text-primary text-lg">أنت تتصفح حالياً أطباق مطبخ محدد</h3>
+                        <p class="text-sm text-on-surface-variant">يتم عرض الأطباق المتاحة من هذا المطبخ فقط بناءً على اختيارك السابق.</p>
+                    </div>
+                </div>
+                <button id="clearKitchenFilterBtn" class="px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary-container transition-all flex items-center gap-2 shadow-glow whitespace-nowrap active:scale-95">
+                    <span class="material-symbols-outlined text-xl">clear_all</span>
+                    عرض كل الأطباق
+                </button>
+            </div>
+        </div>
+        <!-- ========================================== -->
+
+        <!-- شبكة الأطباق -->
+        <section class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 mb-16">
+            <div class="flex justify-between items-center mb-8 pb-4 border-b border-dashed border-outline-variant">
+                <span class="text-on-surface-variant font-bold text-lg flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+                    <span id="resultsCount">جاري التحميل...</span>
+                </span>
+                <span class="text-on-surface-variant text-sm bg-surface-container px-3 py-1 rounded-full" id="pageInfo">الصفحة 1</span>
+            </div>
+
+            <div id="loadingState" class="flex justify-center items-center py-20 hidden">
+                <div class="flex flex-col items-center gap-4">
+                    <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <span class="text-on-surface-variant font-bold">جاري تجهيز المنيو...</span>
+                </div>
+            </div>
+
+            <div id="dishesGridSection">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8" id="dishesGrid"></div>
+            </div>
+
+            <div class="mt-16 flex justify-center items-center gap-2 flex-wrap" id="paginationArea">
+                <button class="page-btn" id="prevPageBtn">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+                <div class="flex items-center gap-2 flex-wrap" id="pageNumbers"></div>
+                <button class="page-btn" id="nextPageBtn">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <script>
+        // ==========================================
+        // 1. شريط السعر الذكي غير الخطي
+        // ==========================================
+        class SmartPriceSlider {
+            constructor() {
+                this.minVal = 0;
+                this.maxVal = 10000;
+                this.currentMin = 0;
+                this.currentMax = 10000;
+                this.thresholdValue = 500;
+                this.thresholdPercent = 70;
+                
+                this.container = document.getElementById('priceSliderContainer');
+                this.activeTrack = document.getElementById('activeTrack');
+                this.thumbMin = document.getElementById('thumbMin');
+                this.thumbMax = document.getElementById('thumbMax');
+                this.displayMin = document.getElementById('displayMin');
+                this.displayMax = document.getElementById('displayMax');
+                this.isDragging = null;
+
+                this.initEvents();
+                this.updateVisuals();
+            }
+
+            valueToPercent(val) {
+                if (val <= this.thresholdValue) return (val / this.thresholdValue) * this.thresholdPercent;
+                return this.thresholdPercent + ((val - this.thresholdValue) / (this.maxVal - this.thresholdValue)) * (100 - this.thresholdPercent);
+            }
+
+            percentToValue(percent) {
+                let val;
+                if (percent <= this.thresholdPercent) val = (percent / this.thresholdPercent) * this.thresholdValue;
+                else val = this.thresholdValue + ((percent - this.thresholdPercent) / (100 - this.thresholdPercent)) * (this.maxVal - this.thresholdValue);
+                
+                return val <= this.thresholdValue ? Math.round(val / 10) * 10 : Math.round(val / 100) * 100;
+            }
+
+            updateVisuals() {
+                const minPercent = this.valueToPercent(this.currentMin);
+                const maxPercent = this.valueToPercent(this.currentMax);
+                
+                this.thumbMin.style.left = `calc(${minPercent}% - 13px)`;
+                this.thumbMax.style.left = `calc(${maxPercent}% - 13px)`;
+                this.activeTrack.style.left = `${minPercent}%`;
+                this.activeTrack.style.width = `${maxPercent - minPercent}%`;
+                
+                this.displayMin.textContent = this.currentMin.toLocaleString('ar-EG');
+                this.displayMax.textContent = this.currentMax.toLocaleString('ar-EG');
+                this.updatePresetButtons();
+            }
+
+            updatePresetButtons() {
+                document.querySelectorAll('.preset-btn').forEach(btn => {
+                    if (this.currentMin === parseInt(btn.dataset.min) && this.currentMax === parseInt(btn.dataset.max)) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+
+            handleMove(clientX) {
+                const rect = this.container.getBoundingClientRect();
+                let percent = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+                let newValue = this.percentToValue(percent);
+
+                if (this.isDragging === 'min') {
+                    const step = newValue <= this.thresholdValue ? 10 : 100;
+                    if (newValue >= this.currentMax - step) newValue = this.currentMax - step;
+                    this.currentMin = Math.max(0, newValue);
+                } else if (this.isDragging === 'max') {
+                    const step = newValue <= this.thresholdValue ? 10 : 100;
+                    if (newValue <= this.currentMin + step) newValue = this.currentMin + step;
+                    this.currentMax = Math.min(this.maxVal, newValue);
+                }
+                this.updateVisuals();
+            }
+
+            setValues(min, max) {
+                this.currentMin = min;
+                this.currentMax = max;
+                this.updateVisuals();
+                applyFilters();
+            }
+
+            initEvents() {
+                const startDrag = (e, type) => { e.preventDefault(); this.isDragging = type; document.body.style.cursor = 'grabbing'; };
+                const onMove = (e) => {
+                    if (!this.isDragging) return;
+                    e.preventDefault();
+                    this.handleMove(e.touches ? e.touches[0].clientX : e.clientX);
+                };
+                const endDrag = () => {
+                    if (this.isDragging) { this.isDragging = null; document.body.style.cursor = 'default'; applyFilters(); }
+                };
+
+                this.thumbMin.addEventListener('mousedown', (e) => startDrag(e, 'min'));
+                this.thumbMax.addEventListener('mousedown', (e) => startDrag(e, 'max'));
+                this.thumbMin.addEventListener('touchstart', (e) => startDrag(e, 'min'), {passive: false});
+                this.thumbMax.addEventListener('touchstart', (e) => startDrag(e, 'max'), {passive: false});
+
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('touchmove', onMove, {passive: false});
+                window.addEventListener('mouseup', endDrag);
+                window.addEventListener('touchend', endDrag);
+
+                document.querySelectorAll('.preset-btn').forEach(btn => {
+                    btn.addEventListener('click', () => this.setValues(parseInt(btn.dataset.min), parseInt(btn.dataset.max)));
+                });
+            }
+        }
+
+        const priceSlider = new SmartPriceSlider();
+
+        // ==========================================
+        // 2. منطق جلب البيانات وعرضها
+        // ==========================================
+        let currentPage = 1, totalPages = 1, totalItems = 0, isLoading = false;
+        let currentFilters = { q: '', category: '', min_price: '0', max_price: '10000', sort_by: 'created_at', sort_order: 'DESC' };
+
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const grid = document.getElementById('dishesGrid');
+        const loadingState = document.getElementById('loadingState');
+        const resultsCount = document.getElementById('resultsCount');
+        const pageInfo = document.getElementById('pageInfo');
+        const pageNumbers = document.getElementById('pageNumbers');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        
+        // عناصر فلتر المطبخ الجديدة
+        const kitchenFilterBanner = document.getElementById('kitchenFilterBanner');
+        const clearKitchenFilterBtn = document.getElementById('clearKitchenFilterBtn');
+
+        // دالة للتحقق من وجود kitchen_id وإظهار/إخفاء الشريط
+        function checkKitchenFilter() {
+            const kitchenId = sessionStorage.getItem('kitchen_id');
+            if (kitchenId) {
+                kitchenFilterBanner.classList.remove('hidden');
+            } else {
+                kitchenFilterBanner.classList.add('hidden');
+            }
+        }
+
+        // دالة لمسح فلتر المطبخ وإعادة تعيين كل شيء
+        function clearKitchenFilter() {
+            // 1. مسح المعرف من الذاكرة
+            sessionStorage.removeItem('kitchen_id');
+            
+            // 2. إعادة تعيين حقول الإدخال
+            searchInput.value = '';
+            categoryFilter.value = '';
+            
+            // 3. إعادة تعيين شريط السعر (سيقوم هذا تلقائياً باستدعاء applyFilters)
+            priceSlider.setValues(0, 10000);
+            
+            // 4. إخفاء شريط التنبيه
+            kitchenFilterBanner.classList.add('hidden');
+            
+            // ملاحظة: priceSlider.setValues يستدعي applyFilters() داخلياً، 
+            // و applyFilters() تقرأ القيم الجديدة الفارغة وتستدعي fetchDishes(1)
+        }
+
+        // ربط الزر بحدث النقر
+        clearKitchenFilterBtn.addEventListener('click', clearKitchenFilter);
+
+        async function fetchCategories() {
+            try {
+                const res = await fetch('/categories/api/v1/all');
+                const data = await res.json();
+                if (data.status === 'success' && data.data.length) {
+                    const html = ['<option value="">كل الأقسام</option>'];
+                    data.data.forEach(cat => {
+                        if (cat.dishes_count > 0) html.push(`<option value="${DOQ.escape(encodeURIComponent(cat.name || ''))}">${DOQ.escape(cat.name || '')} (${Number(cat.dishes_count) || 0})</option>`);
+                    });
+                    categoryFilter.innerHTML = html.join('');
+                }
+            } catch (e) { console.error('Error fetching categories:', e); }
+        }
+
+        async function fetchDishes(page = 1) {
+            if (isLoading) return;
+            isLoading = true;
+            loadingState.classList.remove('hidden');
+            grid.innerHTML = '';
+
+            let params = new URLSearchParams();
+            params.append('page', page);
+            params.append('limit', 9);
+            if (currentFilters.q) params.append('q', currentFilters.q);
+            if (currentFilters.category) params.append('category', decodeURIComponent(currentFilters.category));
+            params.append('min_price', currentFilters.min_price);
+            params.append('max_price', currentFilters.max_price);
+            params.append('sort_by', currentFilters.sort_by);
+            params.append('sort_order', currentFilters.sort_order);
+
+            // التحقق من kitchen_id لتحديد مسار الـ API
+            let url = sessionStorage.getItem('kitchen_id') ? `/dishes/v1/api/kitchen/${parseInt(sessionStorage.getItem('kitchen_id'))}` : '/dishes/v1/api';
+
+            try {
+                const res = await fetch(url + '?' + params.toString());
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const dishes = data.data || [];
+                    const pagination = data.pagination || { page: 1, limit: 9, total: 0, total_pages: 1 };
+                    
+                    currentPage = pagination.page;
+                    totalPages = pagination.total_pages;
+                    totalItems = pagination.total;
+
+                    updateUI(dishes);
+                    renderPagination();
+
+                    setTimeout(() => {
+                        const targetElement = document.getElementById('dishesGridSection');
+                        if (targetElement && page > 1) { 
+                            targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }, 100);
+
+                } else {
+                    showError(data.message || 'حدث خطأ أثناء التحميل');
+                }
+            } catch (err) {
+                showError('حدث خطأ في الاتصال بالخادم');
+            } finally {
+                loadingState.classList.add('hidden');
+                isLoading = false;
+            }
+        }
+
+        function updateUI(dishes) {
+            resultsCount.textContent = `${totalItems} صنف متاح`;
+            pageInfo.textContent = `صفحة ${currentPage} من ${totalPages}`;
+
+            if (dishes.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-16 text-center bg-surface-container-low/30 rounded-3xl border border-dashed border-outline-variant">
+                        <span class="material-symbols-outlined text-6xl text-outline-variant mb-4">search_off</span>
+                        <h3 class="text-xl font-bold text-on-surface mb-2">لا توجد أصناف مطابقة</h3>
+                        <p class="text-on-surface-variant max-w-md">جرب تغيير كلمات البحث، أو وسع نطاق السعر.</p>
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            dishes.forEach((dish, index) => {
+                // تم تصحيح الخطأ الصياغي هنا لضمان عمل الكود بشكل سليم
+                const imageUrl = DOQ.safeImage(dish.image_url || '/assests/dish_avatar.jpeg');
+                const price = dish.price || 0;
+                const categoryName = dish.category_name || 'أطباق متنوعة';
+                const kitchenTitle = dish.kitchen_title || 'مطبخ دوق';
+                const isFeatured = index === 0; 
+                
+                html += `
+                    <article class="dish-card rounded-2xl overflow-hidden group flex flex-col h-full relative">
+                        ${isFeatured ? '<div class="absolute top-4 right-4 z-10 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1"><span class="material-symbols-outlined text-sm" style="font-variation-settings: \'FILL\' 1;">star</span>الأكثر طلباً</div>' : ''}
+                        
+                        <div class="relative w-full overflow-hidden" style="height: 200px;">
+                            <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" src="${imageUrl}" alt="${DOQ.escape(dish.name || '')}" loading="lazy">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        </div>
+                        
+                        <div class="p-5 flex flex-col flex-grow bg-white relative">
+                            <div class="menu-item-header mb-3">
+                                <h3 class="font-bold text-lg text-on-surface leading-tight line-clamp-1">${DOQ.escape(dish.name || '')}</h3>
+                                <span class="font-extrabold text-secondary text-lg whitespace-nowrap">${price} <span class="text-xs font-normal text-on-surface-variant">ج.م</span></span>
+                            </div>
+                            
+                            <div class="flex items-center gap-2 text-on-surface-variant mb-4 text-sm">
+                                <span class="material-symbols-outlined text-base text-outline">storefront</span>
+                                <span class="font-medium">${DOQ.escape(kitchenTitle)}</span>
+                                <span class="mx-1">•</span>
+                                <span class="bg-surface-container px-2 py-0.5 rounded text-xs">${DOQ.escape(categoryName)}</span>
+                            </div>
+                            
+                            <a href="/dishes/${dish.id}" class="mt-auto w-full py-3 bg-surface text-primary border border-primary/20 rounded-xl font-bold text-base hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2 group/btn">
+                                عرض التفاصيل والطلب
+                                <span class="material-symbols-outlined text-lg group-hover/btn:-translate-x-1 transition-transform">arrow_back</span>
+                            </a>
+                        </div>
+                    </article>
+                `;
+            });
+            grid.innerHTML = html;
+        }
+
+        function renderPagination() {
+            prevPageBtn.classList.toggle('disabled', currentPage <= 1);
+            nextPageBtn.classList.toggle('disabled', currentPage >= totalPages);
+
+            let html = '';
+            const range = window.innerWidth < 640 ? 1 : 2;
+            const start = Math.max(1, currentPage - range);
+            const end = Math.min(totalPages, currentPage + range);
+
+            if (start > 1) {
+                html += `<span class="page-btn" data-page="1">1</span>`;
+                if (start > 2) html += `<span class="text-on-surface-variant px-1 hidden sm:inline">...</span>`;
+            }
+
+            for (let i = start; i <= end; i++) {
+                html += `<span class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</span>`;
+            }
+
+            if (end < totalPages) {
+                if (end < totalPages - 1) html += `<span class="text-on-surface-variant px-1 hidden sm:inline">...</span>`;
+                html += `<span class="page-btn" data-page="${totalPages}">${totalPages}</span>`;
+            }
+
+            pageNumbers.innerHTML = html;
+            document.querySelectorAll('#pageNumbers .page-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const page = parseInt(this.dataset.page);
+                    if (page && page !== currentPage) fetchDishes(page);
+                });
+            });
+        }
+
+        function showError(msg) {
+            grid.innerHTML = `
+                <div class="col-span-full flex flex-col items-center justify-center py-16 text-center bg-error-container/20 rounded-3xl border border-error/20">
+                    <span class="material-symbols-outlined text-6xl text-error mb-4">error</span>
+                    <h3 class="text-xl font-bold text-on-surface mb-2">حصل خطأ مفاجئ</h3>
+                    <p class="text-on-surface-variant max-w-md mb-6">${msg}</p>
+                    <button onclick="fetchDishes(1)" class="px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-container transition-colors">إعادة المحاولة</button>
+                </div>`;
+        }
+
+        function applyFilters() {
+            currentFilters.q = searchInput.value.trim();
+            currentFilters.category = categoryFilter.value;
+            currentFilters.min_price = priceSlider.currentMin;
+            currentFilters.max_price = priceSlider.currentMax;
+            fetchDishes(1);
+        }
+
+        let searchTimeout;
+        searchInput.addEventListener('input', () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(applyFilters, 600); });
+        categoryFilter.addEventListener('change', applyFilters);
+
+        prevPageBtn.addEventListener('click', () => { if (currentPage > 1) fetchDishes(currentPage - 1); });
+        nextPageBtn.addEventListener('click', () => { if (currentPage < totalPages) fetchDishes(currentPage + 1); });
+
+        window.addEventListener('resize', () => {
+            clearTimeout(window.resizeTimer);
+            window.resizeTimer = setTimeout(renderPagination, 200);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkKitchenFilter(); // التحقق من فلتر المطبخ عند التحميل
+            fetchCategories();
+            fetchDishes(1);
+        });
+    </script>
+</body>
+</html>

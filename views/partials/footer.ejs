@@ -1,0 +1,64 @@
+<style>
+  .doq-footer { margin-top: 4rem; background: #261816; color: #f8e8e4; font-family: Cairo, sans-serif; }
+  .doq-footer * { box-sizing: border-box; }
+  .doq-footer-inner { max-width: 1280px; margin: auto; padding: 3rem 1.5rem 1.5rem; }
+  .doq-footer-grid { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(150px, 1fr)); gap: 2rem; }
+  .doq-footer h2 { color: #fff; font-size: 1.25rem; font-weight: 800; margin: 0 0 .7rem; }
+  .doq-footer h3 { color: #ffac76; font-size: 1rem; font-weight: 800; margin: 0 0 1rem; }
+  .doq-footer p { color: #e6d0cb; line-height: 1.9; margin: 0; max-width: 25rem; }
+  .doq-footer ul { list-style: none; padding: 0; margin: 0; display: grid; gap: .65rem; }
+  .doq-footer a { color: #f8e8e4; text-decoration: none; }
+  .doq-footer a:hover, .doq-footer a:focus-visible { color: #ffac76; text-decoration: underline; }
+  .doq-footer-social { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.25rem; }
+  .doq-footer-social a { border: 1px solid #74504a; border-radius: 999px; padding: .45rem .9rem; font-size: .85rem; }
+  .doq-footer-bottom { margin-top: 2.25rem; padding-top: 1.25rem; border-top: 1px solid #74504a; color: #cfb8b2; font-size: .85rem; }
+  @media (max-width: 850px) { .doq-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .doq-footer-grid { grid-template-columns: 1fr; gap: 1.75rem; } }
+</style>
+<footer class="doq-footer" dir="rtl">
+  <div class="doq-footer-inner">
+    <div class="doq-footer-grid">
+      <section>
+        <h2>دوق</h2>
+        <p>اختار طبقك من المطابخ المتاحة وشوف السعر والتقييمات قبل ما تطلب</p>
+        <div class="doq-footer-social" aria-label="حسابات دوق">
+          <a href="https://whatsapp.com/channel/0029VbE0a2SJf05iNBHrYV20" target="_blank" rel="noopener noreferrer">قناة واتساب</a>
+          <a href="https://t.me/Doq_Aqliy" target="_blank" rel="noopener noreferrer">تيليجرام</a>
+          <a href="https://www.facebook.com/profile.php?id=61590239307309" target="_blank" rel="noopener noreferrer">فيسبوك</a>
+        </div>
+      </section>
+      <nav aria-label="استكشف دوق">
+        <h3>استكشف</h3>
+        <ul>
+          <li><a href="/">الرئيسية</a></li>
+          <li><a href="/kitchens">المطابخ</a></li>
+          <li><a href="/dishes">الأطباق</a></li>
+          <li><a href="/reviews">التقييمات</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="حسابك">
+        <h3>حسابك</h3>
+        <ul>
+          <% if (typeof login !== 'undefined' && login === true) { %>
+            <% const footerDashboard = { admin: '/admin', chef: '/users/dashboard', delivery: '/delivery', customer: '/my-orders' }[(typeof currentUser !== 'undefined' && currentUser && currentUser.roles) || '']; %>
+            <% if (footerDashboard) { %><li><a href="<%= footerDashboard %>">لوحتك</a></li><% } %>
+            <li><a href="/users/profile">الملف الشخصي</a></li>
+            <li><a href="/notifications">الإشعارات</a></li>
+          <% } else { %>
+            <li><a href="/auth">تسجيل الدخول</a></li>
+          <% } %>
+        </ul>
+      </nav>
+      <nav aria-label="معلومات وسياسات">
+        <h3>معلومات مهمة</h3>
+        <ul>
+          <li><a href="/about">عن دوق</a></li>
+          <li><a href="/contect-us">تواصل معنا</a></li>
+          <li><a href="/police/privacy-policy">الخصوصية</a></li>
+          <li><a href="/police/terms-of-service">شروط الاستخدام</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="doq-footer-bottom">© <%= new Date().getFullYear() %> دوق. جميع الحقوق محفوظة</div>
+  </div>
+</footer>

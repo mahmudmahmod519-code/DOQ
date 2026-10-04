@@ -1,172 +1,44 @@
-const pool=require("../database/pool");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-
-const { 
-    loginSchema,
-    forgetPassword,
-    changePasswordSchema,
-    userSchema 
-} = require("../utiles/validation");
-const isAuthenticated = require("../utiles/isAuthenticated");
-
-
-
+const crypto=require('crypto');
+const bcrypt=require('bcrypt');
+const jwt=require('jsonwebtoken');
+const pool=require('../database/pool');
+const transaction=require('../utiles/transaction');
+const {loginSchema,userSchema}=require('../utiles/validation');
+const {generateSecret,verifyToken,verifyTokenStep}=require('../utiles/authentcator2FA');
+const {issueSession,issueChallenge,seal,unseal,options,dashboard}=require('../utiles/session');
+const notifications=require('../utiles/notifications');
+const HttpError=require('../utiles/httpError');const mailer=require('../utiles/mailer');
+const digest=v=>crypto.createHash('sha256').update(String(v)).digest('hex');
+const enabled=v=>v===true||v==='1'||v==='on';
+const readSecret=v=>v&&v.startsWith('sealed:')?unseal(v.slice(7)).secret:v;
+function enrollment(req){try{const value=unseal(req.cookies?.doq_enrolment);return value.expires>Date.now()?value:null;}catch{return null;}}
+async function generateSecretKey_controller(req,res){const secret=generateSecret();res.cookie('doq_enrolment',seal({secret:secret.base32,expires:Date.now()+600000}),options(600000));res.set('Cache-Control','no-store');return res.json({status:'success',data:{secretKey:secret.base32,otpauth_url:secret.otpauth_url}});}
 async function signIn_controller(req,res){
-    // #swagger.tags = ['Auth']
-    // #swagger.parameters['body'] = { in: 'body', schema: { $ref: '#/definitions/LoginInput' } }
-    const { email, password } = req.body;
-
-    const { error } = loginSchema.validate(req.body);
-
-    if (error) return res.status(400).json({ message: error.details[0].message });
-    
-    const [results] = await pool.query("SELECT * FROM users WHERE email = ?", [email]);
-
-    if (results.length === 0) return res.status(401).json({ message: "Invalid credentials" });
-
-    const user= results[0];
-
-    const isMatch=await bcrypt.compare(password,user.password_hash)
-
-    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
-
-    const token = jwt.sign({ id: user.id, role: user.roles }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-    res.cookie("session_token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 7 * 24 * 60 * 60 * 1000
-    }).redirect("/");
+ const checked=loginSchema.validate(req.body); if(checked.error)return res.status(400).json({message:'اكتب الإيميل والباسورد صح'});
+ const [[user]]=await pool.query('SELECT * FROM users WHERE email=? LIMIT 1',[checked.value.email]);
+ if(!user||!(await bcrypt.compare(checked.value.password,user.password_hash)))return res.status(401).json({message:'الإيميل أو الباسورد غلط'});
+ if(user.account_status!=='approved')return res.status(403).json({message:user.account_status==='rejected'?'طلب الانضمام اترفض. تواصل مع الإدارة لو محتاج تفاصيل':'حسابك لسه في انتظار موافقة الإدارة'});
+ if(Number(user.two_factor_enabled)||Number(user.two_factor_required)){await issueChallenge(res,user,Number(user.two_factor_enabled)?'login':'enroll');return res.json({status:'success',message:'اكتب رمز تطبيق المصادقة',redirect:'/auth/signup2'});}
+ issueSession(res,user);return res.json({status:'success',message:'تم تسجيل الدخول',redirect:dashboard(user.roles)});
 }
-
 async function signUp_controller(req,res){
-    // #swagger.tags = ['Auth']
-    // #swagger.parameters['body'] = { in: 'body', schema: { $ref: '#/definitions/SignupInput' } }
-    const { 
-        email, 
-        password,
-        code,
-        phone_number,
-        password_confirmation,
-        roles,
-        firstname,
-        lastname
-    } = req.body;
-
-    const {error}=await userSchema.validate(req.body)
-    if(error)return res.status(400).json({message:error.details[0].message})
-    //find user if found by email and phone_number
-
-    let [results]=await pool.query('SELECT * FROM users WHERE phone_number = ? OR email = ?',[phone_number,email]);
-
-    if(results.length>0)return res.status(400).json({message:'change your mail or password or phone'});
-
-    const user=await isAuthenticated(req,res);
-
-    [results]=await pool.query('SELECT * FROM users WHERE code=?',[code]);
-    
-    // check code if found change code
-    if(results.length>0)return res.status(400).json({message:'change code'});
-    
-    // check confirem password
-    if(password!==password_confirmation)return res.status(400).json({message:'confirm password please'});
-    
-    //hash password and add it
-    const salt=await bcrypt.genSalt(10);
-
-    const password_hash=await bcrypt.hash(password,salt);
-
-    // create account
-    [results]=await pool.execute(`
-        INSERT INTO 
-        users(first_name,last_name,email,password_hash,code,phone_number,roles)
-        VALUES(?,?,?,?,?,?,?)`,
-    [firstname,lastname,email,password_hash,code,phone_number, user?.roles==="admin" ? roles :'customer']);
-    // if(err)return res.status(500).json({message:err.message});
-    res.status(201).redirect('/');
-    }
-
-
-function logout_controller(req,res){
-    res.clearCookie("session_token");
-    res.redirect("/");
-    }
-
-async function resetPassword_controller(req,res){
-    // #swagger.tags = ['Auth']
-    // #swagger.parameters['body'] = { in: 'body', schema: { $ref: '#/definitions/ChangePasswordInput' } }
-    const {code,current_password,new_password,confirm_password}=req.body;
-
-    const {error}=await changePasswordSchema.validate(req.body);
-    if(error)return res.status(400).json({message:error.details[0].message})
-
-    const [results]=await pool.query('SELECT * FROM users WHERE id=?',[req.my.id]);
-    
-    if(results.length===0)return res.status(404).json({message:"not found account"});
-    
-    const user =results[0];
-
-    let ismatch=await bcrypt.compare(new_password,user.password_hash);
-
-    if(!ismatch)return res.status(400).json({message:'change your new password is wrong.'});
-
-    if(user.code!==code)return res.status(400).json({message:"code not right"});
-
-    ismatch=await bcrypt.compare(current_password,user.password_hash);
-
-    if(!ismatch)return res.status(400).json({message:'wrong password'});
-
-    // check confirem password
-    if(new_password!==confirm_password)return res.status(400).json({message:'confirm password please'});
-    
-    //hash password and add it
-    const salt=await bcrypt.genSalt(10);
-
-    const password_hash=await bcrypt.hash(new_password,salt);
-
-    await pool.execute('UPDATE users SET password_hash=? WHERE id=?',[password_hash,user.id]);
-        // if(err.fatal)return res.status(500).json({message:err.message});
-    
-    res.clearCookie("session_token");
-
-    res.redirect("/auth");
-    }
-
-async function forgetPassword_controller(req,res){
-    // #swagger.tags = ['Auth']
-    // #swagger.parameters['body'] = { in: 'body', schema: { $ref: '#/definitions/ForgetPasswordInput' } }
-    const {code,new_password,confirm_password,email}=req.body;
-
-    const {error}=await forgetPassword.validate(req.body);
-    if(error)return res.status(400).json({message:error.details[0].message})
-
-    const [results]=await pool.query('SELECT * FROM users WHERE email=?',[email]);
-    if(results.length===0)return res.status(404).json({message:"not found mail"});
-    const user =results[0];
-
-    if(user.code!==code)return res.status(400).json({message:"code not right"});
-
-    // check confirem password
-    if(new_password!==confirm_password)return res.status(400).json({message:'confirm password please'});
-    
-    //hash password and add it
-    const salt=await bcrypt.genSalt(10);
-
-    const password_hash=await bcrypt.hash(new_password,salt);
-    
-    await pool.execute('UPDATE users SET password_hash=? WHERE id=?',[password_hash,user.id]);
-    // if(err.fatal)return res.status(500).json({message:err.message});
-
-    res.clearCookie("session_token");
-
-    res.redirect("/auth");
-    }
-
-module.exports={
-signIn_controller,
-signUp_controller,
-resetPassword_controller,
-forgetPassword_controller,
-logout_controller
-};
+ const checked=userSchema.validate(req.body);if(checked.error)return res.status(400).json({message:checked.error.details[0].message});
+ const value=checked.value,wants2fa=enabled(value.enable_2fa),setup=wants2fa?enrollment(req):null;
+ if(wants2fa&&!setup)return res.status(400).json({message:'كود الإعداد انتهى. اعمل كود جديد وجرب تاني'});
+ const [existing]=await pool.query('SELECT id FROM users WHERE email=? OR phone_number=? LIMIT 1',[value.email,value.phone_number]);
+ if(existing.length)return res.status(409).json({message:'الإيميل أو رقم الموبايل مسجل قبل كده'});
+  const passwordHash=await bcrypt.hash(value.password,12),role=value.roles,status=role==='customer'?'approved':'pending',companyName=role==='delivery'?String(value.company_name||'').trim():null;
+  if(role==='delivery'&&(companyName.length<2||companyName.length>120))return res.status(400).json({message:'اسم شركة الدليفري مطلوب'});
+  const user=await transaction(async db=>{const [created]=await db.query('INSERT INTO users (first_name,last_name,email,password_hash,phone_number,roles,company_name,city,address,two_factor_secret,two_factor_required,account_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',[value.firstname,value.lastname,value.email,passwordHash,value.phone_number,role,companyName,value.city||null,value.address||null,setup?'sealed:'+seal({secret:setup.secret}):null,wants2fa?1:0,status]);if(status==='pending')await notifications.admins(db,'account_pending','حساب جديد للمراجعة','طلب انضمام جديد من '+(role==='chef'?'مطبخ':'شركة دليفري'),'user',created.insertId);const referral=req.cookies?.doq_referral;if(referral&&role==='customer')await db.query('INSERT IGNORE INTO referral_signups (customer_id,referral_id) SELECT ?,id FROM dish_referrals WHERE token=? AND referrer_id<>?',[created.insertId,referral,created.insertId]);return{id:created.insertId,roles:role,session_version:0,account_status:status};});
+ res.clearCookie('doq_enrolment',{path:'/'});if(wants2fa){await issueChallenge(res,user,'enroll');return res.status(201).json({status:'success',message:'اكتب رمز تطبيق المصادقة',redirect:'/auth/signup2'});}if(status==='approved')issueSession(res,user);return res.status(201).json({status:'success',message:status==='pending'?'تم إرسال الحساب للمراجعة من الإدارة':'تم إنشاء الحساب',redirect:status==='pending'?'/auth?pending=1':dashboard(role)});
+}
+async function signUp2_verify_controller(req,res){if(!/^\d{6}$/.test(String(req.body.otp||'')))return res.status(400).json({message:'اكتب كود من 6 أرقام'});let pending;try{pending=jwt.verify(req.cookies?.pending_token||'',process.env.JWT_SECRET,{algorithms:['HS256']});}catch{return res.status(401).json({message:'الجلسة انتهت. سجل دخول تاني'});}if(pending.type!=='pending_2fa'||!pending.nonce)return res.status(401).json({message:'الجلسة انتهت. سجل دخول تاني'});
+ const result=await transaction(async db=>{const [[challenge]]=await db.query('SELECT * FROM auth_challenges WHERE nonce_hash=? AND expires_at>UTC_TIMESTAMP() AND consumed_at IS NULL FOR UPDATE',[digest(pending.nonce)]);if(!challenge||challenge.attempts>=5)return{error:'الكود انتهى أو المحاولات خلصت. سجل دخول تاني'};const [[user]]=await db.query('SELECT * FROM users WHERE id=? FOR UPDATE',[pending.userId]);if(!user||Number(user.session_version)!==Number(pending.sv)||challenge.user_id!==user.id||challenge.purpose!==pending.purpose)return{error:'الجلسة مش صالحة. سجل دخول تاني'};await db.query('UPDATE auth_challenges SET attempts=attempts+1 WHERE nonce_hash=?',[digest(pending.nonce)]);const verifiedStep=verifyTokenStep(readSecret(user.two_factor_secret),String(req.body.otp));if(verifiedStep===null||(user.two_factor_last_step!==null&&user.two_factor_last_step!==undefined&&verifiedStep<=Number(user.two_factor_last_step)))return{error:'الكود غلط أو اتستخدم قبل كده'};await db.query('UPDATE auth_challenges SET consumed_at=UTC_TIMESTAMP() WHERE nonce_hash=?',[digest(pending.nonce)]);await db.query('UPDATE users SET two_factor_enabled=1,two_factor_required=1,two_factor_last_step=? WHERE id=?',[verifiedStep,user.id]);return{user};});
+ if(result.error)return res.status(400).json({message:result.error});res.clearCookie('pending_token',{path:'/'});if(result.user.account_status!=='approved')return res.json({status:'success',message:'تم تفعيل المصادقة والحساب في انتظار موافقة الإدارة',redirect:'/auth?pending=1'});issueSession(res,result.user);return res.json({status:'success',message:'تم تسجيل الدخول',redirect:dashboard(result.user.roles)});
+}
+function logout_controller(req,res){res.clearCookie('session_token',{path:'/'});res.clearCookie('pending_token',{path:'/'});return res.json({status:'success',redirect:'/auth'});}
+async function resetPassword_controller(req,res){const{current_password,new_password,confirm_password,otp}=req.body;if(typeof new_password!=='string'||new_password.length<8||new_password.length>72||new_password!==confirm_password)return res.status(400).json({message:'الباسورد الجديد لازم يكون 8 حروف على الأقل ومطابق للتأكيد'});const[[user]]=await pool.query('SELECT * FROM users WHERE id=?',[req.user.id]);if(!user||!(await bcrypt.compare(String(current_password||''),user.password_hash)))return res.status(400).json({message:'الباسورد الحالي غلط'});if(Number(user.two_factor_enabled)&&!verifyToken(readSecret(user.two_factor_secret),String(otp||'')))return res.status(400).json({message:'كود المصادقة غلط'});await pool.query('UPDATE users SET password_hash=?,session_version=session_version+1 WHERE id=?',[await bcrypt.hash(new_password,12),user.id]);res.clearCookie('session_token',{path:'/'});return res.json({status:'success',message:'تم تغيير كلمة المرور',redirect:'/auth'});}
+async function forgetPassword_controller(req,res){const email=String(req.body.email||'').trim().toLowerCase();if(!email.includes('@'))return res.status(400).json({message:'اكتب إيميل صحيح'});const baseUrl=process.env.PUBLIC_URL||(process.env.NODE_ENV==='production'?null:'http://localhost:'+(process.env.PORT||3000));if(!baseUrl)console.error('forget_password_public_url_missing');if(!mailer.configured())console.error('forget_password_smtp_not_configured');const[[user]]=await pool.query('SELECT id FROM users WHERE email=?',[email]);if(user&&baseUrl)await transaction(async db=>{const token=crypto.randomBytes(32).toString('hex');const url=new URL('/auth/recovery',baseUrl);url.searchParams.set('token',token);await db.query('INSERT INTO password_resets (token_hash,user_id,expires_at) VALUES (?,?,DATE_ADD(UTC_TIMESTAMP(),INTERVAL 20 MINUTE))',[digest(token),user.id]);await db.query('INSERT INTO email_outbox (recipient,subject,body) VALUES (?,?,?)',[email,'استعادة حساب دوق','رابط تغيير كلمة المرور صالح لمدة 20 دقيقة: '+url.href]);});setImmediate(()=>mailer.flushOutbox().catch(()=>console.error('mail_flush_failed')));return res.json({status:'success',message:'لو الإيميل ده مسجل عندنا هيوصلك لينك تغيير الباسورد خلال دقايق'});}
+async function recover_controller(req,res){const{token,new_password,confirm_password}=req.body;if(typeof token!=='string'||!/^\w{64}$/.test(token)||typeof new_password!=='string'||new_password.length<8||new_password.length>72||new_password!==confirm_password)return res.status(400).json({message:'الباسورد الجديد لازم يكون 8 حروف على الأقل ومطابق للتأكيد'});await transaction(async db=>{const[[reset]]=await db.query('SELECT * FROM password_resets WHERE token_hash=? AND expires_at>UTC_TIMESTAMP() AND used_at IS NULL FOR UPDATE',[digest(token)]);if(!reset)throw new HttpError(400,'اللينك انتهى أو اتستخدم قبل كده. اطلب لينك جديد');await db.query('UPDATE password_resets SET used_at=UTC_TIMESTAMP() WHERE user_id=? AND used_at IS NULL',[reset.user_id]);await db.query('UPDATE users SET password_hash=?,session_version=session_version+1 WHERE id=?',[await bcrypt.hash(new_password,12),reset.user_id]);});return res.json({status:'success',message:'تم تغيير كلمة المرور',redirect:'/auth'});}
+async function change2fa_controller(req,res){const[[user]]=await pool.query('SELECT * FROM users WHERE id=?',[req.user.id]);if(!user||!(await bcrypt.compare(String(req.body.password||''),user.password_hash)))return res.status(400).json({message:'الباسورد غلط'});const wants=enabled(req.body.enabled);if(wants&&Number(user.two_factor_enabled))return res.status(409).json({message:'المصادقة مفعلة بالفعل'});const setup=wants?enrollment(req):null,secret=wants?setup?.secret:readSecret(user.two_factor_secret);if(!secret||!verifyToken(secret,String(req.body.otp||'')))return res.status(400).json({message:'كود المصادقة غلط'});await pool.query('UPDATE users SET two_factor_secret=?,two_factor_enabled=?,two_factor_required=?,session_version=session_version+1 WHERE id=?',[wants?'sealed:'+seal({secret}):null,wants?1:0,wants?1:0,user.id]);res.clearCookie('doq_enrolment',{path:'/'});issueSession(res,{...user,session_version:Number(user.session_version)+1});return res.json({status:'success',message:wants?'تم تفعيل المصادقة':'تم إيقاف المصادقة'});}
+module.exports={signIn_controller,signUp_controller,signUp2_verify_controller,generateSecretKey_controller,logout_controller,resetPassword_controller,forgetPassword_controller,recover_controller,change2fa_controller};

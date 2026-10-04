@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+!.env.development.example
+!.env.production.example
+node_modules/
+backups/
+verification/
+tmp/
+public/upload/
+database/.cron.lock
+npm-debug.log*

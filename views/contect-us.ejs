@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+<script src="/app-client.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوق | اتصل بنا - Dhouq</title>
+    <title>دوق | اتصل بنا - DOQ</title>
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -130,33 +131,8 @@
 </head>
 <body class="text-on-surface bg-background">
 
-<!-- Top Navigation Bar -->
-<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md shadow-[0px_4px_20px_rgba(192,57,43,0.06)]">
-    <div class="flex flex-row-reverse justify-between items-center w-full px-md md:px-xl py-sm max-w-container-max mx-auto">
-        <div class="flex items-center gap-base">
-            <span class="text-headline-md font-headline-md text-secondary font-bold">دوق</span>
-        </div>
-        <nav class="hidden md:flex flex-row-reverse items-center gap-md font-body-md text-body-md">
-            <a href="/" class="text-on-surface-variant hover:text-secondary transition-colors">الرئيسية</a>
-            <a href="/all-portfolios" class="text-on-surface-variant hover:text-secondary transition-colors">تصفح المطابخ</a>
-            <a href="/auth" class="text-on-surface-variant hover:text-secondary transition-colors">انضم كطباخ</a>
-            <a href="/about" class="text-on-surface-variant hover:text-secondary transition-colors">من نحن</a>
-            <a href="/faqs" class="text-on-surface-variant hover:text-secondary transition-colors">الأسئلة الشائعة</a>
-            <a href="/contact" class="text-secondary font-bold border-b-2 border-secondary pb-1">اتصل بنا</a>
-        </nav>
-        <div>
-            <% if (locals.currentUser) { %>
-                <a href="/vendor-dashboard" class="bg-primary text-on-primary px-lg py-xs rounded-full font-label-sm hover:scale-[1.02] transition-transform active:scale-95">
-                    لوحة التحكم
-                </a>
-            <% } else { %>
-                <a href="/auth" class="bg-primary text-on-primary px-lg py-xs rounded-full font-label-sm hover:scale-[1.02] transition-transform active:scale-95">
-                    تسجيل الدخول
-                </a>
-            <% } %>
-        </div>
-    </div>
-</header>
+    <%- include('./partials/header.ejs') %>
+
 
 <main class="pt-24 pb-xl">
 
@@ -165,7 +141,7 @@
         <div class="hero-gradient px-md py-xl md:py-24 text-center text-on-primary">
             <h1 class="font-display-lg text-display-lg-mobile md:text-display-lg mb-sm">تواصل مع دوق</h1>
             <p class="font-body-lg text-body-lg max-w-2xl mx-auto opacity-90">
-                نحن هنا لمساعدتك والاستماع إليك. فريق دوق ينتظر رسالتك بفارغ الصبر.
+                إحنا هنا عشان نساعدك. سواء عندك استفسار عن عربية، أو عايز تنضم كصاحب عربية، فريق دوق مستني رسالتك.
             </p>
         </div>
         <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent"></div>
@@ -181,7 +157,7 @@
                 <div class="bg-surface-container-low p-lg rounded-xl border border-outline-variant/30">
                     <h2 class="text-headline-md font-headline-md text-primary mb-sm">يسعدنا سماع صوتك!</h2>
                     <p class="font-body-md text-on-surface-variant leading-relaxed">
-                        في دوق، نؤمن أن التجربة الرائعة تبدأ بالتواصل الفعال. سواء كنت متذوقاً يبحث عن طبق مميز، أو طباخاً موهوباً يرغب في مشاركة فنونه، نحن هنا لتقديم كل الدعم اللازم.
+                        في دوق، بنؤمن إن التواصل الجيد جزء من التجربة. سواء بتدور على عربية أكل شارع مميزة، أو صاحب عربية عايز تعرض شغلك، إحنا هنا ندعمك.
                     </p>
                 </div>
 
@@ -205,7 +181,7 @@
                         </div>
                         <div>
                             <h3 class="font-headline-md text-body-md font-bold mb-xs">البريد الإلكتروني العام</h3>
-                            <p class="text-on-surface-variant font-body-md">support@dhouq.com</p>
+                            <p class="text-on-surface-variant font-body-md">support@doq.com</p>
                         </div>
                     </div>
 
@@ -215,8 +191,8 @@
                             <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">handshake</span>
                         </div>
                         <div>
-                            <h3 class="font-headline-md text-body-md font-bold mb-xs">شراكات الطهاة</h3>
-                            <p class="text-on-surface-variant font-body-md">commercial@dhouq.com</p>
+                            <h3 class="font-headline-md text-body-md font-bold mb-xs">شراكات أصحاب العربيات</h3>
+                            <p class="text-on-surface-variant font-body-md">commercial@doq.com</p>
                         </div>
                     </div>
 
@@ -288,8 +264,8 @@
                                     <option value="" disabled selected>اختر الموضوع</option>
                                     <option value="general">استفسار عام</option>
                                     <option value="complaint">تقديم شكوى</option>
-                                    <option value="chef">انضمام كطباخ</option>
-                                    <option value="order">مشكلة في طلب</option>
+                                    <option value="chef">انضمام كصاحب عربية</option>
+                                    <option value="order">مشكلة مع عربية</option>
                                     <option value="other">أخرى</option>
                                 </select>
                             </div>
@@ -316,7 +292,7 @@
                         </div>
                         <h3 class="font-headline-md text-headline-md">دوق منصة رقمية بالكامل.. نصلك أينما كنت</h3>
                         <p class="font-body-md opacity-90 max-w-md">
-                            لا نحتاج لمقر تقليدي لنكون بجانبك. خدماتنا مصممة لتصل إليك في أي مكان وفي أي وقت عبر تطبيقنا وموقعنا الإلكتروني.
+                            مش محتاجين مقر تقليدي عشان نكون جنبك. اكتشف عربيات أكل الشارع وتواصل معاها بسهولة من أي مكان عبر موقع دوق.
                         </p>
                     </div>
                     <div class="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
@@ -337,23 +313,7 @@
 
 </main>
 
-<!-- Footer -->
-<footer class="bg-surface-container-lowest border-t border-outline-variant/30 w-full py-lg mt-xl">
-    <div class="flex flex-col md:flex-row-reverse justify-between items-center px-md md:px-xl max-w-container-max mx-auto gap-sm">
-        <div class="flex items-center gap-base">
-            <span class="text-headline-md font-headline-md text-secondary font-bold">دوق</span>
-        </div>
-        <div class="flex gap-md font-label-sm text-on-surface-variant flex-wrap justify-center">
-            <a href="#" class="hover:text-secondary transition-colors">سياسة الخصوصية</a>
-            <a href="#" class="hover:text-secondary transition-colors">شروط الاستخدام</a>
-            <a href="/contact" class="hover:text-secondary transition-colors">اتصل بنا</a>
-            <a href="/faqs" class="hover:text-secondary transition-colors">الأسئلة الشائعة</a>
-        </div>
-        <p class="font-label-sm text-on-surface-variant">
-            © 2026 دوق. جميع الحقوق محفوظة.
-        </p>
-    </div>
-</footer>
+    <%- include('./partials/footer') %>
 
 <script>
     // ============================================
