@@ -1,18 +1,32 @@
+/**
+ * Reviews controller: handlers for listing, creating, updating, and deleting reviews,
+ * plus aggregated summaries (average rating, distribution, Bayesian fair score)
+ * for dishes, kitchens, chefs, and admin.
+ */
 const pool = require("../database/pool");
 const checker = require("../utiles/checker");
-const { 
-    searchQuerySchema, 
-    idParamSchema, 
-    reviewSchema, 
-    reviewUpdateSchema, 
-    reviewsListQuerySchema } = require('../utiles/validation');
-const allRows=require('../middlware/allRows');
+const {
+    searchQuerySchema,
+    idParamSchema,
+    reviewSchema,
+    reviewUpdateSchema,
+    reviewsListQuerySchema
+} = require('../utiles/validation');
+const allRows = require('../middlware/allRows');
+
 // ======================
-// 1. تقييمات طبق معين
+// 1. Reviews for a specific dish
 // ======================
-// ======================
-// تقييمات طبق معين (مُحسّن)
-// ======================
+
+/**
+ * Get all reviews for a specific dish with a summary (counts per star, average, fair score).
+ * @param {Object} req - Express request.
+ * @param {string} req.params.id - Dish ID.
+ * @param {Object} [req.query] - Pagination/filter options validated by reviewsListQuerySchema (page, limit, q, rating, sort_order).
+ * @param {Object} [req.user] - Optional logged-in user; when present their review is sorted first.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 { status, data: { reviews, summary } }, 400 on invalid query, 404 if dish not found.
+ */
 async function getAllReviewsForDish_controller(req, res) {
     const { id } = req.params;
     const userId = req.user?.id; // إذا كان المستخدم مسجل الدخول
@@ -34,7 +48,7 @@ async function getAllReviewsForDish_controller(req, res) {
     } = value;
 
 
-// التحقق إن الطبق موجود
+    // التحقق إن الطبق موجود
     const [dish] = await pool.query(`SELECT id, name FROM dishes WHERE id = ? LIMIT 1`, [id]);
     if (dish.length === 0) {
         return res.status(404).json({ status: 'error', message: 'الطبق غير موجود' });
@@ -47,9 +61,9 @@ async function getAllReviewsForDish_controller(req, res) {
         JOIN users u ON r.user_id = u.id
         WHERE r.dish_id = ?
     `;
-    
-    let params = [id,limit];
-    
+
+    let params = [id, limit];
+
     // إذا كان المستخدم مسجل، جلب تقييمه أولاً
     if (userId) {
         query = `
@@ -61,14 +75,14 @@ async function getAllReviewsForDish_controller(req, res) {
             ORDER BY is_other ASC, r.created_at DESC
             LIMIT ?
         `;
-        params = [userId, id,limit];
+        params = [userId, id, limit];
     } else {
         query += ` ORDER BY r.created_at DESC LIMIT ?`;
     }
 
     const [reviews] = await pool.query(query, params);
 
-    // Summary + Fair Score
+    // Summary + Fair Score (Bayesian average: C=20, m=4.2)
     const C = 20;
     const m = 4.2;
 
@@ -111,6 +125,14 @@ async function getAllReviewsForDish_controller(req, res) {
     });
 }
 
+/**
+ * List reviews across dishes/kitchens with filters, pagination, and an aggregate summary
+ * that is intentionally NOT affected by the comment/rating filters (only by type/id/city/category).
+ * @param {Object} req - Express request.
+ * @param {Object} req.query - Validated by reviewsListQuerySchema: type ('dish'|'kitchen'), id, page, limit, q, rating, sort_order, city, category.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 { status, data: { type, id, entity_name, reviews, summary }, pagination }, 400 on invalid query, 404 if referenced dish/kitchen not found.
+ */
 async function getReviewsList_controller(req, res) {
     // 1. التحقق من صحة المعاملات
     const { error, value } = reviewsListQuerySchema.validate(req.query, {
@@ -242,7 +264,6 @@ async function getReviewsList_controller(req, res) {
     const summaryWhereSQL = summaryWhereParts.length ? `WHERE ${summaryWhereParts.join(' AND ')}` : '';
     const summaryJoin = `LEFT JOIN categories ON categories.id = dishes.category_id`;
 
-    const C = 20, m = 4.2;
     const [summaryRows] = await pool.query(`
         SELECT
             COUNT(reviews.id) AS total_reviews,
@@ -296,8 +317,18 @@ async function getReviewsList_controller(req, res) {
 }
 
 // ======================
-// 3. Dashboard الشيف (مع Stats + Top Dishes)
+// 3. Chef Dashboard (with Stats + Top Dishes)
 // ======================
+
+/**
+ * Chef dashboard view: reviews written on the chef's dishes, optionally filtered by kitchen,
+ * with aggregated stats and top dishes (ranked by Bayesian fair score) when include_stats is set.
+ * @param {Object} req - Express request.
+ * @param {string} req.user.id - Authenticated chef's user ID.
+ * @param {Object} req.query - searchQuerySchema fields (q, rating, page, limit, sort_by, sort_order) plus raw kitchen_id and include_stats.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 { status, data: { reviews, (stats, top_dishes)? }, pagination }, 400 on invalid query, 403 if kitchen_id does not belong to the chef.
+ */
 async function getChefReviews_controller(req, res) {
     const userId = req.user.id;
 
@@ -349,7 +380,7 @@ async function getChefReviews_controller(req, res) {
     `;
 
     const selectFields = `
-        ${tableName}.*, 
+        ${tableName}*, 
         dishes.name AS dish_name, 
         kitchens.title AS kitchen_title,
         users.first_name,
@@ -490,7 +521,7 @@ async function getChefReviews_controller(req, res) {
 }
 
 // ======================
-// 4. تقييماتي كعميل (تم إصلاح كل الـ bugs)
+// 4. Customer's own reviews
 // ======================
 async function getAllReviewsOnMyreviewOnDish_controller(req, res) {
     const value = checker(searchQuerySchema, req.query, res);
@@ -565,7 +596,7 @@ async function getAllReviewsOnMyreviewOnDish_controller(req, res) {
 }
 
 // ======================
-// 5. Dashboard الأدمن
+// 5. Admin Dashboard
 // ======================
 async function getAllReviewsDashboard_controller(req, res) {
     const { include_stats } = req.query;
@@ -676,7 +707,7 @@ async function getAllReviewsDashboard_controller(req, res) {
 }
 
 // ======================
-// 6. إضافة تقييم (تم إصلاح كل الـ bugs)
+// 6. Add Review
 // ======================
 async function addReviewOnDish_controller(req, res) {
     const { rating, comment, dish_id } = checker(reviewSchema, req.body, res);
@@ -688,7 +719,6 @@ async function addReviewOnDish_controller(req, res) {
         [dish_id]
     );
 
-    
     if (foundDish.length === 0) {
         return res.status(404).json({
             status: 'error',
@@ -722,7 +752,7 @@ async function addReviewOnDish_controller(req, res) {
 }
 
 // ======================
-// 7. تعديل تقييم (تم إصلاح كل الـ bugs)
+// 7. Update Review
 // ======================
 async function updateReviewOnDish_controller(req, res) {
     const body = checker(reviewUpdateSchema, req.body, res);
@@ -778,7 +808,7 @@ async function updateReviewOnDish_controller(req, res) {
         updateParams
     );
 
-       // ✅ مسح كاش التقييمات والمطابخ والأطباق المتأثرة
+    // مسح كاش التقييمات والمطابخ والأطباق المتأثرة
     allRows.clearCache('review');
     allRows.clearCache('kitchen'); // لأن إحصائيات المطبخ تتغير
     allRows.clearCache('dish');    // لأن تقييمات الطبق تتغير
@@ -790,7 +820,7 @@ async function updateReviewOnDish_controller(req, res) {
 }
 
 // ======================
-// 8. حذف تقييم (تم إصلاح كل الـ bugs)
+// 8. Delete Review
 // ======================
 async function deleteReview_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
@@ -815,7 +845,7 @@ async function deleteReview_controller(req, res) {
 
     await pool.query(`DELETE FROM reviews WHERE id = ?`, [id]);
 
-       // ✅ مسح كاش التقييمات والمطابخ والأطباق المتأثرة
+    // مسح كاش التقييمات والمطابخ والأطباق المتأثرة
     allRows.clearCache('review');
     allRows.clearCache('kitchen'); // لأن إحصائيات المطبخ تتغير
     allRows.clearCache('dish');    // لأن تقييمات الطبق تتغير

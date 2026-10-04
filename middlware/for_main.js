@@ -1,48 +1,57 @@
+/**
+ * Middleware factory that loads the current user's owned resources (kitchen, dishes, reviews, user profile)
+ * into req.my with optional pagination and filters.
+ * Requires an authenticated user (req.user must be set by auth middleware).
+ */
 const pool = require("../database/pool");
 const { searchQuerySchema } = require('../utiles/validation');
 
-module.exports = (resource, pass = false,withPageination=true) => {
+/**
+ * @param {string} resource - Resource type to load ('kitchen', 'dish', 'review', 'user').
+ * @param {boolean} [pass=false] - If true, allows empty results without 404.
+ * @param {boolean} [withPagination=true] - If true, applies pagination, filters, and search.
+ * @returns {Function} Express middleware: async (req, res, next) => void.
+ */
+module.exports = (resource, pass = false, withPagination = true) => {
     return async (req, res, next) => {
         try {
-                // 1. التحقق من صحة معاملات query
-                const { error, value } = searchQuerySchema.validate(req.query);
-                if (error) {
-                    return res.status(400).json({
-                        status: 'error',
-                        message: error.details[0].message
-                    });
-                }
-                
-                const {
-                    q,
-                    city,
-                    category,
-                    min_price = 0,
-                    max_price = 10000,
-                    rating,
-                    page = 1,
-                    limit = 10,
-                    sort_by = 'id',
-                    sort_order = 'ASC'
-                } = value;
-                
-                const offset = (page - 1) * limit;
-                
-                // 2. تحديد اسم الجدول الأساسي والجداول المنضمة
-                let tableName = '';
-                let joinClause = '';
-                let selectFields = '';
-                let baseQuery = '';
-                let whereClauses = [];
-                let queryParams = [];
-                let isCollection = true; // هل النتيجة مجموعة أم مفردة
-                
+            // 1. Validate query parameters
+            const { error, value } = searchQuerySchema.validate(req.query);
+            if (error) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: error.details[0].message
+                });
+            }
 
-            if(!req.user)
+            const {
+                q,
+                city,
+                category,
+                min_price = 0,
+                max_price = 10000,
+                rating,
+                page = 1,
+                limit = 10,
+                sort_by = 'id',
+                sort_order = 'ASC'
+            } = value;
+
+            const offset = (page - 1) * limit;
+
+            // 2. Determine base table, joins, and WHERE clause per resource
+            let tableName = '';
+            let joinClause = '';
+            let selectFields = '';
+            let baseQuery = '';
+            let whereClauses = [];
+            let queryParams = [];
+            let isCollection = true; // whether result is an array or single object
+
+            if (!req.user)
                 return res.status(401).redirect('/auth');
 
             const userId = req.user.id;
-            
 
             switch (resource) {
                 case 'kitchen':
@@ -51,12 +60,12 @@ module.exports = (resource, pass = false,withPageination=true) => {
                     baseQuery = `SELECT ${selectFields} FROM ${tableName}`;
                     whereClauses.push(`${tableName}.user_id = ?`);
                     queryParams.push(userId);
-                    isCollection = true; // مفردة (لأن المستخدم له مطبخ واحد فقط)
+                    isCollection = true; // user has one kitchen but we treat as collection
                     break;
 
                 case 'dish':
                     tableName = 'dishes';
-                    // انضمام مع kitchens و categories
+                    // Join with kitchens and categories for name lookups
                     joinClause = `
                         JOIN kitchens ON ${tableName}.kitchen_id = kitchens.id
                         JOIN categories ON ${tableName}.category_id = categories.id
@@ -83,7 +92,7 @@ module.exports = (resource, pass = false,withPageination=true) => {
                     baseQuery = `SELECT ${selectFields} FROM ${tableName}`;
                     whereClauses.push(`${tableName}.id = ?`);
                     queryParams.push(userId);
-                    isCollection = false; // بيانات مستخدم واحد
+                    isCollection = false; // single user profile
                     break;
 
                 default:
@@ -92,32 +101,33 @@ module.exports = (resource, pass = false,withPageination=true) => {
                         message: 'نوع مورد غير معروف'
                     });
             }
-if(withPageination){
 
-    // 3. إضافة الفلاتر حسب نوع المورد
-    if (resource === 'kitchen' && city) {
-                whereClauses.push(`${tableName}.city = ?`);
-                queryParams.push(city);
-            }
-            
-            if (resource === 'dish') {
-                if (category) {
-                    // الفلتر باسم الفئة (categories.name)
-                    whereClauses.push(`categories.name = ?`);
-                    queryParams.push(category);
+            if (withPagination) {
+                // 3. Add resource-specific filters
+                if (resource === 'kitchen' && city) {
+                    whereClauses.push(`${tableName}.city = ?`);
+                    queryParams.push(city);
                 }
-                // فلتر السعر (نطاق)
-                whereClauses.push(`${tableName}.price BETWEEN ? AND ?`);
-                queryParams.push(min_price, max_price);
+
+                if (resource === 'dish') {
+                    if (category) {
+                        // Filter by category name (categories.name)
+                        whereClauses.push(`categories.name = ?`);
+                        queryParams.push(category);
+                    }
+                    // Price range filter
+                    whereClauses.push(`${tableName}.price BETWEEN ? AND ?`);
+                    queryParams.push(min_price, max_price);
+                }
+
+                if (resource === 'review' && rating !== undefined) {
+                    whereClauses.push(`${tableName}.rating = ?`);
+                    queryParams.push(rating);
+                }
             }
-            
-            if (resource === 'review' && rating !== undefined) {
-                whereClauses.push(`${tableName}.rating = ?`);
-                queryParams.push(rating);
-            }
-}
-            // 4. البحث (q)
-            if (q && withPageination) {
+
+            // 4. Text search (q)
+            if (q && withPagination) {
                 const searchKeyword = `%${q}%`;
                 switch (resource) {
                     case 'kitchen':
@@ -141,42 +151,42 @@ if(withPageination){
                 }
             }
 
-            
-            // 5. بناء الاستعلام النهائي مع ORDER BY و LIMIT و OFFSET
+
+            // 5. Build final query with ORDER BY, LIMIT, OFFSET
             const pageLimit = parseInt(limit, 10);
             const pageOffset = parseInt(offset, 10);
-            let paginationParams=[...queryParams];
+            let paginationParams = [...queryParams];
 
             let finalQuery = baseQuery;
-            if (whereClauses.length > 0) 
+            if (whereClauses.length > 0)
                 finalQuery += ` WHERE ` + whereClauses.join(' AND ');
-            
-            if(withPageination){
+
+            if (withPagination) {
                 finalQuery += ` ORDER BY ${tableName}.${sort_by} ${sort_order} LIMIT ? OFFSET ?`;
-                // إضافة معاملات LIMIT و OFFSET
-                paginationParams=[...paginationParams,pageLimit,pageOffset];
+                // Add LIMIT and OFFSET params
+                paginationParams = [...paginationParams, pageLimit, pageOffset];
             }
-                
-            
+
+
             const [data] = await pool.query(finalQuery, paginationParams);
 
-            // 6. تخزين النتائج في req.my
+            // 6. Store results in req.my
             req.my = isCollection ? data : data[0];
 
-            // 7. حساب إجمالي السجلات (pagination)
+            // 7. Calculate total count for pagination
             let countQuery = `SELECT COUNT(1) AS total FROM ${tableName}`;
             if (joinClause) {
                 countQuery = `SELECT COUNT(1) AS total FROM ${tableName} ${joinClause}`;
             }
-            // إعادة بناء WHERE clauses بدون معاملات LIMIT/OFFSET
+            // Rebuild WHERE clauses without LIMIT/OFFSET params
             let countWhere = '';
             if (whereClauses.length > 0) {
                 countWhere = ' WHERE ' + whereClauses.join(' AND ');
             }
             countQuery += countWhere;
 
-            // معاملات الاستعلام (بدون last two parameters الخاصة بـ LIMIT/OFFSET)
-            const countParams = queryParams.slice(); // نسخ
+            // Count query params (without LIMIT/OFFSET)
+            const countParams = queryParams.slice(); // copy
             const [totalResult] = await pool.query(countQuery, countParams);
             const total = totalResult[0].total;
 
@@ -186,12 +196,12 @@ if(withPageination){
                 total: total,
                 total_pages: Math.ceil(total / limit)
             };
-            
-            // 8. إذا لم توجد بيانات و pass = false نعيد 404
+
+            // 8. If no data and pass = false, return 404
             if ((data.length === 0 || !data) && pass === false) {
                 return res.status(404).json({ message: 'لم أجد أي بيانات شخصية', status: 'error' });
             }
-            
+
             next();
 
         } catch (ex) {

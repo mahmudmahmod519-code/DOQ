@@ -1,3 +1,7 @@
+/**
+ * Admin controller: dashboard stats, user/kitchen/dish/review/category management.
+ * All endpoints require admin role (enforced by routes middleware).
+ */
 const pool = require("../database/pool");
 const checker = require("../utiles/checker");
 const {
@@ -9,6 +13,13 @@ const {
 // ============================================
 // Fair Score Helper
 // ============================================
+/**
+ * Calculates Bayesian fair score for review-based ranking.
+ * Formula: (count * avg + C * m) / (count + C) where C=20, m=4.2
+ * @param {number} count - Number of reviews.
+ * @param {number} avg - Average rating.
+ * @returns {string|null} Fair score as string with 2 decimals, or null if no reviews.
+ */
 function calcFairScore(count, avg) {
     const C = 20;
     const m = 4.2;
@@ -20,6 +31,13 @@ function calcFairScore(count, avg) {
 // 1. DASHBOARD
 // GET /api/v1/admin/dashboard
 // =========================================================
+
+/**
+ * Admin dashboard overview: user/kitchen/dish/review stats, latest items, top performers, growth charts.
+ * @param {Object} req - Express request (req.user is admin).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON with stats, latestCarts, latestReviews, topCartsByFairScore, charts.
+ */
 async function getAdminDashboard_controller(req, res) {
     try {
         const [[usersStats]] = await pool.query(`
@@ -170,73 +188,92 @@ async function getAdminDashboard_controller(req, res) {
 // 2. USERS
 // =========================================================
 
+/**
+ * List all users with pagination, search, and role filter.
+ * @param {Object} req - Express request (query: page, limit, q, role).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 { status, data: users[], pagination }.
+ */
 async function getAllUsers_controller(req, res) {
-        const page = Math.max(parseInt(req.query.page) || 1, 1);
-        const limit = Math.min(parseInt(req.query.limit) || 20, 50);
-        const offset = (page - 1) * limit;
-        const q = req.query.q || '';
-        const role = req.query.role || '';
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const offset = (page - 1) * limit;
+    const q = req.query.q || '';
+    const role = req.query.role || '';
 
-        let whereClauses = [];
-        let params = [];
+    let whereClauses = [];
+    let params = [];
 
-        if (q) {
-            const keyword = `%${q}%`;
-            whereClauses.push(`(first_name LIKE ? OR last_name LIKE ? OR email LIKE ? OR phone_number LIKE ?)`);
-            params.push(keyword, keyword, keyword, keyword);
-        }
-        if (role && ['customer', 'chef', 'admin'].includes(role)) {
-            whereClauses.push(`roles = ?`);
-            params.push(role);
-        }
+    if (q) {
+        const keyword = `%${q}%`;
+        whereClauses.push(`(first_name LIKE ? OR last_name LIKE ? OR email LIKE ? OR phone_number LIKE ?)`);
+        params.push(keyword, keyword, keyword, keyword);
+    }
+    if (role && ['customer', 'chef', 'admin'].includes(role)) {
+        whereClauses.push(`roles = ?`);
+        params.push(role);
+    }
 
-        const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
+    const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-        const [users] = await pool.query(`
-            SELECT id, first_name, last_name, email, phone_number, roles, created_at
-            FROM users
-            ${whereSQL}
-            ORDER BY created_at DESC
-            LIMIT ? OFFSET ?
-        `, [...params, limit, offset]);
+    const [users] = await pool.query(`
+        SELECT id, first_name, last_name, email, phone_number, roles, created_at
+        FROM users
+        ${whereSQL}
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+    `, [...params, limit, offset]);
 
-        const [countResult] = await pool.query(`SELECT COUNT(*) AS total FROM users ${whereSQL}`, params);
-        const total = countResult[0]?.total || 0;
+    const [countResult] = await pool.query(`SELECT COUNT(*) AS total FROM users ${whereSQL}`, params);
+    const total = countResult[0]?.total || 0;
 
-        return res.status(200).json({
-            status: 'success',
-            data: users,
-            pagination: { page, limit, total, total_pages: Math.ceil(total / limit) || 1 }
-        });
+    return res.status(200).json({
+        status: 'success',
+        data: users,
+        pagination: { page, limit, total, total_pages: Math.ceil(total / limit) || 1 }
+    });
 }
 
+/**
+ * Get a single user by ID (includes kitchen info if chef).
+ * @param {Object} req - Express request (params.id).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 { status, data: { user, kitchen? } }, 404 if not found.
+ */
 async function getUserById_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;
 
-        const [users] = await pool.query(`
-            SELECT id, first_name, last_name, email, phone_number, roles, created_at
-            FROM users WHERE id = ?
+    const [users] = await pool.query(`
+        SELECT id, first_name, last_name, email, phone_number, roles, created_at
+        FROM users WHERE id = ?
+    `, [id]);
+
+    if (users.length === 0) {
+        return res.status(404).json({ status: 'error', message: 'المستخدم غير موجود' });
+    }
+
+    let kitchen = null;
+    if (users[0].roles === 'chef') {
+        const [kitchens] = await pool.query(`
+            SELECT id, title, city, phone_number, created_at FROM kitchens WHERE user_id = ?
         `, [id]);
+        kitchen = kitchens[0] || null;
+    }
 
-        if (users.length === 0) {
-            return res.status(404).json({ status: 'error', message: 'المستخدم غير موجود' });
-        }
-
-        let kitchen = null;
-        if (users[0].roles === 'chef') {
-            const [kitchens] = await pool.query(`
-                SELECT id, title, city, phone_number, created_at FROM kitchens WHERE user_id = ?
-            `, [id]);
-            kitchen = kitchens[0] || null;
-        }
-
-        return res.status(200).json({
-            status: 'success',
-            data: { ...users[0], kitchen }
-        });
+    return res.status(200).json({
+        status: 'success',
+        data: { ...users[0], kitchen }
+    });
 }
 
+/**
+ * Update a user by admin (name, phone, role).
+ * Prevents admin from removing their own admin role.
+ * @param {Object} req - Express request (params.id, body: first_name, last_name, phone_number, roles).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 success, 400/404/409 on validation/not found/conflict.
+ */
 async function updateUserByAdmin_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;
@@ -244,40 +281,47 @@ async function updateUserByAdmin_controller(req, res) {
     const validated = checker(userUpdateSchema, req.body, res);
     if (!validated) return;
 
-        const [existing] = await pool.query(`SELECT id, roles FROM users WHERE id = ?`, [id]);
-        if (existing.length === 0) {
-            return res.status(404).json({ status: 'error', message: 'المستخدم غير موجود' });
+    const [existing] = await pool.query(`SELECT id, roles FROM users WHERE id = ?`, [id]);
+    if (existing.length === 0) {
+        return res.status(404).json({ status: 'error', message: 'المستخدم غير موجود' });
+    }
+
+    if (parseInt(id) === req.user.id && validated.roles && validated.roles !== 'admin') {
+        return res.status(400).json({ status: 'error', message: 'لا يمكنك إزالة صلاحية الأدمن من حسابك' });
+    }
+
+    const updates = [];
+    const params = [];
+
+    if (validated.first_name !== undefined) { updates.push('first_name = ?'); params.push(validated.first_name); }
+    if (validated.last_name !== undefined) { updates.push('last_name = ?'); params.push(validated.last_name); }
+    if (validated.phone_number !== undefined) {
+        const [phoneCheck] = await pool.query(`SELECT id FROM users WHERE phone_number = ? AND id != ?`, [validated.phone_number, id]);
+        if (phoneCheck.length > 0) {
+            return res.status(409).json({ status: 'error', message: 'رقم الهاتف مستخدم بالفعل' });
         }
+        updates.push('phone_number = ?');
+        params.push(validated.phone_number);
+    }
+    if (validated.roles !== undefined) { updates.push('roles = ?'); params.push(validated.roles); }
 
-        if (parseInt(id) === req.user.id && validated.roles && validated.roles !== 'admin') {
-            return res.status(400).json({ status: 'error', message: 'لا يمكنك إزالة صلاحية الأدمن من حسابك' });
-        }
+    if (updates.length === 0) {
+        return res.status(400).json({ status: 'error', message: 'لا توجد بيانات للتحديث' });
+    }
 
-        const updates = [];
-        const params = [];
+    params.push(id);
+    await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
 
-        if (validated.first_name !== undefined) { updates.push('first_name = ?'); params.push(validated.first_name); }
-        if (validated.last_name !== undefined) { updates.push('last_name = ?'); params.push(validated.last_name); }
-        if (validated.phone_number !== undefined) {
-            const [phoneCheck] = await pool.query(`SELECT id FROM users WHERE phone_number = ? AND id != ?`, [validated.phone_number, id]);
-            if (phoneCheck.length > 0) {
-                return res.status(409).json({ status: 'error', message: 'رقم الهاتف مستخدم بالفعل' });
-            }
-            updates.push('phone_number = ?');
-            params.push(validated.phone_number);
-        }
-        if (validated.roles !== undefined) { updates.push('roles = ?'); params.push(validated.roles); }
-
-        if (updates.length === 0) {
-            return res.status(400).json({ status: 'error', message: 'لا توجد بيانات للتحديث' });
-        }
-
-        params.push(id);
-        await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
-
-        return res.status(200).json({ status: 'success', message: 'تم تحديث بيانات المستخدم بنجاح' });
+    return res.status(200).json({ status: 'success', message: 'تم تحديث بيانات المستخدم بنجاح' });
 }
 
+/**
+ * Delete a user by admin.
+ * Prevents self-deletion and deletion of users who own a kitchen.
+ * @param {Object} req - Express request (params.id).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 success, 400/404/409 on validation/not found/conflict.
+ */
 async function deleteUserByAdmin_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;
@@ -312,6 +356,13 @@ async function deleteUserByAdmin_controller(req, res) {
 // 3. KITCHENS
 // =========================================================
 
+/**
+ * List all kitchens with pagination, search, and city filter.
+ * Includes chef name, dish count, review count, average rating, and fair score.
+ * @param {Object} req - Express request (query: page, limit, q, city).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 { status, data: kitchens[], pagination }.
+ */
 async function getAllKitchensAdmin_controller(req, res) {
     try {
         const page = Math.max(parseInt(req.query.page) || 1, 1);
@@ -378,6 +429,12 @@ async function getAllKitchensAdmin_controller(req, res) {
     }
 }
 
+/**
+ * Get a single kitchen by ID with stats (dish count, reviews, fair score).
+ * @param {Object} req - Express request (params.id).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 { status, data: kitchen }, 404 if not found.
+ */
 async function getKitchenByIdAdmin_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;
@@ -417,6 +474,12 @@ async function getKitchenByIdAdmin_controller(req, res) {
     }
 }
 
+/**
+ * Update a kitchen by admin (title, description, city, address, phone).
+ * @param {Object} req - Express request (params.id, body).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 success, 400/404 on validation/not found.
+ */
 async function updateKitchenByAdmin_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;
@@ -451,6 +514,12 @@ async function updateKitchenByAdmin_controller(req, res) {
     }
 }
 
+/**
+ * Delete a kitchen by admin (cascades to dishes and reviews).
+ * @param {Object} req - Express request (params.id).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 success, 404 if not found.
+ */
 async function deleteKitchenByAdmin_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;
@@ -481,6 +550,13 @@ async function deleteKitchenByAdmin_controller(req, res) {
 // 4. DISHES
 // =========================================================
 
+/**
+ * List all dishes with pagination, search, category filter, and kitchen filter.
+ * Includes category name, kitchen title, review count, average rating, and fair score.
+ * @param {Object} req - Express request (query: page, limit, q, category, kitchen).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 { status, data: dishes[], pagination }.
+ */
 async function getAllDishesAdmin_controller(req, res) {
     try {
         const page = Math.max(parseInt(req.query.page) || 1, 1);
@@ -553,6 +629,12 @@ async function getAllDishesAdmin_controller(req, res) {
     }
 }
 
+/**
+ * Delete a dish by admin (cascades to reviews).
+ * @param {Object} req - Express request (params.id).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 success, 404 if not found.
+ */
 async function deleteDishByAdmin_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;
@@ -577,6 +659,12 @@ async function deleteDishByAdmin_controller(req, res) {
 // 5. REVIEWS
 // =========================================================
 
+/**
+ * List all reviews with pagination, rating filter, and text search (comment/dish/kitchen).
+ * @param {Object} req - Express request (query: page, limit, rating, q).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 { status, data: reviews[], pagination }.
+ */
 async function getAllReviewsAdmin_controller(req, res) {
     try {
         const page = Math.max(parseInt(req.query.page) || 1, 1);
@@ -639,6 +727,12 @@ async function getAllReviewsAdmin_controller(req, res) {
     }
 }
 
+/**
+ * Delete a review by admin.
+ * @param {Object} req - Express request (params.id).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 success, 404 if not found.
+ */
 async function deleteReviewByAdmin_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;
@@ -661,6 +755,12 @@ async function deleteReviewByAdmin_controller(req, res) {
 // 6. CATEGORIES
 // =========================================================
 
+/**
+ * List all categories with dish counts.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 { status, data: categories[] }.
+ */
 async function getAllCategoriesAdmin_controller(req, res) {
     try {
         const [categories] = await pool.query(`
@@ -680,6 +780,12 @@ async function getAllCategoriesAdmin_controller(req, res) {
     }
 }
 
+/**
+ * Create a new category.
+ * @param {Object} req - Express request (body: name, description).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 201 created, 409 if duplicate name.
+ */
 async function createCategoryAdmin_controller(req, res) {
     const validated = checker(categorySchema, req.body, res);
     if (!validated) return;
@@ -708,6 +814,12 @@ async function createCategoryAdmin_controller(req, res) {
     }
 }
 
+/**
+ * Update a category by admin.
+ * @param {Object} req - Express request (params.id, body: name, description).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 success, 404/409 on not found/duplicate.
+ */
 async function updateCategoryAdmin_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;
@@ -737,6 +849,13 @@ async function updateCategoryAdmin_controller(req, res) {
     }
 }
 
+/**
+ * Delete a category by admin.
+ * Blocks deletion if dishes reference the category.
+ * @param {Object} req - Express request (params.id).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} Sends JSON: 200 success, 404/409 on not found/has dishes.
+ */
 async function deleteCategoryAdmin_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;

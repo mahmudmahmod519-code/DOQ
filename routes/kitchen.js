@@ -1,3 +1,8 @@
+/**
+ * Kitchen routes (mounted at /kitchens).
+ * Provides: public kitchen listings, chef kitchen management, admin kitchen management,
+ * image uploads, city listing, and page rendering.
+ */
 const router = require("express").Router();
 const auth = require("../middlware/auth");
 const roles = require("../middlware/roles");
@@ -5,7 +10,6 @@ const upload = require("../middlware/upload");
 const catchError = require("../utiles/catchError");
 const allRows = require("../middlware/allRows");
 const for_main = require("../middlware/for_main");
-const pool = require("../database/pool");
 
 const {
     createKitchen_controller,
@@ -28,46 +32,49 @@ const {
 } = require("../rendering/kitchen");
 const { checkSubscription } = require("../controller/payment");
 
-
 router.use(auth.optional);
 
-router.get('/',catchError(kitchens_render));//done
+// --- Page Routes ---
 
-router.get('/my',roles('chef'),for_main('kitchen',true,false),catchError(myKitchen_render));//done
+// GET /kitchens - Public kitchens listing page
+router.get('/', catchError(kitchens_render));
 
-router.get('/:id',getKitchenById_middleware,catchError(kitchenProfile_render));//done
+// GET /kitchens/my - Chef's kitchen management page (chef only)
+router.get('/my', roles('chef'), for_main('kitchen', true, false), catchError(myKitchen_render));
 
-router.get('/api/v1/my',roles('chef'),for_main('kitchen',true,false),catchError(Mykitchens_controller));
+// GET /kitchens/:id - Kitchen profile page (public)
+router.get('/:id', getKitchenById_middleware, catchError(kitchenProfile_render));
 
+// --- API Routes ---
+
+// GET /kitchens/api/v1/my - Chef's kitchens (chef only)
+router.get('/api/v1/my', roles('chef'), for_main('kitchen', true, false), catchError(Mykitchens_controller));
+
+// GET /kitchens/api/v1/paginated - Public paginated kitchens with filters
 router.get('/api/v1/paginated', catchError(getKitchensPaginated_controller));
+
+// GET /kitchens/api/v1/cities - List distinct cities for filter dropdown
 router.get('/api/v1/cities', catchError(listCities_controller));
 
-router.get('/api/v1/:id',roles('admin'),catchError(getKitchenById_controller));//done
+// GET /kitchens/api/v1/:id - Single kitchen (admin)
+router.get('/api/v1/:id', roles('admin'), catchError(getKitchenById_controller));
 
-router.get('/api/v1',roles('admin'),catchError(getKitchens_controller));//done
+// GET /kitchens/api/v1 - All kitchens (admin)
+router.get('/api/v1', roles('admin'), catchError(getKitchens_controller));
 
-router.post("/api/v1/",roles('chef'),catchError(createKitchen_controller));//done
+// POST /kitchens/api/v1/ - Create kitchen (chef, one per chef)
+router.post("/api/v1/create", roles('chef'), catchError(createKitchen_controller));
 
-router.delete("/api/v1/:id",roles('admin'),catchError(deleteKitchen_controller));//done
+// DELETE /kitchens/api/v1/:id - Delete kitchen (admin)
+router.delete("/api/v1/:id", roles('admin'), catchError(deleteKitchen_controller));
 
-router.post("/api/v1/my/background",roles('chef'),checkSubscription,for_main('kitchen'),upload.single('background'),catchError(uploadKitchenImageBackground_controller));//done
+// POST /kitchens/api/v1/my/background - Upload background image (chef, subscription)
+router.post("/api/v1/my/background", roles('chef'), checkSubscription, for_main('kitchen'), upload.single('background'), catchError(uploadKitchenImageBackground_controller));
 
-router.post("/api/v1/my/profile",roles('chef'),checkSubscription,for_main('kitchen'),upload.single('profile'),catchError(uploadKitchenImageProfile_controller));//done
+// POST /kitchens/api/v1/my/profile - Upload profile image (chef, subscription)
+router.post("/api/v1/my/profile", roles('chef'), checkSubscription, for_main('kitchen'), upload.single('profile'), catchError(uploadKitchenImageProfile_controller));
 
-router.put("/api/v1/my",roles('chef'),checkSubscription,for_main('kitchen'),catchError(updateMyKitchen_controller));//done
+// PUT /kitchens/api/v1/my - Update kitchen (chef, subscription)
+router.put("/api/v1/my", roles('chef'), checkSubscription, for_main('kitchen'), catchError(updateMyKitchen_controller));
 
 module.exports = router;
-    
-    //render all kitchens for admin
-    //render all kitchens for customer and admin
-    //render spcific kitchen portfolio
-    //render get mykitchen
-    
-    //get all kitchens
-    //get spcific kitchen portfolio customer and admin
-    //delete kitchen admin
-    //update mykitchen chef
-    //create kitchen chef one only
-    //patch kitchen upload image chef
-    
-    

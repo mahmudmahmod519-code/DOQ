@@ -1,8 +1,13 @@
+/**
+ * Admin page rendering handler.
+ * Route: GET /admin
+ */
 const checkLogin = require("../utiles/checkLogin");
 
 /**
- * Render Admin Dashboard page
- * Route: GET /admin/
+ * Renders the admin dashboard page.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
  */
 function Dashboard_render(req, res) {
     res.render('./admin/dashboard', {

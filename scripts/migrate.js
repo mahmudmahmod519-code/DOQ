@@ -1,36 +1,377 @@
+/**
+ * Database migration runner for DOQ.
+ * Creates/updates all tables, columns, indexes, and foreign keys required by the application.
+ * Idempotent: safe to run repeatedly; only adds missing objects.
+ */
 require('../config/env');
-const pool=require('../database/pool');
-async function column(table,name,definition){const [[row]]=await pool.query('SELECT COUNT(*) AS present FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=? AND column_name=?',[table,name]);if(!row.present){await pool.query(`ALTER TABLE \`${table}\` ADD COLUMN \`${name}\` ${definition}`);}}
-async function index(table,name,definition){const [[row]]=await pool.query('SELECT COUNT(*) AS present FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name=? AND index_name=?',[table,name]);if(!row.present)await pool.query(`ALTER TABLE \`${table}\` ADD ${definition}`);}
-async function dropIndex(table,name){const [[row]]=await pool.query('SELECT COUNT(*) AS present FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name=? AND index_name=?',[table,name]);if(row.present)await pool.query(`ALTER TABLE \`${table}\` DROP INDEX \`${name}\``);}
-async function run(){
- await pool.query(`CREATE TABLE IF NOT EXISTS payment_webhook_events (event_id VARCHAR(80) PRIMARY KEY,received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
- await column('users','account_status',"VARCHAR(20) NOT NULL DEFAULT 'approved'");await column('users','approved_at','DATETIME NULL');await column('users','approved_by','INT NULL');await column('users','two_factor_required','TINYINT(1) NOT NULL DEFAULT 0');await column('users','two_factor_last_step','BIGINT NULL');await column('users','session_version','INT NOT NULL DEFAULT 0');await column('users','company_name','VARCHAR(120) NULL');
- await column('kitchens','whatsapp_number','VARCHAR(20) NULL');await column('kitchens','delivery_fee','DECIMAL(10,2) NOT NULL DEFAULT 0');
-  await pool.query(`CREATE TABLE IF NOT EXISTS orders (id BIGINT AUTO_INCREMENT PRIMARY KEY,public_id CHAR(36) NOT NULL UNIQUE,idempotency_key VARCHAR(100) NULL,customer_id INT NOT NULL,dish_id INT NOT NULL,kitchen_id INT NOT NULL,delivery_id INT NULL,vehicle_id INT NULL,customer_name VARCHAR(120) NOT NULL,customer_phone VARCHAR(20) NOT NULL,customer_address VARCHAR(255) NULL,order_name VARCHAR(80) NULL,dish_name VARCHAR(120) NOT NULL,kitchen_name VARCHAR(120) NOT NULL,kitchen_phone VARCHAR(20) NULL,kitchen_address VARCHAR(255) NULL,quantity INT NOT NULL,unit_price DECIMAL(10,2) NOT NULL,discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0,total_price DECIMAL(10,2) NOT NULL,delivery_fee_amount DECIMAL(10,2) NOT NULL DEFAULT 0,status ENUM('pending','accepted','completed','cancelled') NOT NULL DEFAULT 'pending',created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,accepted_at DATETIME NULL,completed_at DATETIME NULL,expires_at DATETIME NULL,coupon_id BIGINT NULL,UNIQUE KEY uq_order_idem(customer_id,idempotency_key),INDEX idx_orders_customer(customer_id,created_at),INDEX idx_orders_delivery(delivery_id,status,created_at),INDEX idx_orders_kitchen(kitchen_id,status,created_at),INDEX idx_orders_completed(completed_at),FOREIGN KEY(customer_id) REFERENCES users(id) ON DELETE RESTRICT,FOREIGN KEY(dish_id) REFERENCES dishes(id) ON DELETE RESTRICT,FOREIGN KEY(kitchen_id) REFERENCES kitchens(id) ON DELETE RESTRICT,FOREIGN KEY(delivery_id) REFERENCES users(id) ON DELETE SET NULL)`);await column('orders','idempotency_key','VARCHAR(100) NULL');await index('orders','uq_order_idem','UNIQUE KEY uq_order_idem(customer_id,idempotency_key)');
- await pool.query(`CREATE TABLE IF NOT EXISTS notifications (id BIGINT AUTO_INCREMENT PRIMARY KEY,user_id INT NOT NULL,type VARCHAR(40) NOT NULL,title VARCHAR(160) NOT NULL,body VARCHAR(500) NOT NULL,entity_type VARCHAR(40) NULL,entity_id BIGINT NULL,dedupe_key VARCHAR(180) NULL,read_at DATETIME NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,UNIQUE KEY uq_notification_dedupe(user_id,dedupe_key),INDEX idx_notifications_user(user_id,read_at,created_at),FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`);await column('notifications','dedupe_key','VARCHAR(180) NULL');await index('notifications','uq_notification_dedupe','UNIQUE KEY uq_notification_dedupe(user_id,dedupe_key)');
- await pool.query(`CREATE TABLE IF NOT EXISTS auth_challenges (id BIGINT AUTO_INCREMENT PRIMARY KEY,nonce_hash CHAR(64) NOT NULL UNIQUE,user_id INT NOT NULL,purpose VARCHAR(20) NOT NULL,attempts TINYINT NOT NULL DEFAULT 0,expires_at DATETIME NOT NULL,consumed_at DATETIME NULL,INDEX idx_challenge_user(user_id,expires_at),FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`);
- await pool.query(`CREATE TABLE IF NOT EXISTS dish_coupons (id BIGINT AUTO_INCREMENT PRIMARY KEY,kitchen_id INT NOT NULL,dish_id INT NOT NULL,code VARCHAR(32) NOT NULL UNIQUE,discount_percent DECIMAL(5,2) NOT NULL,expires_at DATETIME NOT NULL,deleted_at DATETIME NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,INDEX idx_coupon_expiry(expires_at),FOREIGN KEY(kitchen_id) REFERENCES kitchens(id) ON DELETE CASCADE,FOREIGN KEY(dish_id) REFERENCES dishes(id) ON DELETE CASCADE)`);
- await pool.query(`CREATE TABLE IF NOT EXISTS coupon_redemptions (id BIGINT AUTO_INCREMENT PRIMARY KEY,coupon_id BIGINT NOT NULL,customer_id INT NOT NULL,order_id BIGINT NOT NULL,redeemed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,UNIQUE KEY uq_coupon_customer(coupon_id,customer_id),UNIQUE KEY uq_coupon_order(order_id),FOREIGN KEY(coupon_id) REFERENCES dish_coupons(id) ON DELETE CASCADE,FOREIGN KEY(customer_id) REFERENCES users(id) ON DELETE CASCADE,FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE)`);await dropIndex('coupon_redemptions','uq_coupon_single_use');await index('coupon_redemptions','uq_coupon_customer','UNIQUE KEY uq_coupon_customer(coupon_id,customer_id)');
- await pool.query(`CREATE TABLE IF NOT EXISTS dish_referrals (id BIGINT AUTO_INCREMENT PRIMARY KEY,dish_id INT NOT NULL,referrer_id INT NOT NULL,token CHAR(36) NOT NULL UNIQUE,reward_percent DECIMAL(5,2) NOT NULL DEFAULT 0,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(dish_id) REFERENCES dishes(id) ON DELETE CASCADE,FOREIGN KEY(referrer_id) REFERENCES users(id) ON DELETE CASCADE)`);
- await pool.query(`CREATE TABLE IF NOT EXISTS referral_signups (id BIGINT AUTO_INCREMENT PRIMARY KEY,customer_id INT NOT NULL,referral_id BIGINT NOT NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,UNIQUE KEY uq_referral_customer(customer_id),FOREIGN KEY(customer_id) REFERENCES users(id) ON DELETE CASCADE,FOREIGN KEY(referral_id) REFERENCES dish_referrals(id) ON DELETE CASCADE)`);
- await column('orders','delivery_fee_amount','DECIMAL(10,2) NOT NULL DEFAULT 0');await column('orders','order_name','VARCHAR(80) NULL');await column('orders','customer_address','VARCHAR(255) NULL');await column('orders','coupon_id','BIGINT NULL');await index('orders','idx_orders_coupon','KEY idx_orders_coupon(coupon_id)');
-  await pool.query(`CREATE TABLE IF NOT EXISTS order_financial_events (id BIGINT AUTO_INCREMENT PRIMARY KEY,order_public_id CHAR(36) NOT NULL UNIQUE,kitchen_id INT NOT NULL,delivery_id INT NULL,vehicle_id INT NULL,gross_amount DECIMAL(12,2) NOT NULL,delivery_fee_amount DECIMAL(10,2) NOT NULL DEFAULT 0,completed_at DATETIME NOT NULL,INDEX idx_financial_period(completed_at,kitchen_id,delivery_id,vehicle_id))`);
- await pool.query(`CREATE TABLE IF NOT EXISTS settlements (id BIGINT AUTO_INCREMENT PRIMARY KEY,period_start DATE NOT NULL,period_end DATE NOT NULL,party_type ENUM('kitchen','delivery') NOT NULL,party_id INT NOT NULL,gross_amount DECIMAL(12,2) NOT NULL,commission_amount DECIMAL(12,2) NOT NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,UNIQUE KEY uq_settlement_party_period(period_start,period_end,party_type,party_id))`);
- await pool.query(`CREATE TABLE IF NOT EXISTS favourite_dishes (customer_id INT NOT NULL,dish_id INT NOT NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(customer_id,dish_id),FOREIGN KEY(customer_id) REFERENCES users(id) ON DELETE CASCADE,FOREIGN KEY(dish_id) REFERENCES dishes(id) ON DELETE CASCADE)`);
- await pool.query(`CREATE TABLE IF NOT EXISTS chat_messages (id BIGINT AUTO_INCREMENT PRIMARY KEY,order_id BIGINT NOT NULL,sender_id INT NOT NULL,recipient_id INT NOT NULL,body VARCHAR(1000) NOT NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,INDEX idx_chat_order(order_id,created_at),FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE,FOREIGN KEY(sender_id) REFERENCES users(id) ON DELETE CASCADE,FOREIGN KEY(recipient_id) REFERENCES users(id) ON DELETE CASCADE)`);
-  await pool.query(`CREATE TABLE IF NOT EXISTS password_resets (id BIGINT AUTO_INCREMENT PRIMARY KEY,token_hash CHAR(64) NOT NULL UNIQUE,user_id INT NOT NULL,expires_at DATETIME NOT NULL,used_at DATETIME NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`);await pool.query(`CREATE TABLE IF NOT EXISTS email_outbox (id BIGINT AUTO_INCREMENT PRIMARY KEY,recipient VARCHAR(255) NOT NULL,subject VARCHAR(255) NOT NULL,body TEXT NOT NULL,html_body MEDIUMTEXT NULL,dedupe_key VARCHAR(180) NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,sent_at DATETIME NULL,attempts TINYINT NOT NULL DEFAULT 0,UNIQUE KEY uq_email_outbox_dedupe(dedupe_key),INDEX idx_email_outbox_pending(sent_at,created_at))`);await column('email_outbox','html_body','MEDIUMTEXT NULL');await column('email_outbox','dedupe_key','VARCHAR(180) NULL');await index('email_outbox','uq_email_outbox_dedupe','UNIQUE KEY uq_email_outbox_dedupe(dedupe_key)');
-  await pool.query(`CREATE TABLE IF NOT EXISTS delivery_vehicles (id INT AUTO_INCREMENT PRIMARY KEY,delivery_user_id INT NOT NULL,label VARCHAR(80) NOT NULL,active TINYINT(1) NOT NULL DEFAULT 1,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,INDEX idx_delivery_vehicle_user(delivery_user_id,active),FOREIGN KEY(delivery_user_id) REFERENCES users(id) ON DELETE CASCADE)`);
-  await column('orders','vehicle_id','INT NULL');await column('orders','accepted_at','DATETIME NULL');await index('orders','idx_orders_offer','KEY idx_orders_offer(status,delivery_id,created_at)');
-  const [[statusColumn]]=await pool.query("SELECT COLUMN_TYPE AS type FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='orders' AND column_name='status'");
-  if(statusColumn && !statusColumn.type.includes("'accepted'")) await pool.query("ALTER TABLE orders MODIFY COLUMN status ENUM('pending','accepted','completed','cancelled') NOT NULL DEFAULT 'pending'");
-  await column('order_financial_events','vehicle_id','INT NULL');
-  await pool.query(`CREATE TABLE IF NOT EXISTS daily_reports (report_date DATE PRIMARY KEY,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,emailed_at DATETIME NULL,completed_count INT NOT NULL DEFAULT 0,purged_at DATETIME NULL)`);
-  const [redemptionFks]=await pool.query("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='coupon_redemptions' AND COLUMN_NAME='order_id' AND REFERENCED_TABLE_NAME='orders'");
-  for(const fk of redemptionFks) if(fk.CONSTRAINT_NAME!=='fk_coupon_redemption_order') await pool.query(`ALTER TABLE coupon_redemptions DROP FOREIGN KEY \`${fk.CONSTRAINT_NAME}\``);
-  const [[redemptionColumn]]=await pool.query("SELECT IS_NULLABLE AS nullable FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='coupon_redemptions' AND column_name='order_id'");
-  if(redemptionColumn?.nullable==='NO') await pool.query('ALTER TABLE coupon_redemptions MODIFY COLUMN order_id BIGINT NULL');
-  if(!redemptionFks.some(fk=>fk.CONSTRAINT_NAME==='fk_coupon_redemption_order')) await pool.query('ALTER TABLE coupon_redemptions ADD CONSTRAINT fk_coupon_redemption_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL');
- console.log('DOQ migration complete');
+const pool = require('../database/pool');
+
+/**
+ * Adds a column to a table if it does not already exist.
+ * @param {string} table - Table name.
+ * @param {string} name - Column name.
+ * @param {string} definition - Full MySQL column definition (type, nullability, default, etc.).
+ * @returns {Promise<void>}
+ */
+async function column(table, name, definition) {
+  const [[row]] = await pool.query(
+    'SELECT COUNT(*) AS present FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=? AND column_name=?',
+    [table, name]
+  );
+  if (!row.present) {
+    await pool.query(`ALTER TABLE \`${table}\` ADD COLUMN \`${name}\` ${definition}`);
+  }
 }
-if(require.main===module)run().then(()=>pool.end()).catch(()=>{console.error('migration_failed_database_unavailable');process.exitCode=1;return pool.end();});module.exports={run};
+
+/**
+ * Adds an index/key to a table if it does not already exist.
+ * @param {string} table - Table name.
+ * @param {string} name - Index name.
+ * @param {string} definition - Full MySQL index definition (e.g., 'KEY idx_name(col)' or 'UNIQUE KEY uq_name(col)').
+ * @returns {Promise<void>}
+ */
+async function index(table, name, definition) {
+  const [[row]] = await pool.query(
+    'SELECT COUNT(*) AS present FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name=? AND index_name=?',
+    [table, name]
+  );
+  if (!row.present) {
+    await pool.query(`ALTER TABLE \`${table}\` ADD ${definition}`);
+  }
+}
+
+/**
+ * Drops an index from a table if it exists.
+ * @param {string} table - Table name.
+ * @param {string} name - Index name.
+ * @returns {Promise<void>}
+ */
+async function dropIndex(table, name) {
+  const [[row]] = await pool.query(
+    'SELECT COUNT(*) AS present FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name=? AND index_name=?',
+    [table, name]
+  );
+  if (row.present) {
+    await pool.query(`ALTER TABLE \`${table}\` DROP INDEX \`${name}\``);
+  }
+}
+
+/**
+ * Runs all migrations in order.
+ * Creates core tables first, then additive columns/indexes, then foreign key fixes.
+ * @returns {Promise<void>}
+ */
+async function run() {
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS payment_webhook_events (
+      event_id VARCHAR(80) PRIMARY KEY,
+      received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`
+  );
+
+  await column('users', 'account_status', "VARCHAR(20) NOT NULL DEFAULT 'approved'");
+  await column('users', 'approved_at', 'DATETIME NULL');
+  await column('users', 'approved_by', 'INT NULL');
+  await column('users', 'two_factor_required', 'TINYINT(1) NOT NULL DEFAULT 0');
+  await column('users', 'two_factor_last_step', 'BIGINT NULL');
+  await column('users', 'session_version', 'INT NOT NULL DEFAULT 0');
+  await column('users', 'company_name', 'VARCHAR(120) NULL');
+
+  await column('kitchens', 'whatsapp_number', 'VARCHAR(20) NULL');
+  await column('kitchens', 'delivery_fee', 'DECIMAL(10,2) NOT NULL DEFAULT 0');
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS orders (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      public_id CHAR(36) NOT NULL UNIQUE,
+      idempotency_key VARCHAR(100) NULL,
+      customer_id INT NOT NULL,
+      dish_id INT NOT NULL,
+      kitchen_id INT NOT NULL,
+      delivery_id INT NULL,
+      vehicle_id INT NULL,
+      customer_name VARCHAR(120) NOT NULL,
+      customer_phone VARCHAR(20) NOT NULL,
+      customer_address VARCHAR(255) NULL,
+      order_name VARCHAR(80) NULL,
+      dish_name VARCHAR(120) NOT NULL,
+      kitchen_name VARCHAR(120) NOT NULL,
+      kitchen_phone VARCHAR(20) NULL,
+      kitchen_address VARCHAR(255) NULL,
+      quantity INT NOT NULL,
+      unit_price DECIMAL(10,2) NOT NULL,
+      discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+      total_price DECIMAL(10,2) NOT NULL,
+      delivery_fee_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+      status ENUM('pending','accepted','completed','cancelled') NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      accepted_at DATETIME NULL,
+      completed_at DATETIME NULL,
+      expires_at DATETIME NULL,
+      coupon_id BIGINT NULL,
+      UNIQUE KEY uq_order_idem(customer_id,idempotency_key),
+      INDEX idx_orders_customer(customer_id,created_at),
+      INDEX idx_orders_delivery(delivery_id,status,created_at),
+      INDEX idx_orders_kitchen(kitchen_id,status,created_at),
+      INDEX idx_orders_completed(completed_at),
+      FOREIGN KEY(customer_id) REFERENCES users(id) ON DELETE RESTRICT,
+      FOREIGN KEY(dish_id) REFERENCES dishes(id) ON DELETE RESTRICT,
+      FOREIGN KEY(kitchen_id) REFERENCES kitchens(id) ON DELETE RESTRICT,
+      FOREIGN KEY(delivery_id) REFERENCES users(id) ON DELETE SET NULL
+    )`
+  );
+  await column('orders', 'idempotency_key', 'VARCHAR(100) NULL');
+  await index('orders', 'uq_order_idem', 'UNIQUE KEY uq_order_idem(customer_id,idempotency_key)');
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS notifications (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      type VARCHAR(40) NOT NULL,
+      title VARCHAR(160) NOT NULL,
+      body VARCHAR(500) NOT NULL,
+      entity_type VARCHAR(40) NULL,
+      entity_id BIGINT NULL,
+      dedupe_key VARCHAR(180) NULL,
+      read_at DATETIME NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_notification_dedupe(user_id,dedupe_key),
+      INDEX idx_notifications_user(user_id,read_at,created_at),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`
+  );
+  await column('notifications', 'dedupe_key', 'VARCHAR(180) NULL');
+  await index('notifications', 'uq_notification_dedupe', 'UNIQUE KEY uq_notification_dedupe(user_id,dedupe_key)');
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS auth_challenges (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      nonce_hash CHAR(64) NOT NULL UNIQUE,
+      user_id INT NOT NULL,
+      purpose VARCHAR(20) NOT NULL,
+      attempts TINYINT NOT NULL DEFAULT 0,
+      expires_at DATETIME NOT NULL,
+      consumed_at DATETIME NULL,
+      INDEX idx_challenge_user(user_id,expires_at),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`
+  );
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS dish_coupons (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      kitchen_id INT NOT NULL,
+      dish_id INT NOT NULL,
+      code VARCHAR(32) NOT NULL UNIQUE,
+      discount_percent DECIMAL(5,2) NOT NULL,
+      expires_at DATETIME NOT NULL,
+      deleted_at DATETIME NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_coupon_expiry(expires_at),
+      FOREIGN KEY(kitchen_id) REFERENCES kitchens(id) ON DELETE CASCADE,
+      FOREIGN KEY(dish_id) REFERENCES dishes(id) ON DELETE CASCADE
+    )`
+  );
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS coupon_redemptions (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      coupon_id BIGINT NOT NULL,
+      customer_id INT NOT NULL,
+      order_id BIGINT NOT NULL,
+      redeemed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_coupon_customer(coupon_id,customer_id),
+      UNIQUE KEY uq_coupon_order(order_id),
+      FOREIGN KEY(coupon_id) REFERENCES dish_coupons(id) ON DELETE CASCADE,
+      FOREIGN KEY(customer_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE
+    )`
+  );
+  await dropIndex('coupon_redemptions', 'uq_coupon_single_use');
+  await index('coupon_redemptions', 'uq_coupon_customer', 'UNIQUE KEY uq_coupon_customer(coupon_id,customer_id)');
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS dish_referrals (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      dish_id INT NOT NULL,
+      referrer_id INT NOT NULL,
+      token CHAR(36) NOT NULL UNIQUE,
+      reward_percent DECIMAL(5,2) NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(dish_id) REFERENCES dishes(id) ON DELETE CASCADE,
+      FOREIGN KEY(referrer_id) REFERENCES users(id) ON DELETE CASCADE
+    )`
+  );
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS referral_signups (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      customer_id INT NOT NULL,
+      referral_id BIGINT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_referral_customer(customer_id),
+      FOREIGN KEY(customer_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(referral_id) REFERENCES dish_referrals(id) ON DELETE CASCADE
+    )`
+  );
+
+  await column('orders', 'delivery_fee_amount', 'DECIMAL(10,2) NOT NULL DEFAULT 0');
+  await column('orders', 'order_name', 'VARCHAR(80) NULL');
+  await column('orders', 'customer_address', 'VARCHAR(255) NULL');
+  await column('orders', 'coupon_id', 'BIGINT NULL');
+  await index('orders', 'idx_orders_coupon', 'KEY idx_orders_coupon(coupon_id)');
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS order_financial_events (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      order_public_id CHAR(36) NOT NULL UNIQUE,
+      kitchen_id INT NOT NULL,
+      delivery_id INT NULL,
+      vehicle_id INT NULL,
+      gross_amount DECIMAL(12,2) NOT NULL,
+      delivery_fee_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+      completed_at DATETIME NOT NULL,
+      INDEX idx_financial_period(completed_at,kitchen_id,delivery_id,vehicle_id)
+    )`
+  );
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS settlements (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      period_start DATE NOT NULL,
+      period_end DATE NOT NULL,
+      party_type ENUM('kitchen','delivery') NOT NULL,
+      party_id INT NOT NULL,
+      gross_amount DECIMAL(12,2) NOT NULL,
+      commission_amount DECIMAL(12,2) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_settlement_party_period(period_start,period_end,party_type,party_id)
+    )`
+  );
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS favourite_dishes (
+      customer_id INT NOT NULL,
+      dish_id INT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY(customer_id,dish_id),
+      FOREIGN KEY(customer_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(dish_id) REFERENCES dishes(id) ON DELETE CASCADE
+    )`
+  );
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS chat_messages (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      order_id BIGINT NOT NULL,
+      sender_id INT NOT NULL,
+      recipient_id INT NOT NULL,
+      body VARCHAR(1000) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_chat_order(order_id,created_at),
+      FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE,
+      FOREIGN KEY(sender_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(recipient_id) REFERENCES users(id) ON DELETE CASCADE
+    )`
+  );
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS password_resets (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      token_hash CHAR(64) NOT NULL UNIQUE,
+      user_id INT NOT NULL,
+      expires_at DATETIME NOT NULL,
+      used_at DATETIME NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`
+  );
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS email_outbox (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      recipient VARCHAR(255) NOT NULL,
+      subject VARCHAR(255) NOT NULL,
+      body TEXT NOT NULL,
+      html_body MEDIUMTEXT NULL,
+      dedupe_key VARCHAR(180) NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      sent_at DATETIME NULL,
+      attempts TINYINT NOT NULL DEFAULT 0,
+      UNIQUE KEY uq_email_outbox_dedupe(dedupe_key),
+      INDEX idx_email_outbox_pending(sent_at,created_at)
+    )`
+  );
+  await column('email_outbox', 'html_body', 'MEDIUMTEXT NULL');
+  await column('email_outbox', 'dedupe_key', 'VARCHAR(180) NULL');
+  await index('email_outbox', 'uq_email_outbox_dedupe', 'UNIQUE KEY uq_email_outbox_dedupe(dedupe_key)');
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS delivery_vehicles (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      delivery_user_id INT NOT NULL,
+      label VARCHAR(80) NOT NULL,
+      active TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_delivery_vehicle_user(delivery_user_id,active),
+      FOREIGN KEY(delivery_user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`
+  );
+
+  await column('orders', 'vehicle_id', 'INT NULL');
+  await column('orders', 'accepted_at', 'DATETIME NULL');
+  await index('orders', 'idx_orders_offer', 'KEY idx_orders_offer(status,delivery_id,created_at)');
+
+  const [[statusColumn]] = await pool.query(
+    "SELECT COLUMN_TYPE AS type FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='orders' AND column_name='status'"
+  );
+  if (statusColumn && !statusColumn.type.includes("'accepted'")) {
+    await pool.query("ALTER TABLE orders MODIFY COLUMN status ENUM('pending','accepted','completed','cancelled') NOT NULL DEFAULT 'pending'");
+  }
+
+  await column('order_financial_events', 'vehicle_id', 'INT NULL');
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS daily_reports (
+      report_date DATE PRIMARY KEY,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      emailed_at DATETIME NULL,
+      completed_count INT NOT NULL DEFAULT 0,
+      purged_at DATETIME NULL
+    )`
+  );
+
+  const [redemptionFks] = await pool.query(
+    "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='coupon_redemptions' AND COLUMN_NAME='order_id' AND REFERENCED_TABLE_NAME='orders'"
+  );
+  for (const fk of redemptionFks) {
+    if (fk.CONSTRAINT_NAME !== 'fk_coupon_redemption_order') {
+      await pool.query(`ALTER TABLE coupon_redemptions DROP FOREIGN KEY \`${fk.CONSTRAINT_NAME}\``);
+    }
+  }
+
+  const [[redemptionColumn]] = await pool.query(
+    "SELECT IS_NULLABLE AS nullable FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='coupon_redemptions' AND column_name='order_id'"
+  );
+  if (redemptionColumn?.nullable === 'NO') {
+    await pool.query('ALTER TABLE coupon_redemptions MODIFY COLUMN order_id BIGINT NULL');
+  }
+  if (!redemptionFks.some(fk => fk.CONSTRAINT_NAME === 'fk_coupon_redemption_order')) {
+    await pool.query(
+      'ALTER TABLE coupon_redemptions ADD CONSTRAINT fk_coupon_redemption_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL'
+    );
+  }
+
+  console.log('DOQ migration complete');
+}
+
+if (require.main === module) {
+  run()
+    .then(() => pool.end())
+    .catch(() => {
+      console.error('migration_failed_database_unavailable');
+      process.exitCode = 1;
+      return pool.end();
+    });
+}
+
+module.exports = { run };

@@ -1,9 +1,18 @@
+/**
+ * Middleware factory that runs paginated, filterable list queries (with caching) for a resource
+ * and attaches the resulting rows and pagination object to req before the controller runs.
+ */
 const pool = require('../database/pool');
 const analyzeQuery = require('../utiles/analyzeQuery');
 const { searchQuerySchema, idParamSchema } = require('../utiles/validation');
 const NodeCache = require('node-cache');
 const cache = new NodeCache({ stdTTL: 60, checkperiod: 120 });
 
+/**
+ * Deletes all cached GET responses whose key is prefixed with `${resource}_`.
+ * @param {string} resource - Resource name used when the cache keys were created (e.g. 'dish').
+ * @returns {void} Mutates the in-memory cache and logs how many keys were removed.
+ */
 function clearResourceCache(resource) {
     const keys = cache.keys();
     const keysToDelete = keys.filter(key => key.startsWith(`${resource}_`));
@@ -12,22 +21,55 @@ function clearResourceCache(resource) {
 }
 
 // ✅ مسح كل الكاش
+
+/**
+ * Removes every entry from the in-memory cache.
+ * @returns {void} Flushes the cache and logs a confirmation message.
+ */
 function clearAllCache() {
     cache.flushAll();
     console.log('🗑️ All cache cleared');
 }
 
 
-const middleware= (resource, relationType) => {
+/**
+ * Builds an Express middleware that lists rows for `resource`, optionally scoped to a parent
+ * relation (`relationType`), with search/filter/sort/pagination, a 60s in-memory cache, and
+ * slow-query logging.
+ * @param {string} resource - Resource name ('category', 'dish', 'review', 'user', 'kitchen', ...).
+ * @param {string} [relationType] - Optional parent relation ('kitchen', 'category', 'dish') that
+ *                                  filters rows by req.params.id of the parent table.
+ * @returns {Function} Express middleware: async (req, res, next) => void.
+ */
+const middleware = (resource, relationType) => {
+
+    /**
+     * Middleware invoked for every request to the route.
+     * - On POST/PUT/PATCH/DELETE it invalidates this resource's cache entries (side effect).
+     * - Validates req.query against searchQuerySchema; on failure responds 400 directly.
+     * - Clamps limit (<=100) and page (<=500), reads req.params.id for relation scoping.
+     * - On GET, serves from cache when present: sets req.paginatedData/req.pagination and calls next().
+     * - Otherwise builds the data + count SQL per resource/relation, applies filters, text search,
+     *   ordering and LIMIT/OFFSET, executes both queries, stores the result in cache, sets
+     *   req.paginatedData and req.pagination, logs slow queries and query analysis, then calls next().
+     * - On error: logs it, responds 500 for SQL parse/field errors, 503 for timeout/deadlock,
+     *   otherwise 500 with the error message.
+     * @param {Object} req - Express request; inspects req.method, req.query, req.params.id;
+     *                       mutates req.paginatedData and req.pagination.
+     * @param {Object} res - Express response used for direct error/cache-miss responses.
+     * @param {Function} next - Called on success or cache hit.
+     */
     return async (req, res, next) => {
         try {
             const startTime = Date.now();
-          
+
+            // Invalidate cached reads whenever the resource may have changed
             if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
                 clearResourceCache(resource);
             }
 
-          
+
+            // Validate query parameters first
             const { error, value } = searchQuerySchema.validate(req.query);
             if (error) {
                 return res.status(400).json({
@@ -43,7 +85,7 @@ const middleware= (resource, relationType) => {
             const safeLimit = Math.min(parseInt(limit) || 20, 100);
             const safePage = Math.min(parseInt(page) || 1, 500);
             const offset = (safePage - 1) * safeLimit;
-            
+
             const relationId = req.params.id;
             const safeSortOrder = (sort_order && sort_order.toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
 
@@ -51,7 +93,7 @@ const middleware= (resource, relationType) => {
             // 2. الكاش (Cache) لتقليل ضغط السيرفر
             // =============================================
             const cacheKey = `${resource}_${relationType || 'none'}_${relationId || 'none'}_${JSON.stringify(req.query)}`;
-            
+
             if (req.method === 'GET') {
                 const cachedData = cache.get(cacheKey);
                 if (cachedData) {
@@ -61,7 +103,7 @@ const middleware= (resource, relationType) => {
                 }
             }
 
-            
+
             // =============================================
             // 3. بناء الاستعلام حسب نوع المورد
             // =============================================
@@ -99,8 +141,8 @@ const middleware= (resource, relationType) => {
                         joinTableName = 'kitchens';
                         relationKeyName = 'kitchen_id';
                         dataQuery = `
-                            SELECT dishes.*, kitchens.title as kitchen_title, kitchens.portfolio_url as kitchen_portfolio 
-                            FROM dishes 
+                            SELECT dishes.*, kitchens.title as kitchen_title, kitchens.portfolio_url as kitchen_portfolio
+                            FROM dishes
                             JOIN kitchens ON dishes.kitchen_id = kitchens.id
                         `;
                         whereClauses.push('kitchens.id = ?');
@@ -111,21 +153,21 @@ const middleware= (resource, relationType) => {
                         joinTableName = 'categories';
                         relationKeyName = 'category_id';
                         dataQuery = `
-                            SELECT dishes.*, categories.name as category_name 
-                            FROM dishes 
+                            SELECT dishes.*, categories.name as category_name
+                            FROM dishes
                             JOIN categories ON dishes.category_id = categories.id
                         `;
                         whereClauses.push('categories.id = ?');
                         queryParams.push(relationId);
                         break;
-                        
+
                     case 'dish':
                         tableName = 'reviews';
                         joinTableName = 'dishes';
                         relationKeyName = 'dish_id';
                         dataQuery = `
-                            SELECT reviews.*, dishes.name as dish_name 
-                            FROM reviews 
+                            SELECT reviews.*, dishes.name as dish_name
+                            FROM reviews
                             JOIN dishes ON reviews.dish_id = dishes.id
                         `;
                         whereClauses.push('dishes.id = ?');
@@ -136,7 +178,7 @@ const middleware= (resource, relationType) => {
                 // حالة خاصة: التقييمات بدون relationType
                 if (resource === 'review') {
                     dataQuery = `
-                        SELECT 
+                        SELECT
                             reviews.id,
                             reviews.rating,
                             reviews.comment,
@@ -146,17 +188,17 @@ const middleware= (resource, relationType) => {
                             users.first_name,
                             users.last_name
                         FROM reviews
-                        JOIN dishes ON dishes.id = reviews.dish_id 
-                        JOIN kitchens ON kitchens.id = dishes.kitchen_id 
+                        JOIN dishes ON dishes.id = reviews.dish_id
+                        JOIN kitchens ON kitchens.id = dishes.kitchen_id
                         JOIN users ON users.id = reviews.user_id
                     `;
                 }
                 //must get dish_count but have error when join query and pageination
                 // else if(resource==='category'){
-                //     dataQuery=`SELECT c.*,COUNT(d.id) as dishes_count FROM categories c 
+                //     dataQuery=`SELECT c.*,COUNT(d.id) as dishes_count FROM categories c
                 //     LEFT JOIN dishes d ON c.id=d.cateogry_id
                 //     GROUP BY c.id`;
-                // } 
+                // }
                 else {
                     // باقي الموارد
                     dataQuery = `SELECT ${tableName}.* FROM ${tableName}`;
@@ -168,10 +210,10 @@ const middleware= (resource, relationType) => {
             // =============================================
 
             if(resource==='dish' && !relationType)
-                dataQuery=`SELECT dishes.*, categories.name as category_name 
-                        FROM dishes 
+                dataQuery=`SELECT dishes.*, categories.name as category_name
+                        FROM dishes
                         JOIN categories ON dishes.category_id = categories.id`;
-            
+
 
             // فلتر المدينة (للمطابخ)
             if (resource === 'kitchen' && city) {
@@ -185,8 +227,8 @@ const middleware= (resource, relationType) => {
                     joinTableName = 'categories';
                     relationKeyName = 'category_id';
                     dataQuery = `
-                        SELECT dishes.*, categories.name as category_name 
-                        FROM dishes 
+                        SELECT dishes.*, categories.name as category_name
+                        FROM dishes
                         JOIN categories ON dishes.category_id = categories.id
                     `;
                 }
@@ -229,9 +271,9 @@ const middleware= (resource, relationType) => {
                         queryParams.push(searchKeyword, searchKeyword, searchKeyword, searchKeyword, searchKeyword);
                         break;
                     default:
-                        return res.status(400).json({ 
-                            status: 'error', 
-                            message: 'نوع مورد غير معروف' 
+                        return res.status(400).json({
+                            status: 'error',
+                            message: 'نوع مورد غير معروف'
                         });
                 }
             }
@@ -268,14 +310,14 @@ const middleware= (resource, relationType) => {
             // 9. بناء استعلام COUNT
             // =============================================
             let countQueryBase = '';
-            
+
             // حالة خاصة للتقييمات
             if (resource === 'review' && !relationType) {
                 countQueryBase = `
-                    SELECT COUNT(1) AS total 
+                    SELECT COUNT(1) AS total
                     FROM reviews
-                    JOIN dishes ON dishes.id = reviews.dish_id 
-                    JOIN kitchens ON kitchens.id = dishes.kitchen_id 
+                    JOIN dishes ON dishes.id = reviews.dish_id
+                    JOIN kitchens ON kitchens.id = dishes.kitchen_id
                     JOIN users ON users.id = reviews.user_id
                 `;
             } else if (relationType) {
@@ -295,7 +337,7 @@ const middleware= (resource, relationType) => {
                     countQueryBase += ` JOIN categories ON ${tableName}.category_id = categories.id`;
                 }
             }
-            
+
             const finalCountQuery = `
                 ${countQueryBase}
                 ${whereClause}
@@ -305,7 +347,7 @@ const middleware= (resource, relationType) => {
             // 10. تنفيذ الاستعلامات
             // =============================================
             const dataQueryParams = [...queryParams, safeLimit, offset];
-            
+
             // تنفيذ استعلام البيانات
             const [data] = await pool.query({
                 sql: finalDataQuery,
@@ -349,7 +391,7 @@ const middleware= (resource, relationType) => {
                     params: dataQueryParams
                 });
             }
-            
+
             analyzeQuery(finalDataQuery,dataQueryParams).then(s=>{
                 console.log(s);
             });

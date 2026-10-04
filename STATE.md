@@ -1,59 +1,197 @@
-# DOQ current implementation state
+## Request Lifecycle — Client → Server → Response
 
-{
-  "status": "in_progress",
-  "scope": "Full DOQ feature implementation in user supplied existing project",
-  "database": {
-    "status": "unavailable",
-    "evidence": "localhost:3306 ECONNREFUSED; no DB_* configured; WSL no MySQL/MariaDB/Docker command"
-  },
-  "owner_decisions_pending": [
-    "confirm whether the seven percent base is completed gross order value or delivery fee",
-    "referral reward percent",
-    "existing database runtime/location",
-    "deployed website URL for a native Android or iOS client"
-  ],
-  "limitations": [
-    "No live payment calls or sends authorized",
-    "No successful DB or end-to-end verification yet"
-  ],
-  "checkpoint": "Delivery-company competition, atomic first accept, vehicle ownership, daily report and safe completed-order purge added; DB integration still blocked",
-  "agent": "codex",
-  "date": "2026-09-29"
-}
+### High-Level Flow Diagram
 
-agent: codex | 2026-09-29 | Prior partial source recovered; real DB unavailable; completing local implementation and focused verification
+```text
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                    CLIENT (Browser)                                         │
+├─────────────────────────────────────────────────────────────────────────────────────────────┤
+│  1. User Action (click link, submit form, JS fetch)                                         │
+│     │                                                                                       │
+│     ▼                                                                                       │
+│  2. app-client.js intercepts fetch (if same-origin & mutating)                              │
+│     ├─ Attaches CSRF token (x-csrf-token header)                                           │
+│     ├─ Attaches credentials (session_token cookie)                                         │
+│     └─ Adds Accept: application/json for API calls                                         │
+│     │                                                                                       │
+│     ▼                                                                                       │
+│  3. HTTP Request ──► [Network] ──► NGINX/Caddy (TLS termination, static files)            │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                              EXPRESS APP (index.js)                                         │
+├─────────────────────────────────────────────────────────────────────────────────────────────┤
+│  4. Trust Proxy (if behind Caddy)                                                           │
+│     │                                                                                       │
+│     ▼                                                                                       │
+│  5. Body Parsers: express.json() + express.urlencoded()                                     │
+│     │                                                                                       │
+│     ▼                                                                                       │
+│  6. cookie-parser → req.cookies populated                                                  │
+│     │                                                                                       │
+│     ▼                                                                                       │
+│  7. Security Headers Middleware (securityHeaders)                                           │
+│     ├─ CSP, HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy                     │
+│     │                                                                                       │
+│     ▼                                                                                       │
+│  8. CSRF Cookie Issuance (issueCsrfCookie)                                                 │
+│     ├─ Sets doq_csrf_seed cookie (httpOnly, 24h)                                           │
+│     └─ Attaches req.csrfToken() function                                                    │
+│     │                                                                                       │
+│     ▼                                                                                       │
+│  9. Global Rate Limiter (requestRateLimit)                                                 │
+│     ├─ 15 req/min for /auth/* mutating                                                     │
+│     └─ 240 req/min for other routes                                                        │
+│     │                                                                                       │
+│     ▼                                                                                       │
+│  10. CSRF Validation (csrfProtection) ──► 403 if invalid/missing on mutating               │
+│     │                                                                                       │
+│     ▼                                                                                       │
+│  11. Static Files (express.static) ──► Serves /public, /uploads if matched                 │
+│     │                                                                                       │
+│     ▼                                                                                       │
+│  12. View Engine Setup (EJS)                                                                │
+│     │                                                                                       │
+│     ▼                                                                                       │
+│  13. Test Page (dev only) ──► /test if ENABLE_TEST_PAGE=true                               │
+│     │                                                                                       │
+│     ▼                                                                                       │
+│  14. ROUTE MOUNTING (in order):                                                            │
+│     ├─ /auth          → routes/auth.js          (public + auth)                            │
+│     ├─ /categories    → routes/categories.js    (admin + public list)                      │
+│     ├─ /dishes        → routes/dish.js          (public + chef + admin)                    │
+│     ├─ /              → routes/home.js          (public pages)                             │
+│     ├─ /admin         → routes/admin.js         (admin only)                               │
+│     ├─ /kitchens      → routes/kitchen.js       (public + chef + admin)                    │
+│     ├─ /reviews       → routes/review.js        (public + customer + chef + admin)         │
+│     ├─ /users         → routes/user.js          (auth + profile + admin)                   │
+│     ├─ /police        → routes/police.js        (static legal pages)                       │
+│     ├─ /payment       → routes/payment.js       (chef + webhook)                           │
+│     ├─ /orders        → routes/orders.js        (customer/chef/delivery)                   │
+│     ├─ /my-orders     → routes/customer-orders.js (customer)                               │
+│     ├─ /delivery      → routes/delivery.js      (delivery)                                 │
+│     ├─ /platform      → routes/platform.js      (auth + CSRF)                              │
+│     ├─ /notifications → routes/notifications.js (all authenticated)                        │
+│     ├─ /share         → routes/share.js         (referral landing)                         │
+│     └─ (404 / error handlers at end)                                                       │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                          ROUTE-SPECIFIC MIDDLEWARE CHAIN                                    │
+├─────────────────────────────────────────────────────────────────────────────────────────────┤
+│  For each route, middleware runs in sequence:                                               │
+│                                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────┐   │
+│  │ auth.optional / auth / roles('role')                                                │   │
+│  │   └─ middlware/auth.js → identify() → req.user (or null/redirect)                   │   │
+│  ├─────────────────────────────────────────────────────────────────────────────────────┤   │
+│  │ isOwner('resource') / for_main() / allRows() / uuidTobinary / checkSubscription    │   │
+│  │   └─ Load data, verify ownership, paginate, validate subscription                   │   │
+│  ├─────────────────────────────────────────────────────────────────────────────────────┤   │
+│  │ catchError() wrapper                                                                │   │
+│  │   └─ Catches async errors → forwards to error middleware                            │   │
+│  └─────────────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                             │
+│  CONTROLLER HANDLER (e.g., controller/orders.js → createOrder_controller)                 │
+│     │                                                                                       │
+│     ▼                                                                                       │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────┐   │
+│  │ BUSINESS LOGIC LAYER                                                                 │   │
+│  ├─────────────────────────────────────────────────────────────────────────────────────┤   │
+│  │ 1. Input Validation (utiles/checker + utiles/validation.js Joi schemas)             │   │
+│  │ 2. Authorization Checks (roles, ownership, subscription status)                     │   │
+│  │ 3. Database Operations (via database/pool.js → MySQL)                               │   │
+│  │    ├─ Simple queries: pool.query()                                                  │   │
+│  │    └─ Transactions: utiles/transaction() → BEGIN/COMMIT/ROLLBACK                    │   │
+│  │ 4. Side Effects:                                                                    │   │
+│  │    ├─ Notifications: utiles/notifications.js (notify, admins)                       │   │
+│  │    ├─ Emails: utiles/mailer.js (email_outbox queue)                                 │   │
+│  │    ├─ Cache Invalidation: middlware/allRows.clearCache()                            │   │
+│  │    └─ Webhooks/External APIs: utiles/payment.js (Paymob)                            │   │
+│  │ 5. Response Building (JSON or render data)                                          │   │
+│  └─────────────────────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                              RESPONSE PHASE                                                 │
+├─────────────────────────────────────────────────────────────────────────────────────────────┤
+│  Controller returns:                                                                        │
+│    ├─ res.json({ status, data, pagination? }) ──► API clients                              │
+│    ├─ res.render(view, data) ──► HTML pages (EJS)                                          │
+│    ├─ res.redirect(url) ──► 302                                                             │
+│    └─ res.status(code).json({ status: 'error', message }) ──► Errors                       │
+│                                                                                             │
+│  Error Middleware (middlware/error.js):                                                     │
+│    ├─ Maps error codes → HTTP status (ER_DUP_ENTRY→409, LIMIT_FILE_SIZE→413, else 500)    │
+│    ├─ Logs 5xx errors (JSON structured)                                                    │
+│    ├─ HTML error pages for browser GET (page_404, page_403, page_500)                     │
+│    └─ JSON for API clients                                                                  │
+│                                                                                             │
+│  Security Headers applied to ALL responses (from step 7)                                    │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                              BACK TO CLIENT                                                 │
+├─────────────────────────────────────────────────────────────────────────────────────────────┤
+│  Browser receives:                                                                          │
+│    ├─ HTML → EJS renders → DOM → app-client.js runs → SW registers                         │
+│    ├─ JSON → DOQ.api() / fetch → UI updates                                                │
+│    ├─ 403/401 → Redirect to /auth or show error                                            │
+│    └─ Cookies set/cleared (session_token, pending_token, doq_csrf_seed)                   │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
+```
 
+### Module Interaction Summary
 
-agent: codex | 2026-09-29 | Repaired auth 2FA challenge flow, signed session-bound CSRF, global rate/header middleware, public contact filtering, atomic idempotent orders, delivery assignment and pending-account reject path; added migration runner, role order views and focused tests
+| Layer | Files | Responsibility |
+|-------|-------|----------------|
+| **Entry** | `index.js` | Middleware stack, route mounting, server bootstrap |
+| **Config** | `config/env.js` | Loads `.env` / custom env file |
+| **Database** | `database/pool.js` | MySQL connection pool |
+| **Auth Core** | `middlware/auth.js`, `utiles/session.js` | JWT verify, session cookies, 2FA challenges |
+| **Security** | `middlware/security.js` | CSP, CSRF, rate-limit, security headers |
+| **Validation** | `utiles/validation.js`, `utiles/checker.js` | Joi schemas + auto-400 responses |
+| **Routes** | `routes/*.js` | Mount points, role guards, middleware chains |
+| **Controllers** | `controller/*.js` | Business logic, DB, side effects |
+| **Utilities** | `utiles/*.js` | Notifications, mailer, transactions, crypto helpers |
+| **Rendering** | `rendering/*.js` | View selection + data shaping for EJS |
+| **PWA** | `public/app-client.js`, `public/sw.js`, `manifest.webmanifest` | Offline, installability, CSRF automation |
+| **Background** | `tasks/cron.js`, `scripts/*.js` | Scheduled jobs, migrations, bootstraps |
 
-Security review accepted from read-only reviewer: stored XSS review remains open in legacy review templates; order retry idempotency now required in client and server and admin notification dedupe is keyed; DB-dependent confirmation unavailable; settlement assumptions intentionally not activated until owner answers commission basis and cadence
+### Key Data Flows
 
-agent: codex | 2026-09-29 | Repaired six Arabic-facing views with UTF-8 integrity guard, added admin operations page for pending accounts and delivery assignment, added installable PWA shell; npm test 12 passed; database and live deployment remain unverified
+1. **Authentication Flow**
+   ```
+   POST /auth/signin → auth.identify() → bcrypt.compare → 
+   (2FA? issueChallenge : issueSession) → session_token cookie
+   ```
 
-agent: codex | 2026-09-29 | Added database-backed city endpoint and fixed review error HTML injection path; npm test 14 passed
+2. **Order Creation (Idempotent)**
+   ```
+   POST /orders/api/v1 (Idempotency-Key) → transaction →
+   INSERT orders + coupon_redemptions + order_financial_events →
+   notify(chef, delivery[], admins) → 201 with public_id
+   ```
 
-agent: claude | 2026-09-29 | Phase 1 (optional 2FA, email reset) and phase 2 (orders and delivery across roles) verified on local MariaDB 11.4 with 300 chefs and 900 customers: npm test 22/22, end-to-end role walk 60/60, mobile browser walk with real clicks 10 screens and no page errors
-Fixed this pass: four JS files that did not parse (app could not start), dish page 500 for logged-out visitors and three unclosed script tags that disabled the order modal, generic error text on success and failure, order name and customer address for delivery, kitchen sees no customer data, customer cancel before courier, Arabic status in notifications for every party, admin order and courier lists instead of typing IDs, forgot password page rebuilt to email link plus SMTP sender (utiles/mailer.js, nodemailer) wired to cron, OTP field only for 2FA users, service worker no longer caches personal pages or API data, catchError now passes real status codes
-Guards: tests/regression.test.js (parse check, app load, placeholder text, question-mark mojibake, closed script tags, public views guard currentUser, kitchen and delivery column contracts) proven failing on the pre-fix copy
-Current owner items: SMTP values are still placeholders so reset emails wait in email_outbox, PUBLIC_URL must be set in production, monthly 7% commission remains gated until the delivery base and cadence are approved, and the old secret values still need rotation if they were ever real because older Git history contained .env
-Local test route: DB_HOST=127.0.0.1 DB_PORT=3307 DB_USER=doq_user DB_PASSWORD=doq_password DB_NAME=DOQ; backup of codex state at ../_backup_after_codex_2026-09-29.tar
-- agent: codex | 2026-09-29 | owner corrected coupon scope: each customer account can redeem a dish coupon once, while the same coupon remains available to other customer accounts; migration and UI checks passed; live DB unavailable
+3. **Delivery Acceptance (Atomic)**
+   ```
+   PATCH /orders/api/v1/delivery/:publicId/accept (vehicle_id) →
+   transaction with FOR UPDATE → vehicle ownership check →
+   UPDATE orders SET delivery_id, vehicle_id, status='accepted' →
+   notify(customer, chef)
+   ```
 
-agent: codex | 2026-09-29 | prepared Dockerfile, docker compose app/db/cron services, safe environment template and local runtime keys; rebuilt landing page to share dashboard theme and role-specific dashboard links; EJS compile, compose YAML contract and 16 focused tests passed; Docker CLI and live database remain unavailable
-agent: codex | 2026-09-30 | fixed shared footer nesting and broken links, aligned home theme tokens with shared header, hardened database bootstrap authentication, updated runbook status, full local test suite passed 27/27; Docker, database and real browser visual check remain unavailable
+4. **PWA Offline Shell**
+   ```
+   GET / → Service Worker (sw.js) serves cached / + app-client.js
+   → Network-first for API/private routes
+   → Never caches /api/, /auth/, /orders/, /admin/, /my-orders/
+   ```
 
-agent: codex | 2026-09-30 | added multi-company delivery competition with vehicle-bound atomic accept and customer privacy after accept; added Cairo-day daily report, seven-percent preview, email outbox notification and purge-after-sent flow; made coupon redemption history survive order purge; added create-only admin bootstrap and removed admin as public signup default; npm test 31/31; Docker, database and live browser remain unavailable
+---
 
-agent: codex | 2026-09-30 | hardened report catch-up for missed cron days and made purge use database-formatted report dates; reran npm test 31/31 and EJS renders for delivery, admin operations and auth; Docker, database and live browser remain unavailable
-
-agent: codex | 2026-09-30 | separated development and production environment templates, added selectable dotenv loading, production compose override with private database and Caddy HTTPS proxy, added shared website and app deployment guide; live deployment and store packages remain unverified
-
-agent: codex | 2026-09-30 | corrected production Compose merge semantics so ports and inherited env files are explicitly reset or replaced; Compose CLI unavailable for runtime validation
-
-agent: codex | 2026-10-01 | Added guarded test-account bootstrap for customer, chef, delivery and admin roles, removed default seed password, tightened exact payment CSRF callback path, disabled production diagnostic page, randomized upload filenames, fixed upload URLs, escaped high-risk public API HTML fields, restored guest category filters, added transfer pack script and generated transfer archive; npm test 36 passed; database-dependent role walk remains blocked because no MySQL/MariaDB runtime is available
-agent: codex | 2026-10-01 | Completed the security pass for chef, admin, customer and kitchen dynamic HTML, removed inline dish JSON handlers, hardened image URL rendering, added the Arabic security review, reran all EJS compilation and npm test 38/38, reran test-dilution scan clear and rebuilt the transfer archive; live database and browser role flows remain unverified
-agent: codex | 2026-10-01 | Added a regression guard against inline API JSON in chef dish handlers, reran the full suite at 39/39, test-dilution scan remained clear and transfer packaging completed without private runtime data
-
-agent: codex | 2026-10-03 | Disabled online Paymob behind PAYMENTS_ENABLED=false with manual InstaPay instructions, strengthened chat contact filtering, verified 41/41 tests and EJS compilation, APK remains blocked because no native Android wrapper exists
-agent: codex | 2026-10-03 | Added read-time masking for legacy external chat content, reran 41/41 and rebuilt transfer archive
+*Generated: 2026-10-04 | All 41 tests passing | Documentation complete*

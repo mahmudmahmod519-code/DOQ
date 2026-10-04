@@ -1,24 +1,27 @@
-const router=require("express").Router();
+/**
+ * Home routes (mounted at /).
+ * Provides landing page, about, FAQ, and contact pages.
+ */
+const router = require("express").Router();
+const catchError = require('../utiles/catchError');
+
 const {
     about_render,
     content_render,
     fqs_render,
     getLandingPage_render
-}=require("../rendering/home");
-const catchError=require('../utiles/catchError');
+} = require("../rendering/home");
 
-router.get('',catchError(getLandingPage_render)); //static & dynamic (optional)
-router.get('/about',catchError(about_render));//static
-router.get('/faqs',catchError(fqs_render));//static
-router.get('/contect-us',catchError(content_render));//static
+// GET / - Landing page (static & dynamic: top dishes with paid promotion)
+router.get('', catchError(getLandingPage_render));
 
-module.exports=router;
+// GET /about - About page (static)
+router.get('/about', catchError(about_render));
 
-/**
- * renders
- * GET /  show home page (optional) and top dishes but with paid for 3 days
- * GET /about  show about page
- * GET /contact  show contact page 
- * GET /faq  show faq page
- * 
- */
+// GET /faqs - FAQ page (static)
+router.get('/faqs', catchError(fqs_render));
+
+// GET /contect-us - Contact page (static)
+router.get('/contect-us', catchError(content_render));
+
+module.exports = router;

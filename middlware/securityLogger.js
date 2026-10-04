@@ -1,24 +1,32 @@
-//use to protect form xss and sqlInjection and code injection
-
-// middleware/securityLogger.js
+/**
+ * Security request logger middleware.
+ * Detects and logs suspicious request patterns (path traversal, SQL injection, XSS, code injection)
+ * to a file and console. Does NOT block requests – only logs for audit/monitoring.
+ */
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * Express middleware that inspects request URL and body for suspicious patterns.
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ * @param {Function} next - Next middleware (always called).
+ */
 module.exports = (req, res, next) => {
     const startTime = Date.now();
-    
-    // تسجيل الطلبات المشبوهة فقط
+
+    // Patterns to flag as suspicious
     const suspiciousPatterns = [
-        /\.\.\//, // محاولة الوصول لملفات خارجية
-        /union\s+select/i, // SQL Injection
-        /<script/i, // XSS
-        /eval\(/i // Code Injection
+        /\.\.\//,            // Path traversal attempts
+        /union\s+select/i,   // SQL injection
+        /<script/i,          // XSS
+        /eval\(/i            // Code injection
     ];
-    
-    const isSuspicious = suspiciousPatterns.some(pattern => 
+
+    const isSuspicious = suspiciousPatterns.some(pattern =>
         pattern.test(req.url) || pattern.test(JSON.stringify(req.body))
     );
-    
+
     if (isSuspicious) {
         const logEntry = {
             timestamp: new Date().toISOString(),
@@ -29,16 +37,16 @@ module.exports = (req, res, next) => {
             body: req.body,
             userAgent: req.headers['user-agent']
         };
-        
-        // تسجيل في ملف
+
+        // Append to log file (sync for simplicity; consider async in high-traffic)
         fs.appendFileSync(
             path.join(__dirname, '../logs/suspicious.log'),
             JSON.stringify(logEntry) + '\n'
         );
-        
-        // إرسال تنبيه (يمكن إرسال إيميل أو Telegram)
+
+        // Console warning for immediate visibility
         console.warn('⚠️ Suspicious request detected:', logEntry);
     }
-    
+
     next();
 };

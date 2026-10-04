@@ -1,3 +1,8 @@
+/**
+ * Admin routes (mounted at /admin).
+ * All routes require admin role. Provides dashboard, operations page,
+ * and full CRUD for users, kitchens, dishes, reviews, and categories.
+ */
 const express = require('express');
 const router = express.Router();
 
@@ -32,24 +37,50 @@ const {
     deleteCategoryAdmin_controller
 } = require('../controller/admin');
 
-const {Dashboard_render}=require("../rendering/admin.js");
-const { approveUser_controller, rejectUser_controller, listPendingUsers_controller, assignDelivery_controller, listOrdersAdmin_controller, listDeliveryUsers_controller } = require('../controller/orders');
+const { Dashboard_render } = require("../rendering/admin.js");
+const {
+    approveUser_controller,
+    rejectUser_controller,
+    listPendingUsers_controller,
+    assignDelivery_controller,
+    listOrdersAdmin_controller,
+    listDeliveryUsers_controller
+} = require('../controller/orders');
 
 const auth = require('../middlware/auth');
 const roles = require('../middlware/roles');
 const catchError = require('../utiles/catchError');
 const for_main = require('../middlware/for_main');
 
-// كل الـ routes محمية: لازم يكون Admin
-router.use(auth,roles('admin'));
+// All routes require admin authentication
+router.use(auth, roles('admin'));
 
+// --- Page Routes ---
+
+// GET /admin - Admin dashboard page
 router.get('/', catchError(Dashboard_render));
-router.get('/operations', (req,res)=>res.render('./admin/operations', { currentUser:req.user, pageTitle:'DOQ operations' }));
+
+// GET /admin/operations - Admin operations page (pending accounts, etc.)
+router.get('/operations', (req, res) => res.render('./admin/operations', { currentUser: req.user, pageTitle: 'DOQ operations' }));
+
+// --- API Routes ---
+
+// GET /admin/api/v1/pending-accounts - List pending chef/delivery accounts
 router.get('/api/v1/pending-accounts', catchError(listPendingUsers_controller));
+
+// PATCH /admin/api/v1/pending-accounts/:id/approve - Approve pending account
 router.patch('/api/v1/pending-accounts/:id/approve', catchError(approveUser_controller));
+
+// PATCH /admin/api/v1/pending-accounts/:id/reject - Reject pending account
 router.patch('/api/v1/pending-accounts/:id/reject', catchError(rejectUser_controller));
+
+// PATCH /admin/api/v1/orders/:publicId/assign-delivery - Assign order to delivery company
 router.patch('/api/v1/orders/:publicId/assign-delivery', catchError(assignDelivery_controller));
+
+// GET /admin/api/v1/orders - List all orders with filters
 router.get('/api/v1/orders', catchError(listOrdersAdmin_controller));
+
+// GET /admin/api/v1/delivery-users - List delivery users for assignment
 router.get('/api/v1/delivery-users', catchError(listDeliveryUsers_controller));
 
 // =========================================================
@@ -66,7 +97,7 @@ router.put('/api/v1/users/:id', catchError(updateUserByAdmin_controller));
 router.delete('/api/v1/users/:id', catchError(deleteUserByAdmin_controller));
 
 // =========================================================
-// KITCHENS (العربيات)
+// KITCHENS
 // =========================================================
 router.get('/api/v1/kitchens', catchError(getAllKitchensAdmin_controller));
 router.get('/api/v1/kitchens/:id', catchError(getKitchenByIdAdmin_controller));

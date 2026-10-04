@@ -1,14 +1,29 @@
+/**
+ * kitchen.js — Kitchen controller.
+ * Handles kitchen CRUD, image uploads, public listings with pagination/filters,
+ * and featured/random kitchen helpers.
+ */
 const pool = require("../database/pool");
 const checker = require("../utiles/checker");
 const { kitchenSchema, kitchenUpdateSchema, idParamSchema } = require("../utiles/validation");
 
+// ============================================
+// Middleware: load single kitchen by ID into req.kitchen
+// ============================================
+
+/**
+ * Loads a kitchen by ID with chef name, dish count, review stats, and Bayesian fair score.
+ * Hides phone numbers for non-admin/chef. Redirects to '/' if not found.
+ * @param {Object} req - Expects req.params.id; req.user.roles optional.
+ * @param {Object} res - Used for redirect on 404.
+ * @param {Function} next - Called on success with req.kitchen populated.
+ * @returns {Promise<void>}
+ */
 async function getKitchenById_middleware(req, res, next) {
     const { id } = checker(idParamSchema, req.params, res);
 
-    // ==========================================
-    // 1. بيانات المطبخ الأساسية
-    // ==========================================
-    let statements = ` 
+    // 1. Basic kitchen data + chef name
+    let statements = `
         SELECT 
             k.*,
             CONCAT(u.first_name,' ',u.last_name) as chefName
@@ -20,16 +35,12 @@ async function getKitchenById_middleware(req, res, next) {
 
     if (result.length === 0) return res.redirect('/');
 
-    // ==========================================
-    // 2. استعلام منفصل لعدد الأطباق (عشان ميتضربش بالتقييمات)
-    // ==========================================
+    // 2. Dish count (separate query to avoid inflation from review joins)
     statements = `SELECT COUNT(DISTINCT id) AS dishes_count FROM dishes WHERE kitchen_id = ?`;
     const [dishCount] = await pool.query(statements, [id]);
     const dishesCount = dishCount[0]?.dishes_count || 0;
 
-    // ==========================================
-    // 3. بيانات التقييمات (هنا بنحسب كل حاجة)
-    // ==========================================
+    // 3. Review aggregates
     statements = `
         SELECT
             COUNT(r.id) AS reviews_count,
@@ -41,41 +52,33 @@ async function getKitchenById_middleware(req, res, next) {
             SUM(CASE WHEN r.rating = 1 THEN 1 ELSE 0 END) AS star_1
         FROM dishes d 
         LEFT JOIN reviews r ON r.dish_id = d.id
-        WHERE d.kitchen_id = ?
-    `;
+        WHERE d.kitchen_id = ?`;
 
     const [count] = await pool.query(statements, [id]);
 
-    // ==========================================
-    // 4. حساب الـ Fair Score (بنفس معادلة الـ reviews.js)
-    // ==========================================
-    const C = 20; // ثابت الـ Bayesian
-    const m = 4.2; // المتوسط العام
+    // 4. Bayesian fair score (C=20, m=4.2)
+    const C = 20;
+    const m = 4.2;
     const totalReviews = count[0]?.reviews_count || 0;
     const rawAvg = count[0]?.avg_rating || 0;
-
-    // الـ Fair Score: (n * avg + C * m) / (n + C)
-    const fairScore = totalReviews > 0 
+    const fairScore = totalReviews > 0
         ? Number(((totalReviews * rawAvg) + (C * m)) / (totalReviews + C)).toFixed(2)
         : null;
+    const displayAvg = totalReviews > 0 ? Number(rawAvg).toFixed(1) : 'جديد';
 
-    // المتوسط الحسابي الخام (اللي هيظهر للمستخدم في الـ Rating)
-    const displayAvg = totalReviews > 0 
-        ? Number(rawAvg).toFixed(1) 
-        : 'جديد';
-
-    // ==========================================
-    // 5. تجهير البيانات النهائية (جاهزة للـ Frontend)
-    // ==========================================
+    // 5. Build public kitchen object (hide contacts for non-admin/chef)
     const publicKitchen = { ...result[0] };
-    if (!['admin','chef'].includes(req.user?.roles)) { delete publicKitchen.phone_number; delete publicKitchen.whatsapp_number; }
+    if (!['admin','chef'].includes(req.user?.roles)) {
+        delete publicKitchen.phone_number;
+        delete publicKitchen.whatsapp_number;
+    }
     req.kitchen = {
         ...publicKitchen,
         ...count[0],
-        dishes_count: dishesCount, // التصحيح المهم هنا!
+        dishes_count: dishesCount,
         avg_rating: totalReviews > 0 ? Number(rawAvg) : null,
         fair_score: fairScore,
-        display_avg_rating: displayAvg, // المتوسط الحسابي الخام
+        display_avg_rating: displayAvg,
         reviews_count: totalReviews,
         rating_distribution: {
             5: count[0]?.star_5 || 0,
@@ -88,131 +91,162 @@ async function getKitchenById_middleware(req, res, next) {
 
     next();
 }
-async function Mykitchens_controller(req,res){
+
+// ============================================
+// Chef's own kitchens (from for_main middleware)
+// ============================================
+
+/**
+ * Returns chef's kitchens from req.my (loaded by for_main middleware).
+ * @param {Object} req - Uses req.my.
+ * @param {Object} res - Response.
+ * @returns {Promise<void>} 200 with kitchens array.
+ */
+async function Mykitchens_controller(req, res) {
     return res.status(200).json({
-        status:'success',
+        status: 'success',
         data: req.my || [],
     });
 }
 
-//DON'T NEED IT 
+// ============================================
+// Public kitchens (legacy, no pagination)
+// ============================================
+
+/**
+ * Legacy endpoint returning all kitchens (no pagination).
+ * @param {Object} req - Request.
+ * @param {Object} res - Response.
+ * @returns {Promise<void>} 200 with kitchens, 404 if empty.
+ */
 async function getKitchens_controller(req, res) {
-    const [kitchens]=await pool.query('SELECT * FROM kitchens');
-    
-    if(kitchens.length===0)return res.status(404).json({message:'not found kitchens',message:'error'});
-    
+    const [kitchens] = await pool.query('SELECT * FROM kitchens');
+
+    if (kitchens.length === 0) return res.status(404).json({ message: 'not found kitchens', message: 'error' });
+
     return res.status(200).json({
         status: 'success',
         data: kitchens || [],
-        // pagination: req.pagination || { page: 1, limit: 10, total: 0, total_pages: 1 }
     });
 }
 
-// =============================================
-// API لجلب المطابخ مع Pagination والفلترة
-// =============================================
+// ============================================
+// Public kitchens with pagination, filters, search
+// ============================================
+
+/**
+ * Lists kitchens with pagination, city/category filters, and text search.
+ * Includes chef name, dish count, and average rating.
+ * Hides contact info for non-admin/chef.
+ * @param {Object} req - Query: page, limit, q, city, category.
+ * @param {Object} res - Response.
+ * @returns {Promise<void>} 200 with kitchens, pagination, and applied filters.
+ */
 async function getKitchensPaginated_controller(req, res) {
-        const page = parseInt(req.query.page) || 1;
-        const limit = Math.min(parseInt(req.query.limit) || 10, 50);
-        const offset = (page - 1) * limit;
-        const q = req.query.q || '';
-        const city = req.query.city || '';
-        const category = req.query.category || '';
-        
-        let queryParams = [];
-        let whereClauses = [];
-        
-        // بناء استعلام المطابخ مع JOIN للمستخدمين لحساب عدد الأطباق
-        let baseQuery = `
-            SELECT 
-                k.*,
-                CONCAT(u.first_name, ' ', u.last_name) as chef_name,
-                u.first_name,
-                u.last_name,
-                COUNT(DISTINCT d.id) as dishes_count,
-                ROUND(AVG(r.rating), 1) as avg_rating
-            FROM kitchens k
-            JOIN users u ON u.id = k.user_id
-            LEFT JOIN dishes d ON d.kitchen_id = k.id
-            LEFT JOIN reviews r ON r.dish_id = d.id
-        `;
-        
-        // فلتر المدينة
-        if (city) {
-            whereClauses.push('k.city = ?');
-            queryParams.push(city);
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+    const offset = (page - 1) * limit;
+    const q = req.query.q || '';
+    const city = req.query.city || '';
+    const category = req.query.category || '';
+
+    let queryParams = [];
+    let whereClauses = [];
+
+    // Base query with joins for counts and ratings
+    let baseQuery = `
+        SELECT 
+            k.*,
+            CONCAT(u.first_name, ' ', u.last_name) as chef_name,
+            u.first_name,
+            u.last_name,
+            COUNT(DISTINCT d.id) as dishes_count,
+            ROUND(AVG(r.rating), 1) as avg_rating
+        FROM kitchens k
+        JOIN users u ON u.id = k.user_id
+        LEFT JOIN dishes d ON d.kitchen_id = k.id
+        LEFT JOIN reviews r ON r.dish_id = d.id
+    `;
+
+    if (city) {
+        whereClauses.push('k.city = ?');
+        queryParams.push(city);
+    }
+    if (category) {
+        baseQuery += ` LEFT JOIN categories c ON d.category_id = c.id`;
+        whereClauses.push('c.name = ?');
+        queryParams.push(category);
+    }
+    if (q) {
+        const searchKeyword = `%${q}%`;
+        whereClauses.push(`(k.title LIKE ? OR k.description LIKE ? OR k.address LIKE ?)`);
+        queryParams.push(searchKeyword, searchKeyword, searchKeyword);
+    }
+
+    let whereClause = '';
+    if (whereClauses.length > 0) {
+        whereClause = ' WHERE ' + whereClauses.join(' AND ');
+    }
+
+    const dataQuery = `
+        ${baseQuery}
+        ${whereClause}
+        GROUP BY k.id
+        ORDER BY k.created_at DESC
+        LIMIT ? OFFSET ?
+    `;
+
+    const dataParams = [...queryParams, limit, offset];
+    const [data] = await pool.query(dataQuery, dataParams);
+
+    // Count query
+    let countQuery = `
+        SELECT COUNT(DISTINCT k.id) as total
+        FROM kitchens k
+        JOIN users u ON u.id = k.user_id
+        LEFT JOIN dishes d ON d.kitchen_id = k.id
+    `;
+
+    if (category) {
+        countQuery += ` LEFT JOIN categories c ON d.category_id = c.id`;
+    }
+    if (whereClauses.length > 0) {
+        countQuery += ` ${whereClause}`;
+    }
+
+    const [totalResult] = await pool.query(countQuery, queryParams);
+    const total = totalResult[0]?.total || 0;
+
+    // Hide contacts for non-admin/chef
+    const visible = !['admin','chef'].includes(req.user?.roles)
+        ? data.map(row => { const item = {...row}; delete item.phone_number; delete item.whatsapp_number; delete item.user_phone; delete item.email; return item; })
+        : data;
+
+    return res.status(200).json({
+        status: 'success',
+        data: {
+            kitchens: visible,
+            pagination: {
+                page: page,
+                limit: limit,
+                total: total,
+                total_pages: Math.ceil(total / limit)
+            },
+            filters: { q: q, city: city, category: category }
         }
-        
-        // فلتر التصنيف (من خلال الأطباق)
-        if (category) {
-            baseQuery += ` LEFT JOIN categories c ON d.category_id = c.id`;
-            whereClauses.push('c.name = ?');
-            queryParams.push(category);
-        }
-        
-        // البحث النصي
-        if (q) {
-            const searchKeyword = `%${q}%`;
-            whereClauses.push(`(k.title LIKE ? OR k.description LIKE ? OR k.address LIKE ?)`);
-            queryParams.push(searchKeyword, searchKeyword, searchKeyword);
-        }
-        
-        let whereClause = '';
-        if (whereClauses.length > 0) {
-            whereClause = ' WHERE ' + whereClauses.join(' AND ');
-        }
-        
-        // استعلام البيانات مع GROUP BY و LIMIT
-        const dataQuery = `
-            ${baseQuery}
-            ${whereClause}
-            GROUP BY k.id
-            ORDER BY k.created_at DESC
-            LIMIT ? OFFSET ?
-        `;
-        
-        const dataParams = [...queryParams, limit, offset];
-        const [data] = await pool.query(dataQuery, dataParams);
-        
-        // استعلام COUNT
-        let countQuery = `
-            SELECT COUNT(DISTINCT k.id) as total
-            FROM kitchens k
-            JOIN users u ON u.id = k.user_id
-            LEFT JOIN dishes d ON d.kitchen_id = k.id
-        `;
-        
-        if (category) {
-            countQuery += ` LEFT JOIN categories c ON d.category_id = c.id`;
-        }
-        
-        if (whereClauses.length > 0) {
-            countQuery += ` ${whereClause}`;
-        }
-        
-        const [totalResult] = await pool.query(countQuery, queryParams);
-        const total = totalResult[0]?.total || 0;
-        
-        const visible = !['admin','chef'].includes(req.user?.roles) ? data.map(row => { const item={...row}; delete item.phone_number; delete item.whatsapp_number; delete item.user_phone; delete item.email; return item; }) : data;
-        return res.status(200).json({
-            status: 'success',
-            data: {
-                kitchens: visible,
-                pagination: {
-                    page: page,
-                    limit: limit,
-                    total: total,
-                    total_pages: Math.ceil(total / limit)
-                },
-                filters: {
-                    q: q,
-                    city: city,
-                    category: category
-                }
-            }
-        });
+    });
 }
 
+// ============================================
+// Single kitchen by ID (API)
+// ============================================
+
+/**
+ * Returns kitchen with chef details (name, email, phone).
+ * @param {Object} req - params.id.
+ * @param {Object} res - Response.
+ * @returns {Promise<void>} 200 with kitchen, 404 if not found.
+ */
 async function getKitchenById_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id || res.headersSent) return;
@@ -237,14 +271,21 @@ async function getKitchenById_controller(req, res) {
     });
 }
 
+// ============================================
+// Create kitchen (chef)
+// ============================================
+
+/**
+ * Creates a kitchen for the current user (one per chef).
+ * Defaults title/phone/city from user profile if not provided.
+ * @param {Object} req - req.user.id; body validated by kitchenSchema.
+ * @param {Object} res - Response.
+ * @returns {Promise<void>} 201 with kitchen data and redirect, 409 if kitchen exists.
+ */
 async function createKitchen_controller(req, res) {
     const userId = req.user.id;
 
-    const [existing] = await pool.query(
-        'SELECT id FROM kitchens WHERE user_id = ?',
-        [userId]
-    );
-
+    const [existing] = await pool.query('SELECT id FROM kitchens WHERE user_id = ?', [userId]);
     if (existing.length > 0) {
         return res.status(409).json({
             status: 'error',
@@ -268,32 +309,37 @@ async function createKitchen_controller(req, res) {
         [title, description || null, city, address || null, null, phone_number, userId]
     );
 
-    //redirect to /myKitchen
     return res.status(201).json({
         status: 'success',
         message: 'تم إنشاء المطبخ بنجاح',
-        redirect: '/users/dachboard',
+        redirect: '/users/dashboard',
         data: {
             id: result.insertId,
             title,
             description,
             city,
             address,
-            image_url:null,
+            image_url: null,
             phone_number
         }
     });
 }
 
+// ============================================
+// Delete kitchen (chef owns it)
+// ============================================
+
+/**
+ * Deletes a kitchen by ID (owner or admin).
+ * @param {Object} req - params.id.
+ * @param {Object} res - Response.
+ * @returns {Promise<void>} 200 on success, 404 if not found.
+ */
 async function deleteKitchen_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;
 
-    const [existing] = await pool.query(
-        'SELECT id FROM kitchens WHERE id = ?',
-        [id]
-    );
-
+    const [existing] = await pool.query('SELECT id FROM kitchens WHERE id = ?', [id]);
     if (existing.length === 0) {
         return res.status(404).json({
             status: 'error',
@@ -301,10 +347,7 @@ async function deleteKitchen_controller(req, res) {
         });
     }
 
-    await pool.query(
-        'DELETE FROM kitchens WHERE id = ?',
-        [id]
-    );
+    await pool.query('DELETE FROM kitchens WHERE id = ?', [id]);
 
     return res.status(200).json({
         status: 'success',
@@ -312,116 +355,78 @@ async function deleteKitchen_controller(req, res) {
     });
 }
 
+// ============================================
+// Update kitchen (chef owns it, or admin)
+// ============================================
+
+/**
+ * Updates kitchen fields (title, description, city, address, phone).
+ * Validates uniqueness of title and phone across users/kitchens.
+ * Non-admin must own the kitchen.
+ * @param {Object} req - req.user.id; body validated by kitchenUpdateSchema.
+ * @param {Object} res - Response.
+ * @returns {Promise<void>} 200 on success, 400/401/404/409 on error.
+ */
 async function updateMyKitchen_controller(req, res) {
     const userId = req.user.id;
-    let kitchen=[];
 
     const validatedData = checker(kitchenUpdateSchema, req.body, res);
     if (!validatedData || res.headersSent) return;
 
-
-    const { title, description, city, address, phone_number,kitchen_id } = validatedData;
+    const { title, description, city, address, phone_number, kitchen_id } = validatedData;
 
     if (phone_number) {
         const [userWithPhone] = await pool.query(
-            'SELECT id FROM users WHERE phone_number = ? AND id != ?',
-            [phone_number, userId]
-        );
-
+            'SELECT id FROM users WHERE phone_number = ? AND id != ?', [phone_number, userId]);
         if (userWithPhone.length > 0) {
-            return res.status(409).json({
-                status: 'error',
-                message: 'رقم الهاتف مستخدم من قبل حساب آخر'
-            });
+            return res.status(409).json({ status: 'error', message: 'رقم الهاتف مستخدم من قبل حساب آخر' });
         }
-
         const [kitchenWithPhone] = await pool.query(
-            'SELECT id FROM kitchens WHERE phone_number = ? AND user_id != ?',
-            [phone_number, userId]
-        );
-
+            'SELECT id FROM kitchens WHERE phone_number = ? AND user_id != ?', [phone_number, userId]);
         if (kitchenWithPhone.length > 0) {
-            return res.status(409).json({
-                status: 'error',
-                message: 'رقم الهاتف مستخدم من قبل مطبخ آخر'
-            });
+            return res.status(409).json({ status: 'error', message: 'رقم الهاتف مستخدم من قبل مطبخ آخر' });
         }
     }
 
     if (title) {
         const [duplicateTitle] = await pool.query(
-            'SELECT id FROM kitchens WHERE title = ? AND user_id != ?',
-            [title, userId]
-        );
-
+            'SELECT id FROM kitchens WHERE title = ? AND user_id != ?', [title, userId]);
         if (duplicateTitle.length > 0) {
-            return res.status(409).json({
-                status: 'error',
-                message: 'هذا الاسم مستخدم من قبل مطبخ آخر'
-            });
+            return res.status(409).json({ status: 'error', message: 'هذا الاسم مستخدم من قبل مطبخ آخر' });
         }
     }
 
-    if(!req.user.roles==="admin"){
+    let kitchen = [];
+    if (req.user.roles !== "admin") {
         const [haveKitchen] = await pool.query(
-            `SELECT * FROM kitchens WHERE id=? AND user_id=?`,[kitchen_id,userId]
-        );
-        
-        if(haveKitchen.length===0){
+            `SELECT * FROM kitchens WHERE id=? AND user_id=?`, [kitchen_id, userId]);
+        if (haveKitchen.length === 0) {
             return res.status(401).json({
                 status: 'error',
                 message: 'اسف لن تستطيع التحكم فى هذا المطبخ'
             });
         }
-        
-        kitchen=haveKitchen;
+        kitchen = haveKitchen;
     }
-    
 
-    if(kitchen.length===0)
-        return res.status(404).json({
-            stauts:'error',
-            message:'اسف لم نجد المطبخ'
-        });
+    if (kitchen.length === 0)
+        return res.status(404).json({ stauts: 'error', message: 'اسف لم نجد المطبخ' });
 
     const updates = [];
     const params = [];
 
-    if (title !== undefined) {
-        updates.push('title = ?');
-        params.push(title);
-    }
-    if (description !== undefined) {
-        updates.push('description = ?');
-        params.push(description);
-    }
-    if (city !== undefined) {
-        updates.push('city = ?');
-        params.push(city);
-    }
-    if (address !== undefined) {
-        updates.push('address = ?');
-        params.push(address);
-    }
-    if (phone_number !== undefined) {
-        updates.push('phone_number = ?');
-        params.push(phone_number);
-    }
+    if (title !== undefined) { updates.push('title = ?'); params.push(title); }
+    if (description !== undefined) { updates.push('description = ?'); params.push(description); }
+    if (city !== undefined) { updates.push('city = ?'); params.push(city); }
+    if (address !== undefined) { updates.push('address = ?'); params.push(address); }
+    if (phone_number !== undefined) { updates.push('phone_number = ?'); params.push(phone_number); }
 
     if (updates.length === 0) {
-        console.log('here controller');
-        return res.status(400).json({
-            status: 'error',
-            message: 'لا توجد بيانات للتحديث'
-        });
+        return res.status(400).json({ status: 'error', message: 'لا توجد بيانات للتحديث' });
     }
 
     params.push(kitchen[0].id);
-
-    await pool.query(
-        `UPDATE kitchens SET ${updates.join(', ')} WHERE id = ?`,
-        params
-    );
+    await pool.query(`UPDATE kitchens SET ${updates.join(', ')} WHERE id = ?`, params);
 
     return res.status(200).json({
         status: 'success',
@@ -429,81 +434,100 @@ async function updateMyKitchen_controller(req, res) {
     });
 }
 
-// must add req.query.kitchen_id
+// ============================================
+// Upload kitchen background image
+// ============================================
+
+/**
+ * Uploads background image (image_url) for one of chef's kitchens.
+ * Selects kitchen from req.my via query.kitchen_id or first.
+ * @param {Object} req - req.my = chef's kitchens; query.kitchen_id optional; req.file from multer.
+ * @param {Object} res - Response.
+ * @returns {Promise<void>} 200 with image_url, 400 if no file.
+ */
 async function uploadKitchenImageBackground_controller(req, res) {
-        const {kitchen_id}=req.query;
-        let selectedKitchen = null;
-        
-        if (req.my && Array.isArray(req.my) && req.my.length > 0) {
-            if (kitchen_id) 
-                selectedKitchen = req.my.find(k => String(k.id) === String(kitchen_id));
+    const { kitchen_id } = req.query;
+    let selectedKitchen = null;
 
-            selectedKitchen = selectedKitchen || req.my[0];
-        }
+    if (req.my && Array.isArray(req.my) && req.my.length > 0) {
+        if (kitchen_id)
+            selectedKitchen = req.my.find(k => String(k.id) === String(kitchen_id));
+        selectedKitchen = selectedKitchen || req.my[0];
+    }
 
-        if (!req.file) {
-            return res.status(400).json({
-                status: 'error',
-                message: 'من فضلك ارفع صورة'
-            });
-        }
+    if (!req.file) {
+        return res.status(400).json({ status: 'error', message: 'من فضلك ارفع صورة' });
+    }
 
-        const imageUrl = `/uploads/${req.file.filename}`;
+    const imageUrl = `/uploads/${req.file.filename}`;
+    await pool.query('UPDATE kitchens SET image_url = ? WHERE id = ?', [imageUrl, selectedKitchen.id]);
 
-        await pool.query(
-            'UPDATE kitchens SET image_url = ? WHERE id = ?',
-            [imageUrl, selectedKitchen.id]
-        );
-
-        return res.status(200).json({
-            status: 'success',
-            message: 'تم رفع الصورة بنجاح',
-            data: {
-                image_url: imageUrl
-            },
-        });
+    return res.status(200).json({
+        status: 'success',
+        message: 'تم رفع الصورة بنجاح',
+        data: { image_url: imageUrl }
+    });
 }
 
+// ============================================
+// Upload kitchen profile/portfolio image
+// ============================================
+
+/**
+ * Uploads portfolio image (portfolio_url) for one of chef's kitchens.
+ * Selects kitchen from req.my via query.kitchen_id or first.
+ * @param {Object} req - req.my = chef's kitchens; query.kitchen_id optional; req.file from multer.
+ * @param {Object} res - Response.
+ * @returns {Promise<void>} 200 with image_url, 400 if no file.
+ */
 async function uploadKitchenImageProfile_controller(req, res) {
-        const {kitchen_id}=req.query;
-        let selectedKitchen = null;
-        
-        if (req.my && Array.isArray(req.my) && req.my.length > 0) {
-            if (kitchen_id) 
-                selectedKitchen = req.my.find(k => String(k.id) === String(kitchen_id));
+    const { kitchen_id } = req.query;
+    let selectedKitchen = null;
 
-            selectedKitchen = selectedKitchen || req.my[0];
-        }
-    
-    
-        if (!req.file) {
-            return res.status(400).json({
-                status: 'error',
-                message: 'من فضلك ارفع صورة'
-            });
-        }
+    if (req.my && Array.isArray(req.my) && req.my.length > 0) {
+        if (kitchen_id)
+            selectedKitchen = req.my.find(k => String(k.id) === String(kitchen_id));
+        selectedKitchen = selectedKitchen || req.my[0];
+    }
 
-        const imageUrl = `/uploads/${req.file.filename}`;
+    if (!req.file) {
+        return res.status(400).json({ status: 'error', message: 'من فضلك ارفع صورة' });
+    }
 
-        await pool.query(
-            'UPDATE kitchens SET portfolio_url = ? WHERE id = ?',
-            [imageUrl, selectedKitchen.id]
-        );
+    const imageUrl = `/uploads/${req.file.filename}`;
+    await pool.query('UPDATE kitchens SET portfolio_url = ? WHERE id = ?', [imageUrl, selectedKitchen.id]);
 
-        return res.status(200).json({
-            status: 'success',
-            message: 'تم رفع الصورة بنجاح',
-            data: {
-                image_url: imageUrl
-            },
-        });
+    return res.status(200).json({
+        status: 'success',
+        message: 'تم رفع الصورة بنجاح',
+        data: { image_url: imageUrl }
+    });
 }
 
-async function listCities_controller(req,res) {
+// ============================================
+// List distinct cities (for filter dropdown)
+// ============================================
+
+/**
+ * Returns distinct non-empty cities from kitchens table, sorted ascending.
+ * @param {Object} req - Request.
+ * @param {Object} res - Response.
+ * @returns {Promise<void>} 200 with city name array.
+ */
+async function listCities_controller(req, res) {
     const [rows] = await pool.query("SELECT DISTINCT city FROM kitchens WHERE city IS NOT NULL AND TRIM(city) <> '' ORDER BY city ASC");
-    return res.json({status:'success',data:rows.map(row=>row.city)});
+    return res.json({ status: 'success', data: rows.map(row => row.city) });
 }
 
+// ============================================
+// Featured kitchens (for landing page)
+// ============================================
+
+/**
+ * Returns up to 6 latest kitchens with chef name and dish count.
+ * Used for homepage featured section.
+ * @returns {Promise<Array>} Array of kitchen objects.
+ */
 async function getFeaturedKitchens() {
     const [kitchens] = await pool.query(`
         SELECT 
@@ -522,7 +546,6 @@ async function getFeaturedKitchens() {
     `);
     return kitchens;
 }
-
 
 module.exports = {
     getKitchenById_controller,

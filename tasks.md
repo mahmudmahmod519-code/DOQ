@@ -1,12 +1,116 @@
-create missing pages with frontend->testand&debugging(customer,admin,kitchn,deilvery)
-->backup->create banners->speack with kitchens and create vadios 
+understand code(dockerfile,dockercompose,envfiles and what env need it and what i don't need it,scripts what use it) -> create doc apis understand it
+
+
+create missing pages with frontend(done)->testand&debugging(customer,admin,kitchn,deilvery)->hidden apis from git it & landing page button sign have error i sign in it alreade 
+->backup->create mobile and how upload it->create banners->speack with kitchens and create vedios
 ->get domain->deploying
 
 
 
+# errors
+1. error number on in page dashboard as chef in page /chef/dashboard must when not have kitchen in dashboard show button in page only button have create kitchen use /kitchens/api/v1/ceate POST
+2. in orders in /chef/orders.ejs this page must have the same theme dashboard chef page with navbar and make it responsive
+3. page dashboard and dishes and kitchen and orders and payment and reviews must be f not have kitchen show button name انشاء مطبخ 
+4. in payment for chef show this
+```bash 
+verified
+حالة الحساب
+?حالة الحساب???? ?????
 
+???حالة الحساب ??? ???????? ??? ??????? ?? ???????
+payments ???حالة الحساب ??? ???????? 
+```
+remove this ?? and make it data or date
 
+5. fix chef my kitchen from this error : Error fetching dashboard data: Error: حصل عطل عندنا. جرب تاني بعد شوية
+    fetchKitchenDashboardData http://localhost:3000/kitchens/my:633
+    async* http://localhost:3000/kitchens/my:661
+    EventListener.handleEvent* http://localhost:3000/kitchens/my:658
 
+and 
+19:28:05.623 XHR GET
+http://localhost:3000/reviews/v1/api/chef?include_stats=true&limit=5&kitchen_id=1501
+[HTTP/1.1 500 Internal Server Error 4ms]
+
+	
+GET
+	http://localhost:3000/reviews/v1/api/chef?include_stats=true&limit=5&kitchen_id=1501
+Status
+500
+Internal Server Error
+VersionHTTP/1.1
+Transferred1 kB (88 B size)
+Referrer Policystrict-origin-when-cross-origin
+DNS ResolutionSystem
+
+    	
+    Cache-Control
+    	no-store
+    Connection
+    	keep-alive
+    Content-Length
+    	88
+    Content-Security-Policy
+    	default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self'; frame-src https://accept.paymob.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+    Content-Type
+    	application/json; charset=utf-8
+    Date
+    	Sun, 04 Oct 2026 16:28:05 GMT
+    ETag
+    	W/"58-aetrSqQ5XgwF1Oidv8fBUtyMHVE"
+    Keep-Alive
+    	timeout=5
+    Permissions-Policy
+    	camera=(), microphone=(), geolocation=()
+    Referrer-Policy
+    	strict-origin-when-cross-origin
+    X-Content-Type-Options
+    	nosniff
+    X-Frame-Options
+    	DENY
+    	
+    Accept
+    	*/*
+    Accept-Encoding
+    	gzip, deflate, br, zstd
+    Accept-Language
+    	en-US,en;q=0.9
+    Connection
+    	keep-alive
+    Cookie
+    	next-auth.session-token=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..ozcid_1TyOKhl5ds.WN_mtnoG_Ioyn_OjacHHf2cHMFJQlsTpJ64rG45G7PNkdFOeuncTZ_btLvBbzXyq9udsXCBtTO-fS7ngfutBV9s0LYlNq7pJOXUXYQ104UNGpMNo31ZrUw8BgRbCkB5cfG9hp7QPKwwqCUaB49-4-KZfMSF2HYMT3awGILMo_T4-AGCij_k9EaXb5W-Qb8his3SO1xHgCvTXdgMRamw04U3QzA2R_uzE379zryyk05mXOEUlvR3OIWAZ3VQoKXuCM_YAo5DAFGqBWIQPWsjtLixsJ-z04GgB9QAHyulA2K0ncMaLJlT1sP6J92lHhARyTtL9QFFzDGC8zmwu9xxkleXoM0XeGR8gyqpVMv0cKv2SqWn8zCKWZ7b61iCqWTzyI3o2m7t25rHEiodOT3glwt0JDtpEE5IoK8DUkU6ULTRXom…AEkTnbrFqA-M3AhhUltUTx4gMNFluWpIB7OIxAwcmUd7f5diwsQpZ-tOh2NXKhJUyDnN-KjGxWo82cY1VkAt2THxKYp6fr65p-AxMXKdObfL0ymjXzyg6PlYEh2OGq6VxA.2AMxS2FBR7snVSg8OkIEGw; opencode_session_49374=1793620554.VrvcQRcZrX5FQ6ymBlKYKxBmze3SbYTVt6MDFXJtbp4; oc_locale=en; doq_csrf_seed=be5120fe3870ca8cdb4f56517b26e843153e9d5b2935a70fc8f6c57843382d7f; session_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Mywic3YiOjAsInR5cGUiOiJzZXNzaW9uIiwiaWF0IjoxNzkxMTMwNjM5LCJleHAiOjE3OTE3MzU0Mzl9.ywdwBbNwkBz0irsDSPvNlERB9IYwTNaAUyhOW-PJNmg
+    Host
+    	localhost:3000
+    Priority
+    	u=4
+    Referer
+    	http://localhost:3000/kitchens/my
+    Sec-Fetch-Dest
+    	empty
+    Sec-Fetch-Mode
+    	cors
+    Sec-Fetch-Site
+    	same-origin
+    User-Agent
+    	Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:156.0) Gecko/20100101 Firefox/156.0
+
+make if not have data in kitchen show you don't have data in kitchen
+
+6. as customer in dishes reviews not show and status
+
+7. the discount not show when enter copunt valid and click on it and add order not show my discount in the form
+
+8. as customer when make device is mobile in page spcific kitchen show space in ui ux in latest page remove this space without fail design and functionalty for page  
+
+9. page delivery must make theme same like anthor pages this page is /delivery/dashboard and add for this page button payment the same page payment in chef/payment
+
+10. some pages create ejs for it but is not have render analysis this page and what is propuse it then tell me propse and i will tell you need it or not render
+
+11. tell me routes don't used it and propse each route in project
+
+12. make code in landing page not online because i will make this application mobile if open page not show ui ux without style
+
+13. notification is good work but not notitfy me as deilvery or admin or customer or chef by any thing must notify me in all pages show as float message and add sound to know i have notification and tell me it change this code to mobile app this notification will add sound or not.
 
 اعلانات
 https://www.facebook.com/logy.mostafa.148/ 

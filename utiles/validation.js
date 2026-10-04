@@ -1,8 +1,16 @@
+/**
+ * Joi validation schemas for DOQ platform routes.
+ * Covers: user registration/login/update, admin user creation, categories, kitchens,
+ * dishes, reviews, search queries, password change/forgot, and ID parameters.
+ * All messages in Arabic to match the UI.
+ */
 const Joi = require('joi');
 
 /**
- * جميع مخططات التحقق (Validation Schemas) لمنصة دوق
- * متوافقة مع هيكل قاعدة البيانات المحدد
+ * User sign-up schema (first step).
+ * Validates: first/last name (Arabic/English only), Egyptian phone, email, strong password
+ * with confirmation, role (customer/chef/delivery), optional city/address, optional 2FA secret.
+ * @type {Joi.ObjectSchema}
  */
 const userSchema = Joi.object({
     firstname: Joi.string()
@@ -67,7 +75,7 @@ const userSchema = Joi.object({
             'any.only': 'تأكيد كلمة المرور غير متطابق',
             'any.required': 'تأكيد كلمة المرور مطلوب'
         }),
-    // ✅ إضافة role - customer أو chef فقط (admin من الـ admin فقط)
+    // Role: customer, chef, or delivery (admin created separately)
     roles: Joi.string()
         .valid('customer', 'chef', 'delivery')
         .default('customer')
@@ -76,7 +84,7 @@ const userSchema = Joi.object({
         }),
     company_name: Joi.string().max(120).trim().allow('', null),
     enable_2fa: Joi.alternatives().try(Joi.boolean(), Joi.string().valid('0', '1', 'on', 'off')).default(false),
-        
+
     city: Joi.string()
         .max(100)
         .trim()
@@ -84,7 +92,7 @@ const userSchema = Joi.object({
         .messages({
             'string.max': 'اسم المدينة يجب أن لا يتجاوز 100 حرف'
         }),
-    
+
     address: Joi.string()
         .max(255)
         .trim()
@@ -92,17 +100,22 @@ const userSchema = Joi.object({
         .messages({
             'string.max': 'العنوان يجب أن لا يتجاوز 255 حرف'
         }),
-    
+
     secretKey: Joi.string().allow('', null)
-    .trim()
-    .uppercase()
-    .pattern(/^[A-Z2-7]{16,32}=*$/)
-    .messages({
-        'string.pattern.base': 'الـ Secret غير صحيح ويجب أن يكون بصيغة Base32'
-    })
+        .trim()
+        .uppercase()
+        .pattern(/^[A-Z2-7]{16,32}=*$/)
+        .messages({
+            'string.pattern.base': 'الـ Secret غير صحيح ويجب أن يكون بصيغة Base32'
+        })
 
 });
 
+/**
+ * Admin user creation schema (from admin panel).
+ * Requires: first/last name, email, Egyptian phone, strong password, role.
+ * @type {Joi.ObjectSchema}
+ */
 const createAdminUserSchema = Joi.object({
     firstname: Joi.string().min(2).max(50).required().trim().messages({
         'string.min': 'الاسم الأول يجب أن يكون على الأقل حرفين',
@@ -129,6 +142,11 @@ const createAdminUserSchema = Joi.object({
     })
 });
 
+/**
+ * Sign-up step 2: OTP verification schema.
+ * Validates 6-digit numeric OTP.
+ * @type {Joi.ObjectSchema}
+ */
 const signUp2Schema = Joi.object({
     otp: Joi.string()
         .length(6)
@@ -148,17 +166,17 @@ const userUpdateSchema = Joi.object({
         .max(50)
         .trim()
         .pattern(/^[\u0600-\u06FFa-zA-Z\s]+$/),
-    
+
     last_name: Joi.string()
         .min(2)
         .max(50)
         .trim()
         .pattern(/^[\u0600-\u06FFa-zA-Z\s]+$/),
-    
+
     phone_number: Joi.string()
         .length(11)
         .trim()
-        .pattern(/^(010|011|012|015)[0-9]{8}$/),    
+        .pattern(/^(010|011|012|015)[0-9]{8}$/),
     // email: Joi.string()
     //     .email()
     //     .trim()
@@ -171,7 +189,7 @@ const userUpdateSchema = Joi.object({
         .messages({
             'string.max': 'اسم المدينة يجب أن لا يتجاوز 100 حرف'
         }),
-    
+
     address: Joi.string()
         .max(255)
         .trim()
@@ -179,14 +197,14 @@ const userUpdateSchema = Joi.object({
         .messages({
             'string.max': 'العنوان يجب أن لا يتجاوز 255 حرف'
         }),
-    
+
     roles: Joi.string()
         .valid('customer', 'chef', 'delivery', 'admin')
 });
 
 const loginSchema = Joi.object({
     email: Joi.string()
-        .email()
+        .email({ tlds: { allow: false } })
         .required()
         .trim()
         .lowercase()
@@ -194,7 +212,7 @@ const loginSchema = Joi.object({
             'string.email': 'البريد الإلكتروني غير صحيح',
             'any.required': 'البريد الإلكتروني مطلوب'
         }),
-    
+
     password: Joi.string()
         .required()
         .messages({
@@ -213,7 +231,7 @@ const categorySchema = Joi.object({
             'string.max': 'اسم التصنيف يجب أن لا يتجاوز 100 حرف',
             'any.required': 'اسم التصنيف مطلوب'
         }),
-    
+
     description: Joi.string()
         .max(1000)
         .trim()
@@ -234,7 +252,7 @@ const kitchenSchema = Joi.object({
             'string.max': 'عنوان المطبخ يجب أن لا يتجاوز 100 حرف',
             'any.required': 'عنوان المطبخ مطلوب'
         }),
-    
+
     description: Joi.string()
         .max(2000)
         .trim()
@@ -242,7 +260,7 @@ const kitchenSchema = Joi.object({
         .messages({
             'string.max': 'وصف المطبخ يجب أن لا يتجاوز 2000 حرف'
         }),
-    
+
     city: Joi.string()
         .max(100)
         .trim()
@@ -250,7 +268,7 @@ const kitchenSchema = Joi.object({
         .messages({
             'string.max': 'اسم المدينة يجب أن لا يتجاوز 100 حرف'
         }),
-    
+
     address: Joi.string()
         .max(255)
         .trim()
@@ -258,7 +276,7 @@ const kitchenSchema = Joi.object({
         .messages({
             'string.max': 'العنوان يجب أن لا يتجاوز 255 حرف'
         }),
-    
+
     phone_number: Joi.string()
         .required()
         .trim()
@@ -268,7 +286,7 @@ const kitchenSchema = Joi.object({
             'string.pattern.base': 'رقم الهاتف يجب أن يكون رقم مصري صحيح',
             'any.required': 'رقم الهاتف مطلوب'
         })
-        
+
     // user_id: Joi.number()
     //     .integer()
     //     .positive()
@@ -286,23 +304,23 @@ const kitchenUpdateSchema = Joi.object({
         .min(3)
         .max(100)
         .trim(),
-    
+
     description: Joi.string()
         .max(2000)
         .trim()
         .allow('', null),
-    
+
     city: Joi.string()
         .max(100)
         .trim()
         .allow('', null),
-    
+
     address: Joi.string()
         .max(255)
         .trim()
         .allow('', null),
-    
-    
+
+
     phone_number: Joi.string()
         .trim()
         .length(11)
@@ -330,7 +348,7 @@ const dishSchema = Joi.object({
             'string.max': 'اسم الأكلة يجب أن لا يتجاوز 100 حرف',
             'any.required': 'اسم الأكلة مطلوب'
         }),
-    
+
     description: Joi.string()
         .max(2000)
         .trim()
@@ -338,7 +356,7 @@ const dishSchema = Joi.object({
         .messages({
             'string.max': 'وصف الأكلة يجب أن لا يتجاوز 2000 حرف'
         }),
-    
+
     ingredients: Joi.string()
         .max(1000)
         .trim()
@@ -358,7 +376,7 @@ const dishSchema = Joi.object({
             'number.max': 'السعر يجب أن لا يتجاوز 10000 جنيه',
             'any.required': 'السعر مطلوب'
         }),
-    
+
     image_url: Joi.string()
         .uri()
         .max(255)
@@ -367,7 +385,7 @@ const dishSchema = Joi.object({
             'string.uri': 'رابط الصورة غير صحيح',
             'string.max': 'رابط الصورة يجب أن لا يتجاوز 255 حرف'
         }),
-    
+
     category_id: Joi.number()
         .integer()
         .positive()
@@ -377,7 +395,7 @@ const dishSchema = Joi.object({
             'number.positive': 'معرف التصنيف يجب أن يكون رقم موجب',
             'any.required': 'معرف التصنيف مطلوب'
         }),
-    
+
     kitchen_id: Joi.number()
         .integer()
         .positive()
@@ -395,12 +413,12 @@ const dishUpdateSchema = Joi.object({
         .min(2)
         .max(100)
         .trim(),
-    
+
     description: Joi.string()
         .max(2000)
         .trim()
         .allow('', null),
-        
+
     ingredients: Joi.string()
      .max(1000)
      .trim()
@@ -413,20 +431,20 @@ const dishUpdateSchema = Joi.object({
         .precision(2)
         .min(0)
         .max(10000),
-    
+
     image_url: Joi.string()
         .uri()
         .max(255)
         .allow('', null),
-    
+
     category_id: Joi.number()
         .integer()
         .positive(),
-    
+
     kitchen_id: Joi.number()
         .integer()
         .positive()
-    
+
 });
 
 const reviewSchema = Joi.object({
@@ -439,7 +457,7 @@ const reviewSchema = Joi.object({
     //         'number.positive': 'معرف المستخدم يجب أن يكون رقم موجب',
     //         'any.required': 'معرف المستخدم مطلوب'
     //     }),
-    
+
     dish_id: Joi.number()
         .integer()
         .positive()
@@ -449,7 +467,7 @@ const reviewSchema = Joi.object({
             'number.positive': 'معرف الأكلة يجب أن يكون رقم موجب',
             'any.required': 'معرف الأكلة مطلوب'
         }),
-    
+
     rating: Joi.number()
         .integer()
         .min(1)
@@ -461,7 +479,7 @@ const reviewSchema = Joi.object({
             'number.max': 'التقييم يجب أن لا يتجاوز 5',
             'any.required': 'التقييم مطلوب'
         }),
-    
+
     comment: Joi.string()
         .max(1000)
         .trim()
@@ -476,7 +494,7 @@ const reviewUpdateSchema = Joi.object({
         .integer()
         .min(1)
         .max(5),
-    
+
     comment: Joi.string()
         .max(1000)
         .trim()
@@ -495,6 +513,12 @@ const reviewsListQuerySchema = Joi.object({
     category: Joi.string().trim().allow('', null).optional()
 }).unknown(true);
 
+/**
+ * Generic search/list query schema used by allRows middleware.
+ * Fields: q (text search), city, category, min/max_price, rating, page, limit, sort_by, sort_order.
+ * Unknown keys allowed (stripped by middleware).
+ * @type {Joi.ObjectSchema}
+ */
 const searchQuerySchema = Joi.object({
 
     q: Joi.string()
@@ -506,7 +530,7 @@ const searchQuerySchema = Joi.object({
             'string.base': 'كلمة البحث يجب أن تكون نصاً.',
             'string.max': 'كلمة البحث يجب ألا تتجاوز 100 حرف.'
         }),
-    
+
     city: Joi.string()
         .optional()
         .max(100)
@@ -516,7 +540,7 @@ const searchQuerySchema = Joi.object({
             'string.base': 'اسم المدينة يجب أن يكون نصاً.',
             'string.max': 'اسم المدينة يجب ألا يتجاوز 100 حرف.'
         }),
-    
+
     category: Joi.string()
         .optional()
         .max(100)
@@ -526,7 +550,7 @@ const searchQuerySchema = Joi.object({
             'string.base': 'اسم القسم يجب أن يكون نصاً.',
             'string.max': 'اسم القسم يجب ألا يتجاوز 100 حرف.'
         }),
-    
+
     min_price: Joi.number()
         .min(0)
         .max(10000)
@@ -535,7 +559,7 @@ const searchQuerySchema = Joi.object({
             'number.min': 'الحد الأدنى للسعر لا يمكن أن يكون أقل من 0.',
             'number.max': 'الحد الأدنى للسعر لا يمكن أن يتجاوز 10000.'
         }),
-    
+
     max_price: Joi.number()
         .min(0)
         .max(10000)
@@ -544,7 +568,7 @@ const searchQuerySchema = Joi.object({
             'number.min': 'الحد الأقصى للسعر لا يمكن أن يكون أقل من 0.',
             'number.max': 'الحد الأقصى للسعر لا يمكن أن يتجاوز 10000.'
         }),
-    
+
     rating: Joi.number()
         .optional()
         .min(1)
@@ -554,7 +578,7 @@ const searchQuerySchema = Joi.object({
             'number.min': 'التقييم لا يمكن أن يكون أقل من نجمة واحدة.',
             'number.max': 'التقييم لا يمكن أن يتجاوز 5 نجوم.'
         }),
-    
+
     page: Joi.number()
         .integer()
         .min(1)
@@ -564,7 +588,7 @@ const searchQuerySchema = Joi.object({
             'number.integer': 'رقم الصفحة يجب أن يكون رقماً صحيحاً.',
             'number.min': 'رقم الصفحة يجب أن يكون 1 على الأقل.'
         }),
-    
+
     limit: Joi.number()
         .integer()
         .min(1)
@@ -576,7 +600,7 @@ const searchQuerySchema = Joi.object({
             'number.min': 'عدد العناصر يجب أن يكون 1 على الأقل.',
             'number.max': 'عدد العناصر في الصفحة الواحدة لا يمكن أن يتجاوز 50.'
         }),
-    
+
     sort_by: Joi.string()
         .valid('created_at', 'price', 'rating', 'name')
         .default('created_at')
@@ -584,7 +608,7 @@ const searchQuerySchema = Joi.object({
             'string.base': 'معيار الترتيب يجب أن يكون نصاً.',
             'any.only': 'معيار الترتيب يجب أن يكون واحداً من القيم التالية: (created_at, price, rating, name).'
         }),
-    
+
     sort_order: Joi.string()
         .valid('ASC', 'DESC')
         .default('DESC')
@@ -599,7 +623,11 @@ const searchQuerySchema = Joi.object({
 
 });
 
-
+/**
+ * ID parameter schema for route params (e.g., /:id).
+ * Validates positive integer.
+ * @type {Joi.ObjectSchema}
+ */
 const idParamSchema = Joi.object({
     id: Joi.number()
         .integer()
@@ -622,14 +650,13 @@ const changePasswordSchema = Joi.object({
             'string.pattern.base': 'رمز التحقق يجب أن يحتوي على أرقام فقط',
             'any.required': 'رمز التحقق مطلوب'
         }),
-    
- 
-    current_password: Joi.string()
+
+  current_password: Joi.string()
         .required()
         .messages({
             'any.required': 'كلمة المرور الحالية مطلوبة'
         }),
-    
+
     new_password: Joi.string()
         .min(8)
         .max(255)
@@ -640,7 +667,7 @@ const changePasswordSchema = Joi.object({
             'string.pattern.base': 'كلمة المرور يجب أن تحتوي على حرف كبير، حرف صغير، رقم، ورمز خاص',
             'any.required': 'كلمة المرور الجديدة مطلوبة'
         }),
-    
+
     confirm_password: Joi.string()
         .valid(Joi.ref('new_password'))
         .required()
@@ -662,7 +689,7 @@ const forgetPassword = Joi.object({
             'string.pattern.base': 'رمز التحقق يجب أن يحتوي على أرقام فقط',
             'any.required': 'رمز التحقق مطلوب'
         }),
-    
+
     email: Joi.string()
         .email()
         .required()
@@ -672,7 +699,7 @@ const forgetPassword = Joi.object({
             'string.email': 'البريد الإلكتروني غير صحيح',
             'any.required': 'البريد الإلكتروني مطلوب'
         }),
-    
+
     new_password: Joi.string()
         .min(8)
         .max(255)
@@ -684,7 +711,7 @@ const forgetPassword = Joi.object({
             'string.pattern.base': 'كلمة المرور يجب أن تحتوي على حرف كبير، حرف صغير، رقم، ورمز خاص',
             'any.required': 'كلمة المرور الجديدة مطلوبة'
         }),
-    
+
     confirm_password: Joi.string()
         .valid(Joi.ref('new_password'))
         .required()
@@ -702,21 +729,20 @@ module.exports = {
     loginSchema,
     changePasswordSchema,
     forgetPassword,
-    
+
     categorySchema,
-    
+
     kitchenSchema,
     kitchenUpdateSchema,
-    
+
     dishSchema,
     dishUpdateSchema,
-    
+
     reviewSchema,
     reviewUpdateSchema,
     reviewsListQuerySchema,
-    
+
     searchQuerySchema,
-    
+
     idParamSchema,
-    
 };

@@ -1,38 +1,75 @@
-// Sends queued rows from email_outbox through the SMTP settings in .env.
-// Nothing is sent while the settings are missing or still hold the sample values; rows wait in the queue.
+/**
+ * Email outbox processor using Nodemailer.
+ * Sends queued rows from email_outbox through SMTP settings in .env.
+ * Rows wait in the queue if SMTP settings are missing or still hold sample values.
+ */
 const nodemailer = require('nodemailer');
 const pool = require('../database/pool');
 
 const PLACEHOLDERS = new Set(['', 'your-email@gmail.com', 'your-app-password']);
+
+/**
+ * Checks if SMTP is properly configured (not using placeholder values).
+ * @returns {boolean} True if SMTP_HOST, SMTP_USER, SMTP_PASS are set and not placeholders.
+ */
 function configured() {
   const { SMTP_HOST, SMTP_USER, SMTP_PASS } = process.env;
   return Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS) && !PLACEHOLDERS.has(SMTP_USER) && !PLACEHOLDERS.has(SMTP_PASS);
 }
 
 let transport;
+/**
+ * Lazily creates and returns the Nodemailer transport.
+ * Uses SMTP_HOST, SMTP_PORT (default 465), and auth from env.
+ * @returns {nodemailer.Transporter}
+ */
 function getTransport() {
   if (!transport) {
     const port = Number(process.env.SMTP_PORT || 465);
     transport = nodemailer.createTransport({
-      host: process.env.SMTP_HOST, port, secure: port === 465,
+      host: process.env.SMTP_HOST,
+      port,
+      secure: port === 465,
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-      connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 20000,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 20000,
     });
   }
   return transport;
 }
 
 let running = false;
+
+/**
+ * Flushes the email outbox up to `limit` messages.
+ * Skips if already running or SMTP not configured.
+ * Marks sent rows with sent_at; increments attempts on failure.
+ * @param {number} [limit=20] - Max emails to send per call.
+ * @returns {Promise<Object>} { status: 'done'|'busy'|'smtp_not_configured', sent: number, failed: number }
+ */
 async function flushOutbox(limit = 20) {
   if (running) return { status: 'busy' };
   if (!configured()) return { status: 'smtp_not_configured' };
+
   running = true;
   let sent = 0, failed = 0;
+
   try {
-    const [rows] = await pool.query('SELECT id, recipient, subject, body, html_body FROM email_outbox WHERE sent_at IS NULL AND attempts < 5 ORDER BY id LIMIT ?', [limit]);
+    const [rows] = await pool.query(
+      'SELECT id, recipient, subject, body, html_body FROM email_outbox WHERE sent_at IS NULL AND attempts < 5 ORDER BY id LIMIT ?',
+      [limit]
+    );
+
     for (const row of rows) {
       try {
-        await getTransport().sendMail({ from: process.env.MAIL_FROM || process.env.SMTP_USER, to: row.recipient, subject: row.subject, text: row.body, html: row.html_body || undefined });
+        await getTransport().sendMail({
+          from: process.env.MAIL_FROM || process.env.SMTP_USER,
+          to: row.recipient,
+          subject: row.subject,
+          text: row.body,
+          html: row.html_body || undefined
+        });
         await pool.query('UPDATE email_outbox SET sent_at = UTC_TIMESTAMP(), attempts = attempts + 1 WHERE id = ?', [row.id]);
         sent++;
       } catch (error) {
@@ -41,7 +78,10 @@ async function flushOutbox(limit = 20) {
         failed++;
       }
     }
-  } finally { running = false; }
+  } finally {
+    running = false;
+  }
+
   return { status: 'done', sent, failed };
 }
 

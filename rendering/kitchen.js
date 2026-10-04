@@ -1,47 +1,51 @@
+/**
+ * Kitchen page rendering handlers.
+ * Provides: public kitchens listing, chef's kitchen management, kitchen profile page.
+ */
 const checkLogin = require("../utiles/checkLogin");
 
-//all kitchens admin and customer
+/**
+ * Renders the kitchens listing page (template varies by role).
+ * Route: GET /kitchens
+ * @param {Object} req - Express request; uses req.user.roles for template selection.
+ * @param {Object} res - Express response.
+ */
 function kitchens_render(req, res) {
+    let path_render = './customer/kitchens';
 
-    let path_render='./customer/kitchens';
-    
-    if(req.user?.roles==='admin')
-        path_render='./admin/kitchens';
+    if (req.user?.roles === 'admin')
+        path_render = './admin/kitchens';
 
-    res.status(200).render(path_render,checkLogin(req, res));
+    res.status(200).render(path_render, checkLogin(req, res));
 }
 
-
-
-//add req.query.kitchen_id = 1
-// check here if query is kitchen_id=1 and req.my.id found return it
-// else return new kitchen i have it
-// if not add req.query.kitchen_id will get first kitchen
-// and have button in page can controller in req.query.kitchen in page to get req.my right
-
-
-
-
-//update it
-//my kitchen chef
+/**
+ * Renders the chef's kitchen management page.
+ * Uses first kitchen from req.my (populated by for_main middleware).
+ * Route: GET /kitchens/my
+ * @param {Object} req - Express request; uses req.my[0] for kitchen data.
+ * @param {Object} res - Express response.
+ */
 function myKitchen_render(req, res) {
     res.render('./chef/kitchen', {
         kitchen: req.my[0] || null,
-        // kitchensList: req.my || [],
         ...checkLogin(req, res)
     });
 }
 
-//spcific kitchen
+/**
+ * Renders a specific kitchen profile page.
+ * Uses req.kitchen populated by getKitchenById_middleware.
+ * Route: GET /kitchens/:id
+ * @param {Object} req - Express request; uses req.kitchen.
+ * @param {Object} res - Express response.
+ */
 function kitchenProfile_render(req, res) {
     res.render('./kitchen/kitchen', {
         kitchen: req.kitchen || null,
-        // dishes: req.dishes || [], will use api dishes in page fetch
-        ...checkLogin(req,res)
+        ...checkLogin(req, res)
     });
 }
-
-
 
 module.exports = {
     kitchens_render,

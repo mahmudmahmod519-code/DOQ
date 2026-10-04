@@ -1,7 +1,13 @@
-const router=require("express").Router();
-const roles=require("../middlware/roles");
-const auth=require("../middlware/auth");
-const allRows=require("../middlware/allRows");
+/**
+ * Category routes (mounted at /categories).
+ * Admin-only management of dish categories with public read endpoint.
+ */
+const router = require("express").Router();
+const roles = require("../middlware/roles");
+const auth = require("../middlware/auth");
+const allRows = require("../middlware/allRows");
+const catchError = require("../utiles/catchError");
+
 const {
     createCategory_controller,
     getAllCategories_controller,
@@ -9,69 +15,37 @@ const {
     updateCategory_controller,
     deleteCategory_controller,
     getCategoriesWithCount_controller
-}=require("../controller/category");
+} = require("../controller/category");
 
-const {catgories_render}=require("../rendering/category");
+const { catgories_render } = require("../rendering/category");
 
-const catchError=require("../utiles/catchError");
-
-
-// Customers and guests need this read-only list for the public dish filters.
-// Keep it before the admin-only router guard.
+// --- Public Read Endpoint (no admin role required) ---
+// GET /categories/api/v1/all - All categories with dish counts (for public filters)
 router.get('/api/v1/all', auth.optional, catchError(getCategoriesWithCount_controller));
 
+// --- Admin Routes ---
 router.use(auth);
-
-
 router.use(roles('admin'));
 
-
-//render page catgories to show it admin
-// all categories only admin
+// GET /categories - Render admin categories management page
 router.get('/', catchError(catgories_render));
 
+// GET /categories/api/v1 - Paginated list of categories (admin)
+router.get('/api/v1', allRows('category'), catchError(getAllCategories_controller));
 
-router.get('/api/v1',allRows('category'),catchError(getAllCategories_controller));
-
-// create category
+// POST /categories/api/v1 - Create new category (admin)
 router.post('/api/v1', catchError(createCategory_controller));
 
-// update any catgory
+// PUT /categories/api/v1/:id - Update category (admin)
 router.put('/api/v1/:id', catchError(updateCategory_controller));
 
-//delete category
+// DELETE /categories/api/v1/:id - Delete category (admin)
 router.delete('/api/v1/:id', catchError(deleteCategory_controller));
 
-//get spcific catgory information
+// GET /categories/api/v1/:id - Get specific category (admin)
 router.get('/api/v1/:id', catchError(getCategory_controller));
 
+// GET /categories/api/v1/stats/count - Categories with dish counts (admin)
 router.get('/api/v1/stats/count', catchError(getCategoriesWithCount_controller));
 
-
-
-
-module.exports=router;
-
-/**
- * render
- * /categories admin
- * 
- * functions
- * GET /categories customer,admin,chef
- * POST /categories admin
- * PUT /categories/:id admin
- * DELETE /categories/:id admin
- * GET /categories/:id admin
- * 
- *  * ============================================
- * ملخص الـ Routes:
- * ============================================
- * GET    /categories/dashboard   → Render صفحة إدارة التصنيفات (Admin)
- * GET    /categories             → جلب جميع التصنيفات (Admin)
- * GET    /categories/:id         → جلب تصنيف معين (Admin)
- * GET    /categories/stats/count → جلب التصنيفات مع عدد الأطباق (Admin)
- * POST   /categories             → إنشاء تصنيف جديد (Admin)
- * PUT    /categories/:id         → تحديث تصنيف (Admin)
- * DELETE /categories/:id         → حذف تصنيف (Admin)
- * 
- */
+module.exports = router;

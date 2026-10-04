@@ -1,8 +1,16 @@
-
+/**
+ * Category controller: CRUD for categories and listing with dish counts.
+ */
 const pool = require("../database/pool");
 const checker = require("../utiles/checker");
 const { categorySchema, idParamSchema } = require("../utiles/validation");
 
+/**
+ * Creates a new category (admin).
+ * @param {Object} req - Body validated by categorySchema (name, description).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} 201 with new category data, 409 if name exists.
+ */
 async function createCategory_controller(req, res) {
     const validatedData = checker(categorySchema, req.body, res);
     if (!validatedData) return;
@@ -37,7 +45,12 @@ async function createCategory_controller(req, res) {
     });
 }
 
-
+/**
+ * Returns pre-paginated categories from allRows middleware.
+ * @param {Object} req - Uses req.paginatedData.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} 200 with categories array.
+ */
 async function getAllCategories_controller(req, res) {
     return res.status(200).json({
         status: 'success',
@@ -45,8 +58,12 @@ async function getAllCategories_controller(req, res) {
     });
 }
 
-
-
+/**
+ * Fetches a single category by ID.
+ * @param {Object} req - params.id validated by idParamSchema.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} 200 with category data, 404 if not found.
+ */
 async function getCategory_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;
@@ -69,7 +86,12 @@ async function getCategory_controller(req, res) {
     });
 }
 
-
+/**
+ * Updates a category by ID (admin).
+ * @param {Object} req - params.id, body validated by categorySchema.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} 200 on success, 404/409 on not found/duplicate.
+ */
 async function updateCategory_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;
@@ -114,7 +136,13 @@ async function updateCategory_controller(req, res) {
     });
 }
 
-
+/**
+ * Deletes a category by ID (admin).
+ * Blocks deletion if dishes reference the category.
+ * @param {Object} req - params.id validated by idParamSchema.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} 200 on success, 404/409 on not found/has dishes.
+ */
 async function deleteCategory_controller(req, res) {
     const { id } = checker(idParamSchema, req.params, res);
     if (!id) return;
@@ -154,7 +182,12 @@ async function deleteCategory_controller(req, res) {
     });
 }
 
-
+/**
+ * Lists all categories with dish counts (paginated by allRows middleware).
+ * @param {Object} req - Uses req.paginatedData.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} 200 with categories array.
+ */
 async function getCategoriesWithCount_controller(req, res) {
     const [categories] = await pool.query(`
         SELECT 
@@ -175,7 +208,11 @@ async function getCategoriesWithCount_controller(req, res) {
     });
 }
 
-
+/**
+ * Internal helper: returns all categories with dish counts (non-paginated).
+ * Used for server-side rendering helpers.
+ * @returns {Promise<Array>} Array of category objects.
+ */
 async function getCategoriesWithCount() {
     const [categories] = await pool.query(`
         SELECT 
@@ -192,8 +229,7 @@ async function getCategoriesWithCount() {
     return categories;
 }
 
-
-module.exports={
+module.exports = {
     createCategory_controller,
     getAllCategories_controller,
     getCategory_controller,
@@ -201,4 +237,4 @@ module.exports={
     deleteCategory_controller,
     getCategoriesWithCount_controller,
     getCategoriesWithCount
-}
+};
