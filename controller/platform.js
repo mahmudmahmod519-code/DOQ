@@ -208,6 +208,20 @@ async function readNotification_controller(req, res) {
     return res.json({ status: 'success' });
 }
 
+/**
+ * Gets unread notification count for the user.
+ * @param {Object} req - req.user.id.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} 200 with unread count.
+ */
+async function unreadNotificationCount_controller(req, res) {
+    const [[row]] = await pool.query(
+        'SELECT COUNT(*) as count FROM notifications WHERE user_id=? AND read_at IS NULL',
+        [req.user.id]
+    );
+    return res.json({ status: 'success', data: { count: Number(row.count) } });
+}
+
 // ============================================
 // Chat
 // ============================================
@@ -286,6 +300,7 @@ module.exports = {
     listFavourites_controller,
     listNotifications_controller,
     readNotification_controller,
+    unreadNotificationCount_controller,
     sendChatMessage_controller,
     listChatMessages_controller,
     cleanChatBody

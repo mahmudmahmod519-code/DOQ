@@ -245,7 +245,7 @@ const kitchenSchema = Joi.object({
     title: Joi.string()
         .min(3)
         .max(100)
-        .required()
+        // .required()
         .trim()
         .messages({
             'string.min': 'عنوان المطبخ يجب أن يكون على الأقل 3 أحرف',
@@ -278,7 +278,7 @@ const kitchenSchema = Joi.object({
         }),
 
     phone_number: Joi.string()
-        .required()
+        // .required()
         .trim()
         .length(11)
         .pattern(/^(010|011|012|015)[0-9]{8}$/)
@@ -619,7 +619,7 @@ const searchQuerySchema = Joi.object({
     type: Joi.string().empty(),
     id: Joi.number().empty(),
     include_stats: Joi.boolean().empty(),
-    kitchen_id: Joi.number().empty(),
+    kitchen_id: Joi.number().integer().positive().optional(),
 
 });
 

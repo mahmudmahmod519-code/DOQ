@@ -41,7 +41,8 @@ router.get('/orders', roles('chef'), (req, res) => res.render('./chef/orders', {
 router.get('/orders/api', roles('chef'), catchError(getChefOrders_controller));
 
 // GET /users/dashboard - Chef/admin dashboard page (chef, admin)
-router.get('/dashboard', roles('chef', 'admin'), catchError(dashboard_render));
+// Chef needs getUnifiedChefDashboard middleware to populate req.dashboard
+router.get('/dashboard', roles('chef', 'admin'), getUnifiedChefDashboard, catchError(dashboard_render));
 
 // GET /users - Admin users listing page (admin)
 router.get('/', roles('admin'), catchError(users_render));

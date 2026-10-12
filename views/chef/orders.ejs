@@ -1,54 +1,488 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title><%= pageTitle %></title>
-<script src="/app-client.js"></script><script src="https://cdn.tailwindcss.com"></script>
+  <script src="/app-client.js"></script>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title><%= pageTitle %></title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Tajawal:wght@400;500;700&display=swap"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "surface-dim": "#eed4d1",
+            "inverse-surface": "#3c2d2a",
+            "on-background": "#261816",
+            "secondary": "#a23f00",
+            "surface-container-highest": "#f7ddd9",
+            "on-error": "#ffffff",
+            "surface-container": "#ffe9e6",
+            "inverse-on-surface": "#ffedea",
+            "surface-container-high": "#fce2de",
+            "on-primary-fixed-variant": "#8e130c",
+            "on-primary": "#ffffff",
+            "primary-container": "#c0392b",
+            "surface-tint": "#b02d21",
+            "secondary-fixed": "#ffdbcd",
+            "on-tertiary-fixed-variant": "#004d66",
+            "tertiary": "#005875",
+            "primary-fixed": "#ffdad5",
+            "primary": "#9e2016",
+            "primary-fixed-dim": "#ffb4a9",
+            "on-primary-fixed": "#410000",
+            "surface": "#fff8f6",
+            "surface-container-low": "#fff0ee",
+            "tertiary-fixed-dim": "#80d0f8",
+            "tertiary-container": "#007296",
+            "tertiary-fixed": "#c0e8ff",
+            "error-container": "#ffdad6",
+            "on-error-container": "#93000a",
+            "secondary-fixed-dim": "#ffb595",
+            "surface-container-lowest": "#ffffff",
+            "surface-bright": "#fff8f6",
+            "on-surface-variant": "#59413d",
+            "on-secondary-container": "#5c2000",
+            "outline-variant": "#e1bfb9",
+            "on-secondary": "#ffffff",
+            "background": "#fff8f6",
+            "on-primary-container": "#ffe5e1",
+            "on-tertiary-container": "#d3eeff",
+            "secondary-container": "#fc7127",
+            "inverse-primary": "#ffb4a9",
+            "on-surface": "#261816",
+            "on-secondary-fixed-variant": "#7c2e00",
+            "on-tertiary": "#ffffff",
+            "on-secondary-fixed": "#351000",
+            "outline": "#8d706c",
+            "surface-variant": "#f7ddd9",
+            "error": "#ba1a1a"
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            "2xl": "1rem",
+            full: "9999px"
+          },
+          spacing: {
+            "container-max": "1280px",
+            gutter: "16px",
+            md: "16px",
+            xl: "24px",
+            base: "8px",
+            sm: "12px"
+          },
+          fontFamily: {
+            "body-lg": ["Tajawal", "sans-serif"],
+            "headline-md": ["Cairo", "sans-serif"],
+            "display-lg-mobile": ["Cairo", "sans-serif"],
+            "label-sm": ["Tajawal", "sans-serif"],
+            "body-md": ["Tajawal", "sans-serif"],
+            "display-lg": ["Cairo", "sans-serif"]
+          },
+          fontSize: {
+            "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+            "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+            "display-lg-mobile": ["28px", { lineHeight: "36px", fontWeight: "700" }],
+            "label-sm": ["13px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "500" }],
+            "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+            "display-lg": ["40px", { lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: "700" }]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Tajawal', sans-serif; background-color: #fff8f6; -webkit-tap-highlight-color: transparent; }
+    h1, h2, h3, h4, h5, h6, .cairo-font { font-family: 'Cairo', sans-serif; }
+    .ambient-shadow { box-shadow: 0 4px 12px rgba(192, 57, 43, 0.06); }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .stat-card { transition: all 0.2s ease; }
+    .stat-card:active { transform: scale(0.98); }
+    .review-card-enter { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .pb-safe-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+    
+  </style>
 </head>
-<body class="min-h-screen bg-[#fff8f6] text-[#261816]">
-<%- include('../partials/role_bar', { links: [{ href: '/users/dashboard', label: 'المطبخ' }, { href: '/users/orders', label: 'الطلبات', active: true }] }) %>
-<main class="mx-auto max-w-6xl p-4 md:p-8">
-  <section class="rounded-3xl bg-[#261816] p-6 text-white shadow-xl">
-    <h1 class="text-2xl font-bold md:text-3xl">طلبات المطبخ</h1>
-    <p class="mt-2 text-white/75">جهز الطلب وسلمه للمندوب<br>لما يقولك كود الطلب</p>
-    <div class="mt-4 flex flex-wrap gap-2 text-sm">
-      <span class="rounded-full bg-white/10 px-3 py-1">محتاجة تتجهز: <b id="count-open">0</b></span>
-      <span class="rounded-full bg-white/10 px-3 py-1">اتسلمت: <b id="count-done">0</b></span>
-    </div>
-  </section>
-  <div id="notice" class="mt-5 hidden rounded-xl p-4" role="status"></div>
-  <section id="orders" class="mt-6 grid gap-4 md:grid-cols-2"></section>
-</main>
-<script>
-const esc = v => DOQ.escape(v);
-function notice(t, ok = true) { const e = document.getElementById('notice'); e.textContent = t; e.className = 'mt-5 rounded-xl p-4 ' + (ok ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900'); }
-function card(o) {
-  const courier = o.status === 'pending' ? '<span class="text-amber-800">مستني أول شركة دليفري تقبل الطلب</span>' : o.status === 'accepted' ? '<span class="text-green-800">شركة الدليفري قبلت الطلب</span>' : '';
-  return '<article class="rounded-2xl border border-[#e1bfb9] bg-white p-5 shadow-sm">'
-    + '<div class="flex items-start justify-between gap-3"><div><p class="text-sm text-[#59413d]">كود الطلب</p><p dir="ltr" class="text-right text-xl font-extrabold tracking-wider">' + esc(o.order_code) + '</p></div>' + statusChip(o.status) + '</div>'
-    + '<p class="mt-3 text-lg font-bold">' + esc(o.dish_name) + ' × ' + o.quantity + '</p>'
-    + '<p class="mt-1 text-sm text-[#59413d]">' + money(o.unit_price) + ' للطبق · الإجمالي ' + money(o.total_price) + '</p>'
-    + '<p class="mt-3 text-sm">' + courier + '</p>'
-    + '<p class="mt-1 text-xs text-[#59413d]">' + when(o.created_at) + '</p>'
-    + (o.status === 'pending' ? '<button class="mt-4 w-full rounded-xl bg-red-100 px-4 py-3 text-red-800" data-id="' + esc(o.public_id) + '">اعتذار عن الطلب</button>' : '')
-    + '</article>';
-}
-async function load() {
-  try {
-    const rows = (await DOQ.api('/users/orders/api')).data || [];
-    document.getElementById('count-open').textContent = rows.filter(o => o.status === 'pending' || o.status === 'accepted').length;
-    document.getElementById('count-done').textContent = rows.filter(o => o.status === 'completed').length;
-    document.getElementById('orders').innerHTML = rows.length ? rows.map(card).join('') : '<div class="rounded-2xl border border-dashed border-[#e1bfb9] bg-white p-8 text-center md:col-span-2">مفيش طلبات لسه. أول ما حد يطلب من أطباقك هيوصلك إشعار</div>';
-  } catch (e) { notice(e.message, false); }
-}
-document.getElementById('orders').addEventListener('click', async e => {
-  const b = e.target.closest('button[data-id]'); if (!b) return;
-  if (!confirm('متأكد إنك مش هتقدر تجهز الطلب ده؟ العميل هيوصله إشعار بالإلغاء')) return;
-  b.disabled = true;
-  try { const j = await DOQ.api('/orders/api/v1/' + encodeURIComponent(b.dataset.id) + '/status', 'PATCH', { status: 'cancelled' }); notice(j.message); load(); }
-  catch (err) { notice(err.message, false); b.disabled = false; }
-});
-load();
-</script>
+<body class="bg-background text-on-background min-h-screen pb-20 md:pb-8">
+  <%- include('../partials/chef_sidebar', { activePage: 'orders' }) %>
+
+  <div class="transition-all duration-300">
+    <header class="fixed top-0 right-0 lg:right-72 left-0 h-16 bg-surface/80 backdrop-blur-xl shadow-sm z-40 flex items-center justify-between px-4 md:px-8 border-b border-outline-variant/20">
+      <div class="flex items-center gap-3 flex-1">
+        <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-surface-container transition-colors">
+          <span class="material-symbols-outlined text-on-surface text-[24px]">menu</span>
+        </button>
+        <div class="flex items-center gap-2 text-sm text-on-surface-variant">
+          <span class="material-symbols-outlined text-[18px] hidden sm:inline">home</span>
+          <span class="hidden sm:inline">/</span>
+          <span class="text-on-surface font-semibold">طلبات المطبخ</span>
+        </div>
+        <div class="hidden md:flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-full mr-2">
+          <span class="w-2 h-2 rounded-full bg-secondary-container animate-pulse"></span>
+          <span class="text-xs text-on-surface-variant">مطبخك يعمل بنشاط</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 md:gap-4">
+        <!-- Notification Bell -->
+        <a href="/notifications" aria-label="الإشعارات" class="block p-1.5 sm:p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center relative" id="notification-bell">
+          <span class="material-symbols-outlined text-xl sm:text-2xl">notifications</span>
+          <span id="notification-badge" class="absolute -top-0.5 -right-0.5 w-5 h-5 min-w-[18px] bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden">0</span>
+        </a>
+        <!-- Profile Avatar with Image -->
+        <a href="/users/profile" class="block w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full overflow-hidden border-2 border-primary hover:border-secondary transition-all hover:scale-105 active:scale-95 shadow-sm">
+          <img src="/assests/avatar.jpeg" alt="صورة المستخدم" class="w-full h-full object-cover" loading="lazy">
+        </a>
+      </div>
+    </header>
+
+    <main class="w-full pt-20 px-4 md:px-8 lg:pr-72 pb-16 bg-surface min-h-screen">
+      <section class="mb-8">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-surface-container-low p-5 rounded-2xl border border-outline-variant/30">
+          <div class="flex flex-col gap-1">
+            <h2 class="text-xl md:text-2xl font-cairo font-bold text-on-surface flex items-center gap-2 flex-wrap">
+              <span class="material-symbols-outlined text-primary text-lg">storefront</span>
+              <span class="text-primary" id="header-kitchen-name">جاري التحميل...</span>
+              <span class="text-on-surface-variant font-normal text-base md:text-lg">/ الطلبات</span>
+            </h2>
+          </div>
+        </div>
+      </section>
+
+      <!-- Empty State: No Kitchen -->
+      <section id="no-kitchen-section" class="hidden mb-8">
+        <%- include('../partials/no_kitchen_state', { 
+            title: 'لا يوجد مطبخ مرتبط بحسابك',
+            description: 'لا يمكنك استقبال الطلبات بدون مطبخ. أنشئ مطبخك الأول لبدء استقبال طلبات العملاء.',
+            ctaHref: '/kitchens/create',
+            ctaText: 'إنشاء مطبخ جديد'
+        }) %>
+      </section>
+
+      <!-- Orders Content (Hidden when no kitchen) -->
+      <div id="orders-content">
+        <div id="notice" class="mb-5 hidden rounded-xl p-4" role="status"></div>
+
+        <section class="rounded-2xl bg-surface-container-low p-6 shadow-sm border border-outline-variant/30 mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-xl font-cairo font-bold text-on-surface">إحصائيات سريعة</h2>
+              <p class="text-on-surface-variant text-sm mt-1">متابعة حالة طلبات مطبخك</p>
+            </div>
+            <div class="flex flex-wrap gap-2 text-sm">
+              <span class="rounded-full bg-surface-container px-3 py-1 text-on-surface-variant border border-outline-variant/30">محتاجة تتجهز: <b id="count-open" class="text-primary font-bold">0</b></span>
+              <span class="rounded-full bg-surface-container px-3 py-1 text-on-surface-variant border border-outline-variant/30">مقبولة: <b id="count-accepted" class="text-secondary font-bold">0</b></span>
+              <span class="rounded-full bg-surface-container px-3 py-1 text-on-surface-variant border border-outline-variant/30">قيد التوصيل: <b id="count-delivering" class="text-tertiary font-bold">0</b></span>
+              <span class="rounded-full bg-surface-container px-3 py-1 text-on-surface-variant border border-outline-variant/30">اتسلمت: <b id="count-done" class="text-green-700 font-bold">0</b></span>
+            </div>
+          </div>
+        </section>
+
+        <div id="notice" class="mb-5 hidden rounded-xl p-4" role="status"></div>
+
+        <section id="orders" class="grid gap-4 md:grid-cols-2">
+          <!-- Status Filter -->
+          <div class="md:col-span-2 mb-4 flex flex-wrap gap-3 items-center">
+            <label class="flex items-center gap-2 text-sm text-on-surface-variant">
+              <span class="material-symbols-outlined">filter_list</span>
+              <span>فلترة حسب الحالة:</span>
+            </label>
+            <select id="status-filter" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-background text-sm">
+              <option value="">جميع الحالات</option>
+              <option value="pending">مفتوح</option>
+              <option value="accepted">مقبولة</option>
+              <option value="delivering">قيد التوصيل</option>
+              <option value="completed">اتسلمت</option>
+              <option value="cancelled">ملغية</option>
+            </select>
+            <button id="refresh-btn" class="px-4 py-2 rounded-xl bg-primary text-on-primary hover:bg-primary/90 transition whitespace-nowrap flex items-center gap-2">
+              <span class="material-symbols-outlined">refresh</span>
+              <span>تحديث</span>
+            </button>
+          </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const esc = v => DOQ.escape(v);
+    
+    // Pagination state
+    let currentPage = 1;
+    const pageLimit = 20;
+    let currentStatus = '';
+    let vehicles = [];
+    
+    function notice(t, ok = true) { 
+      const e = document.getElementById('notice'); 
+      e.textContent = t; 
+      e.className = 'mb-5 rounded-xl p-4 ' + (ok ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900'); 
+      e.classList.remove('hidden');
+    }
+    
+    function money(v){ return Number(v||0).toFixed(2) + ' جنيه'; }
+    function tel(v){ return v ? '<a dir="ltr" class="text-primary underline" href="tel:'+esc(v)+'">'+esc(v)+'</a>' : '<span class="text-on-surface-variant">مش متاح</span>'; }
+    
+    function row(l,v){ return '<div class="flex justify-between gap-3 border-b border-outline-variant/30 py-2"><span class="text-on-surface-variant">'+l+'</span><span class="text-left">'+v+'</span></div>'; }
+    
+    function chip(s){
+      const m = {
+        pending: ['مفتوح','bg-amber-100 text-amber-900'],
+        chef_accepted: ['مقبول من المطبخ','bg-blue-100 text-blue-900'],
+        accepted: ['قيد التوصيل','bg-blue-100 text-blue-900'],
+        completed: ['اتسلم','bg-green-100 text-green-900'],
+        cancelled: ['ملغي','bg-red-100 text-red-900']
+      };
+      const x = m[s] || [s,'bg-surface-container text-on-surface-variant'];
+      return '<span class="rounded-full px-3 py-1 text-xs font-bold '+x[1]+'">'+x[0]+'</span>';
+    }
+    
+    function vehicleOptions(){
+      return vehicles.length ? '<select data-vehicle class="w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50">' + vehicles.map(v => '<option value="'+v.id+'">'+esc(v.label)+'</option>').join('') + '</select>' : '<p class="text-sm text-amber-800">ضيف عربية قبل قبول الطلب</p>';
+    }
+    
+    function renderPagination(pagination) {
+      const container = document.getElementById('pagination');
+      const totalPages = pagination.total_pages || 1;
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+      let html = '';
+      html += '<button onclick="changePage(' + (currentPage - 1) + ')" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low transition text-sm ' + (currentPage <= 1 ? 'opacity-50 pointer-events-none' : '') + '">السابق</button>';
+      // Show page numbers
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, currentPage + 2);
+      for (let p = startPage; p <= endPage; p++) {
+        html += '<button onclick="changePage(' + p + ')" class="px-4 py-2 rounded-xl ' + (p === currentPage ? 'bg-primary text-on-primary' : 'border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low') + ' transition text-sm">' + p + '</button>';
+      }
+      html += '<button onclick="changePage(' + (currentPage + 1) + ')" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low transition text-sm ' + (currentPage >= totalPages ? 'opacity-50 pointer-events-none' : '') + '">التالي</button>';
+      container.innerHTML = html;
+    }
+    
+    function changePage(newPage) {
+      if (newPage < 1) return;
+      const totalPages = document.getElementById('pagination').querySelectorAll('button[onclick^="changePage"]').length > 0 ? 
+        Math.max(...Array.from(document.getElementById('pagination').querySelectorAll('button[onclick^="changePage"]')).map(b => {
+          const match = b.getAttribute('onclick').match(/changePage\((\d+)\)/);
+          return match ? parseInt(match[1]) : 0;
+        })) : 1;
+      if (newPage > totalPages) return;
+      currentPage = newPage;
+      load();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    function card(o){
+      const isPending = o.status === 'pending';
+      const isChefAccepted = o.status === 'chef_accepted';
+      const isOutForDelivery = o.status === 'out_for_delivery';
+      const isAccepted = o.status === 'accepted';
+      const isCompleted = o.status === 'completed';
+      const isCancelled = o.status === 'cancelled';
+      const isDelivery = o.delivery_id && Number(o.delivery_id) > 0;
+      
+      // For chef's page: show "مقبول" button for pending orders
+      const showChefAccept = isPending;
+      // For chef: show "إرسال مع الدليفري" button when delivery accepted (chef_accepted + delivery_id)
+      const showHandoff = isChefAccepted && isDelivery;
+      // For delivery: show complete button for accepted/out_for_delivery
+      const showDeliveryComplete = (isAccepted || isOutForDelivery) && isDelivery;
+      
+      return '<article class="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-5 shadow-sm">'
+        + '<div class="flex items-start justify-between gap-3"><div><p class="text-sm text-on-surface-variant">كود الطلب</p><p dir="ltr" class="text-right text-xl font-extrabold tracking-wider text-on-surface">' + esc(o.order_code) + '</p></div>' + chip(o.status) + '</div>'
+        + '<p class="mt-3 text-lg font-bold text-on-surface">' + esc(o.dish_name) + ' × ' + o.quantity + '</p>'
+        + '<div class="mt-3 rounded-xl bg-surface-container-low/50 p-3 text-sm">' + row('اسم الطلب',esc(o.order_name||'بدون اسم')) + row('الإجمالي','<b class="text-primary">'+money(o.total_price)+'</b>') + '</div>'
+        + '<h3 class="mt-4 font-bold text-on-surface flex items-center gap-2"><span class="material-symbols-outlined text-primary">storefront</span> الاستلام من المطبخ (الاستلام)</h3>'
+        + '<div class="text-sm bg-blue-50 p-3 rounded-xl border border-blue-100">' + row('المطبخ',esc(o.kitchen_name)) + row('عنوان الاستلام',esc(o.kitchen_address||'مش متاح')) + row('تليفون المطبخ',tel(o.kitchen_phone)) + '</div>'
+        + (isDelivery ? '<h3 class="mt-4 font-bold text-on-surface flex items-center gap-2"><span class="material-symbols-outlined text-secondary">person</span> توصيل للعميل (التسليم)</h3><div class="text-sm bg-green-50 p-3 rounded-xl border border-green-100">' + row('الاسم',esc(o.customer_name||'مش متاح')) + row('التليفون',tel(o.customer_phone)) + row('عنوان التسليم',esc(o.customer_address||'اسأل العميل على التليفون')) + '</div>' : '<p class="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">بيانات العميل هتظهر بعد قبول الطلب من المطبخ</p>')
+        + (showChefAccept ? '<div class="mt-5"><button class="w-full rounded-xl bg-primary text-on-primary px-4 py-3 font-bold hover:bg-primary-container transition-colors" data-action="chef-accept" data-id="'+esc(o.public_id)+'">مقبول ✓</button></div>' 
+          : isChefAccepted ? (isDelivery ? '<div class="mt-5"><button class="w-full rounded-xl bg-tertiary text-on-tertiary px-4 py-3 font-bold hover:bg-tertiary-container transition-colors" data-action="chef-handoff" data-id="'+esc(o.public_id)+'">إرسال مع الدليفري 🚚</button></div>' : '<div class="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-200"><p class="text-blue-900 font-medium">✓ تم قبول الطلب من المطبخ. في انتظار مندوب التوصيل...</p></div>')
+          : isOutForDelivery ? '<div class="mt-4 p-4 rounded-xl bg-purple-50 border border-purple-200"><p class="text-purple-900 font-medium">🚚 تم تسليم الطلب للمندوب. في الطريق للعميل...</p></div>'
+          : isAccepted ? (showDeliveryComplete ? '<div class="mt-5"><button class="w-full rounded-xl bg-primary text-on-primary px-4 py-3 font-bold hover:bg-primary-container transition-colors" data-action="complete" data-id="'+esc(o.public_id)+'">تأكيد التسليم (اتسلم) ✓</button></div>' : '<div class="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-200"><p class="text-blue-900 font-medium">مندوب التوصيل في الطريق للمطبخ...</p></div>')
+          : isCompleted ? '<div class="mt-4 p-4 rounded-xl bg-green-50 border border-green-200"><p class="text-green-900 font-medium">✓ تم تسليم الطلب بنجاح</p></div>'
+          : isCancelled ? '<div class="mt-4 p-4 rounded-xl bg-red-50 border border-red-200"><p class="text-red-900 font-medium">✗ تم إلغاء الطلب</p></div>'
+          : '<p class="mt-4 text-sm text-on-surface-variant">الحالة: ' + (o.status || 'غير معروف') + '</p>')
+        + '</article>';
+    }
+    
+    async function loadVehicles(){
+      vehicles = (await DOQ.api('/orders/api/v1/chef/vehicles')).data || [];
+      document.getElementById('vehicles').innerHTML = vehicles.length ? vehicles.map(v => '<span class="rounded-full bg-surface-container-low px-3 py-1 text-sm text-on-surface-variant border border-outline-variant/30">'+esc(v.label)+'</span>').join('') : '<span class="text-sm text-on-surface-variant">لسه مفيش عربيات مضافة</span>';
+    }
+    
+    async function load(){
+      try {
+        // Read status filter from dropdown
+        currentStatus = document.getElementById('status-filter')?.value || '';
+        
+        const [reviewsRes, dishesRes] = await Promise.all([
+          fetch('/reviews/v1/api/chef?include_stats=true&limit=5'),
+          fetch('/dishes/v1/api/my?limit=5')
+        ]);
+        
+        const reviewsJson = await reviewsRes.json();
+        const dishesJson = await dishesRes.json();
+        
+        // Check if user has kitchen
+        if (reviewsJson.hasKitchen === false) {
+          document.getElementById('no-kitchen-section').classList.remove('hidden');
+          document.getElementById('orders-content').classList.add('hidden');
+          document.getElementById('header-kitchen-name').textContent = 'لا يوجد مطبخ';
+          return;
+        }
+        
+        // Has kitchen - show orders
+        document.getElementById('no-kitchen-section').classList.add('hidden');
+        document.getElementById('orders-content').classList.remove('hidden');
+        
+        const response = await DOQ.api('/orders/api/v1/chef?page=' + currentPage + '&limit=' + pageLimit + (currentStatus ? '&status=' + currentStatus : ''));
+        const rows = response.data || [];
+        const pagination = response.pagination || { page: 1, limit: 20, total: 0, total_pages: 1 };
+        
+        document.getElementById('count-open').textContent = rows.filter(o => o.status === 'pending' || o.status === 'accepted').length;
+        document.getElementById('count-accepted').textContent = rows.filter(o => o.status === 'accepted' && Number(o.delivery_id) > 0).length;
+        document.getElementById('count-delivering').textContent = rows.filter(o => o.status === 'delivering').length;
+        document.getElementById('count-done').textContent = rows.filter(o => o.status === 'completed').length;
+        document.getElementById('orders').innerHTML = rows.length ? rows.map(card).join('') : '<div class="rounded-2xl border border-dashed border-outline-variant bg-surface-container-lowest p-8 text-center text-on-surface-variant md:col-span-2">مفيش طلبات لسه. أول ما حد يطلب من أطباقك هيوصلك إشعار</div>';
+        
+        // Render pagination
+        renderPagination(pagination);
+      } catch (e) { 
+        notice(e.message, false); 
+      }
+    }
+    
+    async function loadVehiclesFirst() {
+      try {
+        vehicles = (await DOQ.api('/orders/api/v1/chef/vehicles')).data || [];
+        const vehiclesEl = document.getElementById('vehicles');
+        if (vehiclesEl) {
+          vehiclesEl.innerHTML = vehicles.length ? vehicles.map(v => '<span class="rounded-full bg-surface-container-low px-3 py-1 text-sm text-on-surface-variant border border-outline-variant/30">' + esc(v.label) + '</span>').join('') : '<span class="text-sm text-on-surface-variant">لسه مفيش عربيات مضافة</span>';
+        }
+      } catch (e) { console.error('Error loading vehicles:', e); }
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Attach event listener to create kitchen link in the partial
+      const noKitchenSection = document.getElementById('no-kitchen-section');
+      if (noKitchenSection) {
+        noKitchenSection.addEventListener('click', (e) => {
+          const link = e.target.closest('a[href="/kitchens/create"]');
+          if (link) {
+            e.preventDefault();
+            createKitchen();
+          }
+        });
+      }
+      
+      // Status filter change
+      const statusFilter = document.getElementById('status-filter');
+      if (statusFilter) {
+        statusFilter.addEventListener('change', () => {
+          currentPage = 1;
+          load();
+        });
+      }
+      
+      // Refresh button
+      const refreshBtn = document.getElementById('refresh-btn');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+          currentPage = 1;
+          load();
+        });
+      }
+      
+      // Orders click handler (chef-accept, chef-handoff, complete)
+      const ordersContainer = document.getElementById('orders');
+      if (ordersContainer) {
+        ordersContainer.addEventListener('click', async e => {
+          const b = e.target.closest('button[data-action]');
+          if (!b) return;
+          b.disabled = true;
+          try {
+            if (b.dataset.action === 'chef-accept') {
+              // Chef accepts order
+              await DOQ.api('/orders/api/v1/chef/' + encodeURIComponent(b.dataset.id) + '/accept', 'PATCH', {});
+              notice('تم قبول الطلب. تم إشعار شركات التوصيل.');
+            } else if (b.dataset.action === 'chef-handoff') {
+              // Chef hands order to delivery
+              await DOQ.api('/orders/api/v1/chef/' + encodeURIComponent(b.dataset.id) + '/handoff', 'PATCH', {});
+              notice('تم تسليم الطلب للمندوب. تم إشعار المندوب والعميل.');
+            } else if (b.dataset.action === 'complete') {
+              // Delivery confirms delivery
+              await DOQ.api('/orders/api/v1/' + encodeURIComponent(b.dataset.id) + '/status', 'PATCH', { status: 'completed' });
+              notice('تم تأكيد التسليم.');
+            }
+            load();
+          } catch (err) { 
+            notice(err.message, false); 
+            b.disabled = false; 
+          }
+        });
+      }
+      
+      await loadVehiclesFirst();
+      await load();
+    });
+
+    // Kitchen Creation Handler (API call to /kitchens/api/v1/create)
+    async function createKitchen() {
+      const btn = document.querySelector('#no-kitchen-section a[href="/kitchens/create"]');
+      if (!btn) return;
+      
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> جاري الإنشاء...';
+      btn.style.pointerEvents = 'none';
+      
+      try {
+        const response = await fetch('/kitchens/api/v1/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+          },
+          body: JSON.stringify({})
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.status === 'success') {
+          // Success - reload page to show orders
+          window.location.reload();
+        } else {
+          // Show error
+          const errorMsg = data.message || 'حدث خطأ أثناء إنشاء المطبخ';
+          alert(errorMsg);
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          btn.style.pointerEvents = '';
+        }
+      } catch (err) {
+        console.error('Create kitchen error:', err);
+        alert('حدث خطأ في الاتصال بالخادم');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        btn.style.pointerEvents = '';
+      }
+    }
+    
+    function notice(t, ok = true) { 
+      const e = document.getElementById('notice'); 
+      e.textContent = t; 
+      e.className = 'mb-5 rounded-xl p-4 ' + (ok ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900'); 
+      e.classList.remove('hidden');
+    }
+  </script>
 </body>
 </html>

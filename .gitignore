@@ -10,3 +10,5 @@ tmp/
 public/upload/
 database/.cron.lock
 npm-debug.log*
+fresh_start.sh
+*.md

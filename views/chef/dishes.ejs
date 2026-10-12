@@ -111,6 +111,15 @@
                 <span class="hidden sm:inline">إضافة طبق</span>
             </button>
             
+            <!-- Notification Bell -->
+            <a href="/notifications" aria-label="الإشعارات" class="block p-1.5 sm:p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center relative" id="notification-bell">
+              <span class="material-symbols-outlined text-xl sm:text-2xl">notifications</span>
+              <span id="notification-badge" class="absolute -top-0.5 -right-0.5 w-5 h-5 min-w-[18px] bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden">0</span>
+            </a>
+            <!-- Profile Avatar with Image -->
+            <a href="/users/profile" class="block w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full overflow-hidden border-2 border-primary hover:border-secondary transition-all hover:scale-105 active:scale-95 shadow-sm">
+              <img src="/assests/avatar.jpeg" alt="صورة المستخدم" class="w-full h-full object-cover" loading="lazy">
+            </a>
         </div>
     </header>
 
@@ -118,6 +127,9 @@
         <!-- Main Content Container -->
         <main class="w-full pt-20 px-4 md:px-8 lg:pr-72 pb-16 bg-surface min-h-screen">
 
+            <!-- Controls + Dishes Content (Hidden when no kitchen) -->
+            <div id="dishes-main-content">
+            
             <!-- Controls Section -->
             <section class="mb-8 space-y-6">
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-surface-container-low p-5 rounded-2xl border border-outline-variant/30">
@@ -143,6 +155,16 @@
                 </div>
             </section>
 
+            <!-- Empty State: No Kitchen -->
+            <section id="no-kitchen-section" class="hidden mb-8">
+                <%- include('../partials/no_kitchen_state', { 
+                    title: 'لا يوجد مطبخ مرتبط بحسابك',
+                    description: 'لا يمكنك إضافة أطباق بدون مطبخ. أنشئ مطبخك الأول لبدء إضافة أطباقك واستقبال الطلبات.',
+                    ctaHref: '/kitchens/create',
+                    ctaText: 'إنشاء مطبخ جديد'
+                }) %>
+            </section>
+
             <!-- Dynamic Error Alert Box -->
             <div id="error-alert" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-[9999] w-[90%] max-w-md p-4 bg-error/10 border border-error/20 text-error rounded-xl shadow-card flex items-center justify-center gap-3 animate-fade-in-down">
                 <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">error</span>
@@ -163,6 +185,8 @@
                 <!-- Dynamic Pagination Buttons -->
             </section>
 
+            </div> <!-- /dishes-main-content -->
+            
         </main>
     </div>
 
@@ -283,29 +307,45 @@
         let currentKitchenId = null; // سيتم تعبئته تلقائياً بالمطبخ الوحيد
         
         document.addEventListener('DOMContentLoaded', async () => {
+            // Attach event listener to create kitchen link in the partial
+            const noKitchenSection = document.getElementById('no-kitchen-section');
+            if (noKitchenSection) {
+                noKitchenSection.addEventListener('click', (e) => {
+                    const link = e.target.closest('a[href="/kitchens/create"]');
+                    if (link) {
+                        e.preventDefault();
+                        createKitchen();
+                    }
+                });
+            }
+
             await loadKitchens(); // تحميل المطبخ الوحيد وتعيينه
             await loadCategories();
             
             if (currentKitchenId) {
+                // Has kitchen - show content and load dishes
                 await fetchDishes(1, '');
+                
+                // Attach search listener only when kitchen exists
+                let searchTimeout = null;
+                document.getElementById('search-input').addEventListener('input', (e) => {
+                    const query = e.target.value.trim();
+                    document.getElementById('clear-search-btn').classList.toggle('hidden', query === '');
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        searchQuery = query;
+                        fetchDishes(1, searchQuery);
+                    }, 400);
+                });
+
+                document.getElementById('ingredient-input').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); addIngredientFromInput(); }
+                });
             } else {
-                showError('لا يوجد مطبخ مرتبط بحسابك. يرجى إنشاء مطبخ أولاً.');
+                // No kitchen - show no-kitchen state, hide main content
+                document.getElementById('no-kitchen-section').classList.remove('hidden');
+                document.getElementById('dishes-main-content').classList.add('hidden');
             }
-
-            let searchTimeout = null;
-            document.getElementById('search-input').addEventListener('input', (e) => {
-                const query = e.target.value.trim();
-                document.getElementById('clear-search-btn').classList.toggle('hidden', query === '');
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    searchQuery = query;
-                    fetchDishes(1, searchQuery);
-                }, 400);
-            });
-
-            document.getElementById('ingredient-input').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') { e.preventDefault(); addIngredientFromInput(); }
-            });
         });
 
         function showError(msg) {
@@ -351,6 +391,11 @@
                         document.getElementById('dish-kitchen-id').value = currentKitchenId;
                     } else {
                         document.getElementById('header-kitchen-name').textContent = 'لا يوجد مطبخ';
+                        // إظهار قسم "لا يوجد مطبخ" وإخفاء عناصر التحكم وقائمة الأطباق
+                        document.getElementById('no-kitchen-section').classList.remove('hidden');
+                        document.getElementById('dishes-main-content').classList.add('hidden');
+                        document.getElementById('dishes-container').classList.add('hidden');
+                        document.getElementById('pagination-container').classList.add('hidden');
                     }
                 }
             } catch (err) { 
@@ -648,6 +693,48 @@
                 showError(err.message);
             } finally {
                 toggleLoading('delete-dish-btn', false, '<span class="material-symbols-outlined text-[18px]">delete</span><span>حذف</span>');
+            }
+        }
+
+        // Kitchen Creation Handler (API call to /kitchens/api/v1/create)
+        async function createKitchen() {
+            const btn = document.querySelector('#no-kitchen-section a[href="/kitchens/create"]');
+            if (!btn) return;
+            
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> جاري الإنشاء...';
+            btn.style.pointerEvents = 'none';
+            
+            try {
+                const response = await fetch('/kitchens/api/v1/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success') {
+                    // Success - reload page to show dishes
+                    window.location.reload();
+                } else {
+                    // Show error
+                    const errorMsg = data.message || 'حدث خطأ أثناء إنشاء المطبخ';
+                    alert(errorMsg);
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    btn.style.pointerEvents = '';
+                }
+            } catch (err) {
+                console.error('Create kitchen error:', err);
+                alert('حدث خطأ في الاتصال بالخادم');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                btn.style.pointerEvents = '';
             }
         }
     </script>

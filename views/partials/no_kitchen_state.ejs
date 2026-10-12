@@ -1,0 +1,9 @@
+<div class="text-center py-16 bg-surface-container-low/50 rounded-2xl border border-dashed border-outline-variant mb-8" id="no-kitchen-state">
+  <span class="material-symbols-outlined text-[56px] text-outline-variant block mb-3">storefront</span>
+  <h3 class="font-cairo text-xl font-bold text-on-surface mb-2"><%= title || 'لا يوجد مطبخ مرتبط بحسابك' %></h3>
+  <p class="text-sm text-on-surface-variant mb-6"><%= description || 'يرجى إنشاء مطبخ أولاً لتتمكن من متابعة بياناتك.' %></p>
+  <a href="<%= ctaHref || '/kitchens/api/v1/create' %>" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary/90 transition">
+    <span class="material-symbols-outlined">add_business</span>
+    <%= ctaText || 'إنشاء مطبخ جديد' %>
+  </a>
+</div>

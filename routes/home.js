@@ -4,6 +4,7 @@
  */
 const router = require("express").Router();
 const catchError = require('../utiles/catchError');
+const auth = require('../middlware/auth');
 
 const {
     about_render,
@@ -13,7 +14,7 @@ const {
 } = require("../rendering/home");
 
 // GET / - Landing page (static & dynamic: top dishes with paid promotion)
-router.get('', catchError(getLandingPage_render));
+router.get('', auth.optional, catchError(getLandingPage_render));
 
 // GET /about - About page (static)
 router.get('/about', catchError(about_render));

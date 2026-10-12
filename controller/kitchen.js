@@ -292,7 +292,7 @@ async function createKitchen_controller(req, res) {
             message: 'لديك مطبخ مسجل مسبقاً'
         });
     }
-
+    
     const validatedData = checker(kitchenSchema, req.body, res);
     if (!validatedData || res.headersSent) return;
 

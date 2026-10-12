@@ -8,8 +8,8 @@ const pool = require('../database/pool');
 const transaction = require('../utiles/transaction');
 const { notify, admins } = require('../utiles/notifications');
 
-const VALID_STATUSES = new Set(['pending', 'accepted', 'completed', 'cancelled']);
-const STATUS_LABEL = { pending: 'قيد التنفيذ', accepted: 'اتقبل للتوصيل', completed: 'اتسلم', cancelled: 'اتلغى' };
+const VALID_STATUSES = new Set(['pending', 'chef_accepted', 'out_for_delivery', 'accepted', 'completed', 'cancelled']);
+const STATUS_LABEL = { pending: 'قيد التنفيذ', chef_accepted: 'مقبول من المطبخ', out_for_delivery: 'مع الدليفري', accepted: 'قيد التوصيل', completed: 'اتسلم', cancelled: 'اتلغى' };
 
 /**
  * Parses and validates quantity (1-50 integer).
@@ -131,12 +131,10 @@ async function createOrder_controller(req, res) {
         const code = orderCode(publicId);
         await notify(db, dish.chef_id, 'new_order', 'طلب جديد', `طلب ${code}: ${dish.dish_name} بعدد ${quantity}`, 'order', created.insertId, `order:${created.insertId}:new`);
 
-        const [deliveries] = await db.query("SELECT id FROM users WHERE roles='delivery' AND account_status='approved'");
-        for (const delivery of deliveries) {
-            await notify(db, delivery.id, 'delivery_offer', 'طلب توصيل متاح', `طلب ${code} جاهز للمنافسة. أول دليفري يقبله ياخده`, 'order', created.insertId, `order:${created.insertId}:offer:${delivery.id}`);
-        }
+        await admins(db, 'new_order', 'طلب جديد', `طلب ${code} من ${dish.kitchen_name} في انتظار قبول المطبخ`, 'order', created.insertId);
 
-        await admins(db, 'new_order', 'طلب محتاج مندوب توصيل', `طلب ${code} من ${dish.kitchen_name}. الطلب ظاهر لكل شركات الدليفري`, 'order', created.insertId);
+        // Notify the customer who placed the order
+        await notify(db, req.user.id, 'order_created', 'تم إنشاء طلبك', `تم إنشاء طلبك ${code}: ${dish.dish_name} بنجاح`, 'order', created.insertId, `order:${created.insertId}:customer`);
 
         return { createdId: created.insertId, discount, total };
     });
@@ -146,7 +144,7 @@ async function createOrder_controller(req, res) {
 
     return res.status(201).json({
         status: 'success',
-        message: 'جهز فلوسك. تم إرسال الطلب للمطبخ ولكل شركات الدليفري',
+        message: 'تم إرسال الطلب للمطبخ بنجاح. في انتظار قبول المطبخ',
         data: {
             public_id: publicId,
             order_code: orderCode(publicId),
@@ -159,6 +157,158 @@ async function createOrder_controller(req, res) {
             status: 'pending'
         }
     });
+}
+
+// ============================================
+// 1.5. Chef Accepts Order (NEW)
+// ============================================
+
+/**
+ * Chef accepts a pending order for their kitchen.
+ * Changes status from 'pending' to 'chef_accepted'.
+ * Notifies ALL delivery users with full order details (customer + kitchen info).
+ * @param {Object} req - Authenticated chef; params.publicId.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} 200 on success, 403/404/409 on permission/state errors.
+ */
+async function chefAcceptOrder_controller(req, res) {
+    const result = await transaction(async db => {
+        // 1. Verify order belongs to chef's kitchen and is pending
+        const [[order]] = await db.query(
+            `SELECT o.id, o.public_id, o.customer_id, o.dish_name, o.kitchen_name, o.kitchen_phone, o.kitchen_address, o.customer_name, o.customer_phone, o.customer_address, o.order_name, o.quantity, o.total_price, k.user_id AS chef_id
+             FROM orders o
+             JOIN kitchens k ON k.id=o.kitchen_id
+             WHERE o.public_id=? AND o.status='pending' AND k.user_id=? FOR UPDATE`,
+            [req.params.publicId, req.user.id]
+        );
+        
+        if (!order) {
+            return { error: 409, message: 'الطلب غير موجود، ليس لمطبخك، أو تم قبوله مسبقاً' };
+        }
+        
+        // 2. Update status to chef_accepted
+        const [updated] = await db.query(
+            "UPDATE orders SET status='chef_accepted', chef_accepted_at=UTC_TIMESTAMP() WHERE id=? AND status='pending'",
+            [order.id]
+        );
+        
+        if (!updated.affectedRows) {
+            return { error: 409, message: 'الطلب تم قبوله من قبل' };
+        }
+        
+        const code = orderCode(order.public_id);
+        
+        // 3. Notify ALL approved delivery users with FULL order details
+        const [deliveries] = await db.query("SELECT id FROM users WHERE roles='delivery' AND account_status='approved'");
+        for (const delivery of deliveries) {
+            await notify(db, delivery.id, 'delivery_offer', 'طلب توصيل جديد', 
+                `طلب ${code}: ${order.dish_name} × ${order.quantity} - ${order.total_price} ج.م\n` +
+                `المطبخ: ${order.kitchen_name}\n` +
+                `العنوان: ${order.kitchen_address}\n` +
+                `الهاتف: ${order.kitchen_phone}\n` +
+                `العميل: ${order.customer_name}\n` +
+                `هاتف العميل: ${order.customer_phone}\n` +
+                `عنوان العميل: ${order.customer_address || 'غير محدد'}\n` +
+                `اسم الطلب: ${order.order_name}`,
+                'order', order.id, `order:${order.id}:offer:${delivery.id}`);
+        }
+        
+        // 4. Notify chef
+        await notify(db, order.chef_id, 'order_chef_accepted', 'تم قبول طلبك', 
+            `لقد قبِلت طلب ${code}: ${order.dish_name}`, 'order', order.id, `order:${order.id}:chef_accepted:${req.user.id}`);
+        
+        // 5. Notify customer
+        await notify(db, order.customer_id, 'order_chef_accepted', 'تم قبول طلبك من المطبخ', 
+            `المطبخ قبل طلبك ${code}: ${order.dish_name}. جاري البحث عن مندوب توصيل.`, 'order', order.id, `order:${order.id}:customer_chef_accepted`);
+        
+        // 6. Notify admins
+        await admins(db, 'order_chef_accepted', 'طلب تم قبوله من المطبخ', 
+            `طلب ${code} من ${order.kitchen_name} تم قبوله. في انتظار مندوب توصيل.`, 'order', order.id);
+        
+        return { ok: true };
+    });
+    
+    if (result.error) {
+        return res.status(result.error).json({ status: 'error', message: result.message });
+    }
+    
+    return res.json({ status: 'success', message: 'تم قبول الطلب. تم إشعارات شركات التوصيل.' });
+}
+
+// ============================================
+// 1.6. Chef Hands Order to Delivery (NEW)
+// ============================================
+
+/**
+ * Chef marks order as handed to delivery (chef_accepted → out_for_delivery).
+ * Notifies delivery user and customer.
+ * @param {Object} req - Authenticated chef; params.publicId.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} 200 on success.
+ */
+async function chefHandoffOrder_controller(req, res) {
+    const result = await transaction(async db => {
+        // 1. Verify order belongs to chef's kitchen and is chef_accepted
+        const [[order]] = await db.query(
+            `SELECT o.id, o.public_id, o.customer_id, o.dish_name, o.kitchen_name, o.kitchen_phone, o.kitchen_address, o.customer_name, o.customer_phone, o.customer_address, o.order_name, o.quantity, o.total_price, o.delivery_id, k.user_id AS chef_id
+             FROM orders o
+             JOIN kitchens k ON k.id=o.kitchen_id
+             WHERE o.public_id=? AND o.status='chef_accepted' AND k.user_id=? FOR UPDATE`,
+            [req.params.publicId, req.user.id]
+        );
+        
+        if (!order) {
+            return { error: 409, message: 'الطلب غير موجود، ليس لمطبخك، أو ليس في حالة مقبول من المطبخ' };
+        }
+        
+        if (!order.delivery_id) {
+            return { error: 400, message: 'لا يوجد مندوب توصيل مخصص لهذا الطلب بعد' };
+        }
+        
+        // 2. Update status to out_for_delivery
+        const [updated] = await db.query(
+            "UPDATE orders SET status='out_for_delivery', out_for_delivery_at=UTC_TIMESTAMP() WHERE id=? AND status='chef_accepted'",
+            [order.id]
+        );
+        
+        if (!updated.affectedRows) {
+            return { error: 409, message: 'الطلب تم تحديثه من قبل' };
+        }
+        
+        const code = orderCode(order.publicId || order.public_id);
+        
+        // 3. Notify the delivery user
+        await notify(db, order.delivery_id, 'order_out_for_delivery', 'الطلب معك الآن', 
+            `طلب ${code}: ${order.dish_name} × ${order.quantity} - ${order.total_price} ج.م\n` +
+            `المطبخ: ${order.kitchen_name}\n` +
+            `العنوان: ${order.kitchen_address}\n` +
+            `الهاتف: ${order.kitchen_phone}\n` +
+            `العميل: ${order.customer_name}\n` +
+            `هاتف العميل: ${order.customer_phone}\n` +
+            `عنوان العميل: ${order.customer_address || 'غير محدد'}\n` +
+            `اسم الطلب: ${order.order_name}`,
+            'order', order.id, `order:${order.id}:out_for_delivery:${order.delivery_id}`);
+        
+        // 4. Notify customer
+        await notify(db, order.customer_id, 'order_out_for_delivery', 'طلبك مع مندوب التوصيل', 
+            `مطبخ ${order.kitchen_name} سلم طلبك ${code}: ${order.dish_name} للمندوب. جارٍ التوصيل إليك.`, 'order', order.id, `order:${order.id}:customer_out_for_delivery`);
+        
+        // 5. Notify chef
+        await notify(db, order.chef_id, 'order_handoff', 'تم تسليم الطلب للمندوب', 
+            `لقد سلمت طلب ${code}: ${order.dish_name} للمندوب.`, 'order', order.id, `order:${order.id}:chef_handoff:${req.user.id}`);
+        
+        // 6. Notify admins
+        await admins(db, 'order_handoff', 'طلب تم تسليمه للمندوب', 
+            `طلب ${code} من ${order.kitchen_name} تم تسليمه للمندوب للتوصيل.`, 'order', order.id);
+        
+        return { ok: true };
+    });
+    
+    if (result.error) {
+        return res.status(result.error).json({ status: 'error', message: result.message });
+    }
+    
+    return res.json({ status: 'success', message: 'تم تسليم الطلب للمندوب. تم إشعار المندوب والعميل.' });
 }
 
 // ============================================
@@ -185,13 +335,24 @@ async function getCustomerOrders_controller(req, res) {
 // ============================================
 
 /**
- * Returns orders for a delivery user: pending unassigned + their own assigned/accepted.
+ * Returns orders for a delivery user: chef_accepted unassigned + their own assigned/accepted.
  * Includes customer details only for assigned orders (privacy).
- * @param {Object} req - Authenticated delivery user.
+ * Supports filtering by kitchen_id.
+ * @param {Object} req - Authenticated delivery user; query: kitchen_id (optional).
  * @param {Object} res - Express response.
  * @returns {Promise<void>} 200 with orders array.
  */
 async function getDeliveryOrders_controller(req, res) {
+    const kitchenId = req.query.kitchen_id ? Number(req.query.kitchen_id) : null;
+    
+    let whereClause = `(o.status='chef_accepted' AND o.delivery_id IS NULL) OR o.delivery_id=?`;
+    let params = [req.user.id, req.user.id, req.user.id, req.user.id];
+    
+    if (kitchenId) {
+        whereClause += ` AND k.id = ?`;
+        params.push(kitchenId);
+    }
+    
     const [orders] = await pool.query(
         `SELECT o.public_id,o.order_name,
                 CASE WHEN o.delivery_id=? THEN o.customer_name ELSE NULL END AS customer_name,
@@ -202,9 +363,10 @@ async function getDeliveryOrders_controller(req, res) {
                 o.delivery_id,v.id AS vehicle_id,v.label AS vehicle_label
          FROM orders o
          LEFT JOIN delivery_vehicles v ON v.id=o.vehicle_id
-         WHERE (o.status='pending' AND o.delivery_id IS NULL) OR o.delivery_id=?
-         ORDER BY CASE WHEN o.status='pending' AND o.delivery_id IS NULL THEN 0 WHEN o.status='accepted' THEN 1 ELSE 2 END,o.created_at DESC LIMIT 200`,
-        [req.user.id, req.user.id, req.user.id, req.user.id]
+         JOIN kitchens k ON k.id=o.kitchen_id
+         WHERE ${whereClause}
+         ORDER BY CASE WHEN o.status='chef_accepted' AND o.delivery_id IS NULL THEN 0 WHEN o.status='accepted' THEN 1 WHEN o.status='out_for_delivery' THEN 2 ELSE 3 END,o.created_at DESC LIMIT 200`,
+        params
     );
     return res.json({ status: 'success', data: withCode(orders) });
 }
@@ -214,21 +376,46 @@ async function getDeliveryOrders_controller(req, res) {
 // ============================================
 
 /**
- * Returns orders for the chef's kitchens (last 100), pending first.
- * @param {Object} req - Authenticated chef.
+ * Returns orders for the chef's kitchens with pagination, pending first.
+ * @param {Object} req - Authenticated chef; query: page, limit, status.
  * @param {Object} res - Express response.
- * @returns {Promise<void>} 200 with orders array.
+ * @returns {Promise<void>} 200 with orders array and pagination info.
  */
 async function getChefOrders_controller(req, res) {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+    const status = req.query.status;
+
+    const VALID_STATUSES = new Set(['pending', 'accepted', 'completed', 'cancelled']);
+    const statusFilter = VALID_STATUSES.has(status) ? `AND o.status = ?` : '';
+    const statusParam = statusFilter ? [status] : [];
+
     const [orders] = await pool.query(
-        `SELECT o.public_id,o.dish_name,o.quantity,o.unit_price,o.total_price,o.status,o.created_at,o.delivery_id IS NOT NULL AS has_delivery
+        `SELECT o.public_id,o.dish_name,o.quantity,o.unit_price,o.total_price,o.status,o.created_at,o.delivery_id,o.kitchen_name
          FROM orders o
          JOIN kitchens k ON k.id=o.kitchen_id
-         WHERE k.user_id=?
-         ORDER BY o.status='pending' DESC,o.created_at DESC LIMIT 100`,
-        [req.user.id]
+         WHERE k.user_id=? ${statusFilter}
+         ORDER BY o.status='pending' DESC,o.created_at DESC LIMIT ? OFFSET ?`,
+        [req.user.id, ...statusParam, limit, offset]
     );
-    return res.json({ status: 'success', data: withCode(orders) });
+
+    // Total count for pagination
+    const [[{ total }]] = await pool.query(
+        `SELECT COUNT(1) AS total FROM orders o JOIN kitchens k ON k.id=o.kitchen_id WHERE k.user_id=? ${statusFilter}`,
+        [req.user.id, ...statusParam]
+    );
+
+    return res.json({
+        status: 'success',
+        data: withCode(orders),
+        pagination: {
+            page,
+            limit,
+            total,
+            total_pages: Math.ceil(total / limit) || 1
+        }
+    });
 }
 
 // ============================================
@@ -295,6 +482,42 @@ async function listDeliveryVehicles_controller(req, res) {
 }
 
 /**
+ * Lists delivery vehicles associated with the chef's kitchen.
+ * Returns vehicles of delivery users who have handled orders from this chef's kitchen(s).
+ * @param {Object} req - Authenticated chef.
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} 200 with vehicles array.
+ */
+async function listChefDeliveryVehicles_controller(req, res) {
+    // Get chef's kitchen IDs
+    const [kitchens] = await pool.query(
+        'SELECT id FROM kitchens WHERE user_id = ?',
+        [req.user.id]
+    );
+    
+    if (kitchens.length === 0) {
+        return res.json({ status: 'success', data: [] });
+    }
+    
+    const kitchenIds = kitchens.map(k => k.id);
+    const placeholders = kitchenIds.map(() => '?').join(',');
+    
+    // Get delivery users who have accepted orders from this chef's kitchens
+    // and their vehicles
+    const [vehicles] = await pool.query(
+        `SELECT DISTINCT v.id, v.label, v.active, v.created_at, dv.first_name +" "+dv.last_name as delivery_name
+         FROM delivery_vehicles v
+         JOIN users dv ON dv.id = v.delivery_user_id
+         JOIN orders o ON o.delivery_id = dv.id
+         WHERE o.kitchen_id IN (${placeholders}) AND v.active = 1
+         ORDER BY v.active DESC, v.id ASC`,
+        kitchenIds
+    );
+    
+    return res.json({ status: 'success', data: vehicles });
+}
+
+/**
  * Creates a new vehicle for the authenticated delivery user.
  * @param {Object} req - Authenticated delivery; body: label (2-80 chars).
  * @param {Object} res - Express response.
@@ -317,46 +540,48 @@ async function createDeliveryVehicle_controller(req, res) {
 // ============================================
 
 /**
- * Delivery user accepts a pending order with their vehicle (atomic with FOR UPDATE).
- * Notifies customer and chef.
- * @param {Object} req - Authenticated delivery; params.publicId; body: vehicle_id.
+ * Delivery user accepts a chef-accepted order (atomic with FOR UPDATE to prevent race conditions).
+ * Notifies customer and chef. Order is assigned directly to delivery user.
+ * @param {Object} req - Authenticated delivery; params.publicId.
  * @param {Object} res - Express response.
- * @returns {Promise<void>} 200 on success, 400/409 on invalid vehicle/race condition.
+ * @returns {Promise<void>} 200 on success, 409 on race condition.
  */
 async function acceptOrder_controller(req, res) {
-    const vehicleId = req.body.vehicle_id ? Number(req.body.vehicle_id) : null;
-    if (!Number.isInteger(vehicleId) || vehicleId <= 0) {
-        return res.status(400).json({ status: 'error', message: 'اختار عربية من حساب شركتك قبل قبول الطلب' });
+  const result = await transaction(async db => {
+    // 1. Lock row (FOR UPDATE) to prevent race conditions - only chef_accepted orders with no delivery
+    const [[order]] = await db.query(
+      "SELECT o.id, o.public_id, o.customer_id, k.user_id AS chef_id FROM orders o JOIN kitchens k ON k.id=o.kitchen_id WHERE o.public_id=? AND o.status='chef_accepted' AND o.delivery_id IS NULL FOR UPDATE",
+      [req.params.publicId]
+    );
+    
+    if (!order) {
+      return { error: 409, message: 'الطلب اتاخد من دليفري تاني أو اتقفل' };
     }
+    
+    // 2. Assign order to this delivery user
+    const [updated] = await db.query(
+      "UPDATE orders SET delivery_id=?, accepted_at=UTC_TIMESTAMP(), status='accepted', vehicle_id=NULL WHERE id=? AND status='chef_accepted' AND delivery_id IS NULL",
+      [req.user.id, order.id]
+    );
+    
+    if (!updated.affectedRows) {
+      return { error: 409, message: 'الطلب اتاخد من دليفري تاني' };
+    }
+    
+    const code = orderCode(order.public_id);
+    
+    // 3. Send notifications
+    await notify(db, order.customer_id, 'delivery_accepted', 'تم قبول طلبك', `المندوب قبل طلب ${code} وهيوصله ليك`, 'order', order.id, `order:${order.id}:accepted:${req.user.id}`);
+    await notify(db, order.chef_id, 'delivery_accepted', 'الدليفري قبل الطلب', `طلب ${code} اتقبل من مندوب توصيل. المندوب في الطريق للمطبخ.`, 'order', order.id, `order:${order.id}:chef-delivery-accepted`);
+    
+    return { ok: true };
+  });
 
-    const result = await transaction(async db => {
-        const [[vehicle]] = await db.query(
-            'SELECT id FROM delivery_vehicles WHERE id=? AND delivery_user_id=? AND active=1 FOR UPDATE',
-            [vehicleId, req.user.id]
-        );
-        if (!vehicle) return { error: 400, message: 'العربية مش تابعة لحساب الدليفري ده' };
-
-        const [[order]] = await db.query(
-            "SELECT o.id,o.public_id,o.customer_id,k.user_id AS chef_id FROM orders o JOIN kitchens k ON k.id=o.kitchen_id WHERE o.public_id=? AND o.status='pending' AND o.delivery_id IS NULL FOR UPDATE",
-            [req.params.publicId]
-        );
-        if (!order) return { error: 409, message: 'الطلب اتاخد من دليفري تاني أو اتقفل' };
-
-        const [updated] = await db.query(
-            "UPDATE orders SET delivery_id=?,vehicle_id=?,accepted_at=UTC_TIMESTAMP(),status='accepted' WHERE id=? AND status='pending' AND delivery_id IS NULL",
-            [req.user.id, vehicleId, order.id]
-        );
-        if (!updated.affectedRows) return { error: 409, message: 'الطلب اتاخد من دليفري تاني' };
-
-        const code = orderCode(order.public_id);
-        await notify(db, order.customer_id, 'delivery_accepted', 'تم قبول طلبك', `الدليفري قبل طلب ${code} وهيظهر له عنوانك ورقمك`, 'order', order.id, `order:${order.id}:accepted:${req.user.id}`);
-        await notify(db, order.chef_id, 'delivery_accepted', 'الدليفري قبل الطلب', `طلب ${code} اتقبل من مندوب توصيل`, 'order', order.id, `order:${order.id}:chef-accepted`);
-
-        return { ok: true };
-    });
-
-    if (result.error) return res.status(result.error).json({ status: 'error', message: result.message });
-    return res.json({ status: 'success', message: 'تم قبول الطلب. بيانات العميل ظهرت عندك دلوقتي' });
+  if (result.error) {
+    return res.status(result.error).json({ status: 'error', message: result.message });
+  }
+  
+  return res.json({ status: 'success', message: 'تم قبول الطلب. بيانات العميل ظهرت عندك دلوقتي' });
 }
 
 // ============================================
@@ -424,9 +649,8 @@ async function updateOrderStatus_controller(req, res) {
         const by = req.user.roles === 'delivery' ? 'مندوب التوصيل' : req.user.roles === 'customer' ? 'العميل' : 'الإدارة';
         const key = `order:${order.id}:status:${status}`;
 
-        if (req.user.id !== order.customer_id) {
-            await notify(db, order.customer_id, 'order_status', 'تحديث طلبك', `طلب ${order.dish_name} (${code}) ${STATUS_LABEL[status]}`, 'order', order.id, key);
-        }
+        // Always notify the customer about their order status changes
+        await notify(db, order.customer_id, 'order_status', 'تحديث طلبك', `طلب ${order.dish_name} (${code}) ${STATUS_LABEL[status]}`, 'order', order.id, key);
         if (req.user.id !== order.chef_id) {
             await notify(db, order.chef_id, 'order_status', 'تحديث طلب', `طلب ${code} ${STATUS_LABEL[status]} من ${by}`, 'order', order.id, key);
         }
@@ -561,12 +785,15 @@ async function listPendingUsers_controller(req, res) {
 
 module.exports = {
     createOrder_controller,
+    chefAcceptOrder_controller,
+    chefHandoffOrder_controller,
     getCustomerOrders_controller,
     getDeliveryOrders_controller,
     getChefOrders_controller,
     updateOrderStatus_controller,
     acceptOrder_controller,
     listDeliveryVehicles_controller,
+    listChefDeliveryVehicles_controller,
     createDeliveryVehicle_controller,
     approveUser_controller,
     listPendingUsers_controller,

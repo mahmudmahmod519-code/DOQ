@@ -99,6 +99,7 @@
   <style>
     body { font-family: 'Tajawal', sans-serif; background-color: #fff8f6; -webkit-tap-highlight-color: transparent; }
     h1, h2, h3, h4, h5, h6, .cairo-font { font-family: 'Cairo', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
     .ambient-shadow { box-shadow: 0 4px 12px rgba(192, 57, 43, 0.06); }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -141,10 +142,15 @@
       </div>
       
       <div class="flex items-center gap-3 md:gap-4">
-        <!-- صورة المستخدم -->
-        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm shadow-sm">
-          <%= (currentUser?.first_name || 'ش').charAt(0).toUpperCase() %>
-        </div>
+        <!-- Notification Bell -->
+        <a href="/notifications" aria-label="الإشعارات" class="block p-1.5 sm:p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center relative" id="notification-bell">
+          <span class="material-symbols-outlined text-xl sm:text-2xl">notifications</span>
+          <span id="notification-badge" class="absolute -top-0.5 -right-0.5 w-5 h-5 min-w-[18px] bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden">0</span>
+        </a>
+        <!-- Profile Avatar with Image -->
+        <a href="/users/profile" class="block w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full overflow-hidden border-2 border-primary hover:border-secondary transition-all hover:scale-105 active:scale-95 shadow-sm">
+          <img src="/assests/avatar.jpeg" alt="صورة المستخدم" class="w-full h-full object-cover" loading="lazy">
+        </a>
       </div>
     </header>
 
@@ -164,14 +170,14 @@
         </header>
 
         <!-- رسالة في حال عدم وجود مطبخ -->
-        <div id="no-kitchen-message" class="hidden text-center py-16 bg-surface-container-low/50 rounded-2xl border border-dashed border-outline-variant mb-8">
-          <span class="material-symbols-outlined text-[56px] text-outline-variant block mb-3">storefront</span>
-          <h3 class="font-headline-md text-headline-md text-on-surface mb-2">لا يوجد مطبخ مرتبط بحسابك</h3>
-          <p class="font-body-md text-body-md text-on-surface-variant mb-6">يرجى إنشاء مطبخ أولاً لتتمكن من متابعة تقييمات عملائك.</p>
-          <a href="/kitchens/create" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary/90 transition">
-            <span class="material-symbols-outlined">add_business</span> إنشاء مطبخ جديد
-          </a>
-        </div>
+        <section id="no-kitchen-message" class="hidden">
+          <%- include('../partials/no_kitchen_state', { 
+              title: 'لا يوجد مطبخ مرتبط بحسابك',
+              description: 'يرجى إنشاء مطبخ أولاً لتتمكن من متابعة تقييمات عملائك.',
+              ctaHref: '/kitchens/create',
+              ctaText: 'إنشاء مطبخ جديد'
+          }) %>
+        </section>
 
         <!-- Dashboard Content (يظهر فقط عند وجود مطبخ) -->
         <div id="dashboard-content" class="hidden">
@@ -596,6 +602,18 @@
 
     // ================ ربط الأحداث ================
     document.addEventListener('DOMContentLoaded', async () => {
+      // Attach event listener to create kitchen link in the no-kitchen partial
+      const noKitchenMessage = document.getElementById('no-kitchen-message');
+      if (noKitchenMessage) {
+        noKitchenMessage.addEventListener('click', (e) => {
+          const link = e.target.closest('a[href="/kitchens/create"]');
+          if (link) {
+            e.preventDefault();
+            createKitchen();
+          }
+        });
+      }
+
       // 1. جلب المطبخ أولاً
       const hasKitchen = await fetchMyKitchen();
       if (!hasKitchen) return;
@@ -627,6 +645,49 @@
       // 3. تحميل البيانات
       fetchChefData();
     });
+
+    // Kitchen Creation Handler (API call to /kitchens/api/v1/create)
+    async function createKitchen() {
+      const btn = document.querySelector('#no-kitchen-message a[href="/kitchens/create"]');
+      if (!btn) return;
+      
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> جاري الإنشاء...';
+      btn.style.pointerEvents = 'none';
+      
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+        
+        const response = await fetch('/kitchens/api/v1/create', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({})
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.status === 'success') {
+          // Success - reload page to show dashboard
+          window.location.reload();
+        } else {
+          // Show error
+          const errorMsg = data.message || 'حدث خطأ أثناء إنشاء المطبخ';
+          alert(errorMsg);
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          btn.style.pointerEvents = '';
+        }
+      } catch (err) {
+        console.error('Create kitchen error:', err);
+        alert('حدث خطأ في الاتصال بالخادم');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        btn.style.pointerEvents = '';
+      }
+    }
   </script>
 </body>
 </html>

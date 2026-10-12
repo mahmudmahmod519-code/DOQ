@@ -1,0 +1,120 @@
+/* DOQ Offline Fallback CSS - Minimal styling for offline use */
+:root {
+  --primary: #9e2016;
+  --secondary: #fc7127;
+  --background: #fff8f6;
+  --surface: #fff8f6;
+  --surface-low: #fff0ee;
+  --surface-high: #fce2de;
+  --on-surface: #261816;
+  --on-surface-variant: #59413d;
+  --outline-variant: #e1bfb9;
+  --error: #ba1a1a;
+  --primary-container: #c0392b;
+  --on-primary: #ffffff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; }
+body { font-family: inherit; background: var(--background); color: var(--on-surface); min-height: 100vh; }
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Layout */
+.container { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-4 { gap: 1rem; }
+.gap-6 { gap: 1.5rem; }
+.p-4 { padding: 1rem; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.mt-4 { margin-top: 1rem; }
+.mt-8 { margin-top: 2rem; }
+.mb-4 { margin-bottom: 1rem; }
+
+/* Typography */
+.text-center { text-align: center; }
+.text-lg { font-size: 1.125rem; }
+.text-xl { font-size: 1.25rem; }
+.text-2xl { font-size: 1.5rem; }
+.font-bold { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+
+/* Colors */
+.text-primary { color: var(--primary); }
+.text-secondary { color: var(--secondary); }
+.text-on-surface { color: var(--on-surface); }
+.text-on-surface-variant { color: var(--on-surface-variant); }
+.text-white { color: #fff; }
+.text-error { color: var(--error); }
+.bg-primary { background: var(--primary); }
+.bg-secondary { background: var(--secondary); }
+.bg-surface { background: var(--surface); }
+.bg-surface-low { background: var(--surface-low); }
+.bg-error { background: var(--error); }
+.bg-amber-50 { background: #fff8e1; }
+.text-amber-900 { color: #7b5b00; }
+.text-amber-700 { color: #b45309; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-primary:hover { background: var(--primary-deep); }
+.btn-secondary { background: var(--secondary); color: var(--on-secondary); }
+.btn-secondary:hover { background: #e66418; }
+.btn-outline { border: 2px solid var(--primary); color: var(--primary); background: transparent; }
+.btn-outline:hover { background: var(--primary); color: var(--on-primary); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Cards */
+.card { background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(158,32,22,0.08); }
+.card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(158,32,22,0.12); }
+
+/* Forms */
+.input { width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--outline-variant); border-radius: 0.75rem; background: var(--surface); color: var(--on-surface); }
+.input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(158,32,22,0.1); }
+.label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--on-surface); }
+.error-msg { color: var(--error); font-size: 0.875rem; margin-top: 0.25rem; }
+
+/* Header/Nav */
+.header { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: rgba(255,248,246,0.95); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(225,191,185,0.2); }
+.header-inner { max-width: 1280px; margin: 0 auto; padding: 0 1rem; height: 4rem; display: flex; align-items: center; justify-content: space-between; }
+.logo { display: flex; align-items: center; gap: 0.5rem; font-weight: 800; font-size: 1.5rem; color: var(--on-surface); }
+.logo-icon { width: 2.5rem; height: 2.5rem; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
+
+/* Main content */
+main { padding-top: 5rem; }
+.section { padding: 2rem 0; }
+
+/* Grid */
+.grid { display: grid; gap: 1.5rem; }
+.grid-cols-1 { grid-template-columns: 1fr; }
+@media (min-width: 768px) { .md\:grid-cols-2 { grid-template-columns: repeat(2, 1fr); } .md\:grid-cols-3 { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1024px) { .lg\:grid-cols-3 { grid-template-columns: repeat(3, 1fr); } }
+
+/* Utility */
+.hidden { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.rounded-xl { border-radius: 1rem; }
+.rounded-2xl { border-radius: 1.5rem; }
+.rounded-full { border-radius: 9999px; }
+.shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.shadow-md { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.shadow-lg { box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+.transition { transition: all 0.2s ease; }
+.hover\:scale-105:hover { transform: scale(1.05); }
+.hover\:shadow-lg:hover { box-shadow: 0 12px 30px rgba(158,32,22,0.12); }
+
+/* Offline indicator */
+.offline-banner { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); background: var(--error); color: white; padding: 0.75rem 1.5rem; border-radius: 2rem; box-shadow: 0 4px 20px rgba(186,26,26,0.3); z-index: 1000; animation: slideUp 0.3s ease; }
+@keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(1rem); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+/* Offline page */
+.offline-page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; }
+.offline-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
+.offline-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+.offline-text { color: var(--on-surface-variant); max-width: 20rem; margin-bottom: 1.5rem; }

@@ -98,7 +98,7 @@ success "Test accounts created"
 step "7/7 Seeding database with full dataset"
 export DOQ_SEED_PASSWORD="$TEST_PASSWORD"
 export DOQ_ALLOW_SEED=true
-node seed_data.js
+node scripts/seed_data.js
 success "Database seeded with full dataset"
 
 # ============================================================

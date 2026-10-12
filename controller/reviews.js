@@ -264,6 +264,10 @@ async function getReviewsList_controller(req, res) {
     const summaryWhereSQL = summaryWhereParts.length ? `WHERE ${summaryWhereParts.join(' AND ')}` : '';
     const summaryJoin = `LEFT JOIN categories ON categories.id = dishes.category_id`;
 
+    // Bayesian fair score constants
+    const C = 20;
+    const m = 4.2;
+
     const [summaryRows] = await pool.query(`
         SELECT
             COUNT(reviews.id) AS total_reviews,
@@ -346,17 +350,50 @@ async function getChefReviews_controller(req, res) {
         page = 1,
         limit = 10,
         sort_by = 'created_at',
-        sort_order = 'DESC'
+        sort_order = 'DESC',
+        kitchen_id,
+        include_stats
     } = value;
-
-    const { kitchen_id, include_stats } = req.query;
-    const wantStats = include_stats === 'true' || include_stats === '1';
+    
+    const wantStats = include_stats === true || include_stats === '1';
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
     const pageLimit = parseInt(limit, 10);
     const pageOffset = parseInt(offset, 10);
 
-    // التحقق من ملكية المطبخ
+    // التحقق من وجود مطبخ للشيف
+    const [userKitchens] = await pool.query(
+        `SELECT id, title FROM kitchens WHERE user_id = ? LIMIT 1`,
+        [userId]
+    );
+
+    const hasKitchen = userKitchens.length > 0;
+    const userKitchenId = userKitchens[0]?.id || null;
+    const userKitchenTitle = userKitchens[0]?.title || null;
+
+    // إذا لم يكن هناك مطبخ، نرجع بيانات فارغة مع علم hasKitchen
+    if (!hasKitchen) {
+        return res.status(200).json({
+            status: 'success',
+            state: 'no_kitchen',
+            currentUser: req.user,
+            hasKitchen: false,
+            kitchen: null,
+            data: {
+                reviews: [],
+                stats: null,
+                top_kitchens: [],
+                top_dishes: [],
+                reviews_over_time: []
+            },
+            pagination: { page: parseInt(page), limit: pageLimit, total: 0, total_pages: 1 }
+        });
+    }
+
+    // تحديد المطبخ المستخدم (من query أو أول مطبخ للشيف)
+    const effectiveKitchenId = kitchen_id || userKitchenId;
+
+    // التحقق من ملكية المطبخ (إذا تم تمرير kitchen_id صراحة)
     if (kitchen_id) {
         const [kitchen] = await pool.query(
             `SELECT id FROM kitchens WHERE id = ? AND user_id = ?`,
@@ -380,7 +417,7 @@ async function getChefReviews_controller(req, res) {
     `;
 
     const selectFields = `
-        ${tableName}*, 
+        ${tableName}.*,
         dishes.name AS dish_name, 
         kitchens.title AS kitchen_title,
         users.first_name,
@@ -477,9 +514,11 @@ async function getChefReviews_controller(req, res) {
             reviews_over_time: overTime
         };
 
-        // Top Dishes (Bayesian Fair Score)
+        // Top Kitchens (Fair Score) - for chef's own kitchen(s)
         const C = 20;
         const m = 4.2;
+
+        // Top Dishes (Bayesian Fair Score)
 
         const [topDishesResult] = await pool.query(`
             SELECT 
@@ -505,11 +544,16 @@ async function getChefReviews_controller(req, res) {
         topDishes = topDishesResult;
     }
 
+    
     return res.status(200).json({
         status: 'success',
+        state: 'active',
+        currentUser: req.user,
+        hasKitchen: true,
+        kitchen: { id: userKitchenId, title: userKitchenTitle },
         data: {
             reviews,
-            ...(wantStats && { stats, top_dishes: topDishes })
+            ...(wantStats && { stats,  top_dishes: topDishes })
         },
         pagination: {
             page: parseInt(page),

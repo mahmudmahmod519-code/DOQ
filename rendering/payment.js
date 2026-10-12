@@ -11,7 +11,11 @@ const { paymentsEnabled } = require('../controller/payment');
  * @param {Object} res - Express response.
  */
 async function payment_render(req, res) {
-    res.render('./chef/payment', {
+    let path='./chef/payment';
+    if(req.user && req.user.roles==='delivery')
+        path='./delivery/payment';
+
+    res.render(path, {
         ...checkLogin(req, res),
         paymentsEnabled: paymentsEnabled(),
         payoutLink: process.env.PAYOUT_LINK || 'https://ipn.eg/S/mahmoudmustafamm/instapay/0qc4FA'

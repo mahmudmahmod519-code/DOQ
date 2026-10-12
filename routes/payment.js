@@ -10,7 +10,7 @@ const roles = require("../middlware/roles");
 const { payment_render } = require("../rendering/payment");
 
 // GET /payment - Payment page (chef only)
-router.get('/', auth, roles('chef'), catchError(payment_render));
+router.get('/', auth, roles('chef','delivery'), catchError(payment_render));
 
 // POST /payment/initiate - Initiate Paymob payment (chef, requires auth)
 router.post("/initiate", auth, initiateSubscription);

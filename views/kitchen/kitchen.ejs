@@ -189,11 +189,11 @@
         }
     </script>
 </head>
-<body class="bg-background text-on-background min-h-screen pb-24 md:pb-0">
+<body class="bg-background text-on-background antialiased flex flex-col min-h-screen">
 
     <%- include('../partials/header') %>
 
-    <main class="max-w-container-max mx-auto px-4 md:px-lg mb-xl">
+    <main class="flex-grow max-w-container-max mx-auto px-4 md:px-lg pb-8 md:pb-0">
 
         <% if (kitchen) { 
             var chefName = kitchen.chefName || 'دوق';
@@ -342,7 +342,7 @@
         </section>
         
         <!-- Back Button -->
-        <div class="mt-xl flex justify-center">
+        <div class="mt-8 flex justify-center">
             <a class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium" href="/kitchens">
                 <span class="material-symbols-outlined">arrow_forward</span>
                 العودة إلى قائمة المطابخ

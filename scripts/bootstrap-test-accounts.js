@@ -9,8 +9,8 @@ const pool = require('../database/pool');
 
 const accounts = [
   { key: 'customer', email: 'doq-test-customer@example.test', phone: '01000000001', role: 'customer', status: 'approved', first: 'عميل', last: 'اختبار' },
-  { key: 'chef', email: 'doq-test-chef@example.test', phone: '01000000002', role: 'chef', status: 'pending', first: 'شيف', last: 'اختبار', company: 'مطبخ اختبار' },
-  { key: 'delivery', email: 'doq-test-delivery@example.test', phone: '01000000003', role: 'delivery', status: 'pending', first: 'دليفري', last: 'اختبار', company: 'شركة توصيل اختبار' },
+  { key: 'chef', email: 'doq-test-chef@example.test', phone: '01000000002', role: 'chef', status: 'approved', first: 'شيف', last: 'اختبار', company: 'مطبخ اختبار' },
+  { key: 'delivery', email: 'doq-test-delivery@example.test', phone: '01000000003', role: 'delivery', status: 'approved', first: 'دليفري', last: 'اختبار', company: 'شركة توصيل اختبار' },
   { key: 'admin', email: 'doq-test-admin@example.test', phone: '01000000004', role: 'admin', status: 'approved', first: 'مدير', last: 'اختبار' }
 ];
 

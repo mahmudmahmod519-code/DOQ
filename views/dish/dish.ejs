@@ -338,9 +338,15 @@ transform: scale(1.05);
     </div>
     <p id="coupon-hint" class="mt-1 text-xs text-gray-500">الكوبون يخص الطبق ده فقط ويستخدم مرة واحدة لكل حساب</p>
     <p class="mt-1 text-xs text-gray-500"><span class="text-red-600">*</span> مطلوب</p>
-    <div class="mt-4 flex items-center justify-between rounded-xl bg-amber-50 p-3 text-amber-900">
-      <span class="text-sm font-bold">جهز فلوسك</span>
-      <span class="text-lg font-extrabold"><span id="order-total"></span> جنيه</span>
+    <div class="mt-4 rounded-xl bg-amber-50 p-3 text-amber-900">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-bold">جهز فلوسك</span>
+        <span class="text-lg font-extrabold"><span id="order-total"></span> جنيه</span>
+      </div>
+      <div id="discount-row" class="hidden mt-2 flex items-center justify-between text-sm">
+        <span class="text-green-700 font-bold">خصم الكوبون: <span id="discount-amount"></span> جنيه</span>
+        <span class="text-gray-500" id="applied-code"></span>
+      </div>
     </div>
     <p class="mt-1 text-xs text-gray-500">الدفع كاش لمندوب التوصيل وقت الاستلام</p>
     <div id="order-alert" class="hidden mt-4 rounded-xl p-3 text-sm" role="status"></div>
@@ -368,7 +374,7 @@ async function fetchReviews() {
     }
 
     try {
-        const res = await fetch('/reviews/v1/api/list/?type=dish&limit=3&id=' + dishId, {
+        const res = await fetch('/reviews/v1/api/list?type=dish&limit=3&id=' + dishId, {
             credentials: 'include'
         });
         const data = await res.json();
@@ -758,6 +764,18 @@ function updateOrderTotal(){
   if(totalNode)totalNode.textContent=money(total);
   const hint=document.getElementById('coupon-hint');
   if(hint&&appliedCouponCode)hint.textContent='تم تطبيق '+appliedCouponCode+' بخصم '+money(appliedCouponDiscount)+' جنيه على هذا الطبق';
+  
+  // Show/hide discount row
+  const discountRow = document.getElementById('discount-row');
+  const discountAmount = document.getElementById('discount-amount');
+  const appliedCode = document.getElementById('applied-code');
+  if (appliedCouponCode && appliedCouponDiscount > 0) {
+    discountAmount.textContent = money(appliedCouponDiscount);
+    appliedCode.textContent = '(' + appliedCouponCode + ')';
+    discountRow.classList.remove('hidden');
+  } else {
+    discountRow.classList.add('hidden');
+  }
 }
 function resetCoupon(){
   appliedCouponCode='';

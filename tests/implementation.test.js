@@ -159,7 +159,7 @@ test('payment webhooks have a replay ledger and only activate chef subscriptions
 
 test('uploads use server generated filenames and seed data has no default password',()=>{
   const upload=read('middlware/upload.js');
-  const seed=read('seed_data.js');
+  const seed=read('scripts/seed_data.js');
   assert.match(upload,/randomBytes\(18\)/);
   assert.doesNotMatch(upload,/file\.originalname\}\`/);
   assert.doesNotMatch(seed,/P@ssword123/);

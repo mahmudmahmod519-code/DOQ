@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إدارة المستخدمين | دوق DOQ</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -28,6 +28,7 @@
     </script>
     <style>
         body { font-family: 'Cairo', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
         .fade-out { animation: fadeOut 0.4s ease-in-out forwards; }
         @keyframes fadeOut { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.95); height: 0; padding: 0; margin: 0; overflow: hidden; } }
         .zoom-in { animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
@@ -57,10 +58,16 @@
                 <span class="text-xs text-on-surface-variant">المنصة تعمل بنشاط</span>
             </div>
         </div>
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-                <span class="material-symbols-outlined text-white text-[18px]">person</span>
-            </div>
+        <div class="flex items-center gap-3 md:gap-4">
+            <!-- Notification Bell -->
+            <a href="/notifications" aria-label="الإشعارات" class="block p-1.5 sm:p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center relative">
+              <span class="material-symbols-outlined text-xl sm:text-2xl">notifications</span>
+              <span id="notification-badge" class="absolute -top-0.5 -right-0.5 w-5 h-5 min-w-[18px] bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden">0</span>
+            </a>
+            <!-- Profile Avatar with Image -->
+            <a href="/users/profile" class="block w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full overflow-hidden border-2 border-primary hover:border-secondary transition-all hover:scale-105 active:scale-95 shadow-sm">
+              <img src="/assests/avatar.jpeg" alt="صورة المستخدم" class="w-full h-full object-cover" loading="lazy">
+            </a>
         </div>
     </header>
 
@@ -107,6 +114,7 @@
                                     <option value="customer">عميل</option>
                                     <option value="chef">شيف</option>
                                     <option value="admin">مدير</option>
+                                    <option value="delivery">دليفري</option>
                                 </select>
                             </div>
                             <button type="submit" class="sm:mt-6 px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary-container transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm">
@@ -186,6 +194,7 @@
                                 <option value="customer">عميل</option>
                                 <option value="chef">شيف</option>
                                 <option value="admin">مدير</option>
+                                <option value="delivery">ديلفري</option>
                             </select>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-outline-variant/30">

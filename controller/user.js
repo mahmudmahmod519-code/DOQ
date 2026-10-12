@@ -26,7 +26,10 @@ const bcrypt = require("bcrypt");
  */
 async function getUnifiedChefDashboard(req, res, next) {
     const userId = req.user.id;
-    const requestedKitchenId = req.query.kitchen_id;
+
+  
+    const [kitchen]=await pool.query(`SELECT * FROM kitchens WHERE user_id=? limit 1;`,[userId]);
+    const requestedKitchenId = kitchen.id;
 
     // 1. Fetch all kitchens owned by the chef (for dropdown)
     const [allKitchens] = await pool.query(
@@ -40,16 +43,16 @@ async function getUnifiedChefDashboard(req, res, next) {
     }
 
     // 2. Determine active kitchen (from query or default to newest)
-    let activeKitchen = allKitchens.find(k => String(k.id) === String(requestedKitchenId));
-    if (!activeKitchen) {
-        activeKitchen = allKitchens[0];
-    }
-    const activeKitchenId = activeKitchen.id;
+    // let activeKitchen = allKitchens.find(k => String(k.id) === String(requestedKitchenId));
+    // if (!activeKitchen) {
+    //     activeKitchen = allKitchens[0];
+    // }
+    // const activeKitchenId = activeKitchen.id;
 
     // 3. Fetch stats for active kitchen
     const [dishesCountResult] = await pool.query(
         'SELECT COUNT(*) as count FROM dishes WHERE kitchen_id = ?',
-        [activeKitchenId]
+        [requestedKitchenId]
     );
     const dishesCount = dishesCountResult[0].count;
 
@@ -58,7 +61,7 @@ async function getUnifiedChefDashboard(req, res, next) {
          FROM dishes d
          LEFT JOIN reviews r ON r.dish_id = d.id
          WHERE d.kitchen_id = ?`,
-        [activeKitchenId]
+        [requestedKitchenId]
     );
     const reviewsCount = reviewsResult[0].count || 0;
     const avgRating = parseFloat(reviewsResult[0].avg_rating || 0);
@@ -78,7 +81,7 @@ async function getUnifiedChefDashboard(req, res, next) {
          JOIN users u ON r.user_id = u.id
          WHERE d.kitchen_id = ?
          ORDER BY r.created_at DESC LIMIT 5`,
-        [activeKitchenId]
+        [requestedKitchenId]
     );
 
     // Top 5 dishes by fair score
@@ -90,7 +93,7 @@ async function getUnifiedChefDashboard(req, res, next) {
          WHERE d.kitchen_id = ?
          GROUP BY d.id
          ORDER BY fair_score DESC, review_count DESC LIMIT 5`,
-        [activeKitchenId]
+        [requestedKitchenId]
     );
 
     // Latest 5 dishes added
@@ -101,14 +104,14 @@ async function getUnifiedChefDashboard(req, res, next) {
          WHERE d.kitchen_id = ?
          GROUP BY d.id
          ORDER BY d.created_at DESC LIMIT 5`,
-        [activeKitchenId]
+        [requestedKitchenId]
     );
 
     // 4. Attach dashboard data
     req.dashboard = {
         hasKitchen: true,
         allKitchens: allKitchens,
-        activeKitchen: activeKitchen,
+        activeKitchen: kitchen[0],
         stats: { dishesCount, reviewsCount, avgRating, fairScore },
         recentReviews,
         topDishes,

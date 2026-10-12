@@ -4,8 +4,9 @@
 <script src="/app-client.js"></script>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta name="csrf-token" content="<%= csrfToken %>">
   <title>لوحة تحكم الشيف | دوق DOQ</title>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -46,6 +47,7 @@
   <style>
     body { font-family: 'Tajawal', sans-serif; }
     h1, h2, h3, h4, h5, h6 { font-family: 'Cairo', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-thumb { background: #e1bfb9; border-radius: 10px; }
     .slide-in-left { animation: slideInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
@@ -75,10 +77,16 @@
           <span class="text-xs text-on-surface-variant">مطبخك يعمل بنشاط</span>
         </div>
       </div>
-      <div class="flex items-center gap-4">
-        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold">
-          <%= (currentUser?.first_name || 'ش').charAt(0).toUpperCase() %>
-        </div>
+      <div class="flex items-center gap-3 md:gap-4">
+        <!-- Notification Bell -->
+        <a href="/notifications" aria-label="الإشعارات" class="block p-1.5 sm:p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center relative" id="notification-bell">
+          <span class="material-symbols-outlined text-xl sm:text-2xl">notifications</span>
+          <span id="notification-badge" class="absolute -top-0.5 -right-0.5 w-5 h-5 min-w-[18px] bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden">0</span>
+        </a>
+        <!-- Profile Avatar with Image -->
+        <a href="/users/profile" class="block w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full overflow-hidden border-2 border-primary hover:border-secondary transition-all hover:scale-105 active:scale-95 shadow-sm">
+          <img src="/assests/avatar.jpeg" alt="صورة المستخدم" class="w-full h-full object-cover" loading="lazy">
+        </a>
       </div>
     </header>
 
@@ -91,7 +99,7 @@
             <div class="flex flex-col space-y-2">
               <div class="flex items-center gap-2 text-secondary text-sm font-medium">
                 <span class="inline-block w-2 h-2 rounded-full bg-secondary-container animate-ping"></span>
-                <span>لوحة العمليات الحية • أداء مطبخك</span>
+                <span id="welcome-subtitle">لوحة العمليات الحية • أداء مطبخك</span>
               </div>
               <h1 class="text-2xl md:text-4xl font-cairo font-bold text-primary tracking-tight">
                 أهلاً بك يا شيف 🍲
@@ -111,8 +119,26 @@
           <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 animate-pulse h-36"></div>
         </section>
 
-        <!-- Main Grid: Tables + Sidebar widgets -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Primary Stats (4 Cards) -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5" id="stats-grid">
+          <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 animate-pulse h-36"></div>
+          <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 animate-pulse h-36"></div>
+          <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 animate-pulse h-36"></div>
+          <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 animate-pulse h-36"></div>
+        </section>
+
+        <!-- Empty State: No Kitchen -->
+        <section id="no-kitchen-section" class="hidden">
+          <%- include('../partials/no_kitchen_state', { 
+              title: 'لا يوجد مطبخ مرتبط بحسابك',
+              description: 'يرجى إنشاء مطبخ أولاً لتتمكن من متابعة بيانات لوحة التحكم.',
+              ctaHref: '/kitchens/create',
+              ctaText: 'إنشاء مطبخ جديد'
+          }) %>
+        </section>
+
+        <!-- Dashboard Content (Hidden when no kitchen) -->
+        <div id="dashboard-content">
 
           <!-- Left: Tables (8 cols) -->
           <div class="lg:col-span-8 flex flex-col space-y-6">
@@ -189,6 +215,7 @@
           </div>
         </div>
       </div>
+    </div>
     </main>
   </div>
 
@@ -223,11 +250,26 @@
 
         const reviewsJson = await reviewsRes.json();
         const dishesJson = await dishesRes.json();
-
+        
+        console.log(reviewsJson);
         if (reviewsJson.status !== 'success' || dishesJson.status !== 'success') {
           console.error('Dashboard error:', reviewsJson.message || dishesJson.message);
           return;
         }
+
+        // التحقق من وجود مطبخ
+        if (reviewsJson.hasKitchen === false) {
+          // لا يوجد مطبخ - إظهار قسم "إنشاء مطبخ"
+          document.getElementById('no-kitchen-section').classList.remove('hidden');
+          document.getElementById('dashboard-content').classList.add('hidden');
+          document.getElementById('welcome-subtitle').textContent = 'ابدأ بإنشاء مطبخك الأول';
+          return;
+        }
+
+        // يوجد مطبخ - إظهار محتوى لوحة التحكم
+        document.getElementById('no-kitchen-section').classList.add('hidden');
+        document.getElementById('dashboard-content').classList.remove('hidden');
+        document.getElementById('welcome-subtitle').textContent = 'لوحة العمليات الحية • أداء مطبخك';
 
         const stats = reviewsJson.data.stats || {};
         const latestReviews = reviewsJson.data.reviews || [];
@@ -235,7 +277,17 @@
         const latestDishes = dishesJson.data || [];
         const totalDishes = dishesJson.pagination?.total || 0;
 
-        renderChefStats(stats, totalDishes);
+        // حساب Fair Score من توزيع التقييمات (لأنه غير موجود في stats)
+        const dist = stats.rating_distribution || {};
+        const totalReviewsForFair = stats.total_reviews || 1;
+        const star5 = parseInt(dist[5]) || 0;
+        const star4 = parseInt(dist[4]) || 0;
+        const star3 = parseInt(dist[3]) || 0;
+        const star2 = parseInt(dist[2]) || 0;
+        const star1 = parseInt(dist[1]) || 0;
+        const fairScore = ((star5*5 + star4*4 + star3*3 + star2*2 + star1*1) / totalReviewsForFair).toFixed(1);
+
+        renderChefStats(stats, totalDishes, fairScore);
         renderLatestDishes(latestDishes);
         renderLatestReviews(latestReviews);
         renderTopDishes(topDishes);
@@ -247,11 +299,10 @@
     }
 
     // ---------- Stats Cards ----------
-    function renderChefStats(stats, totalDishes) {
+    function renderChefStats(stats, totalDishes, fairScore) {
       const grid = document.getElementById('stats-grid');
       const totalReviews = stats.total_reviews || 0;
       const avgRating = stats.average_rating || '0.0';
-      const fairScore = stats.fair_score || avgRating;
 
       grid.innerHTML = `
         <div class="rounded-xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30 hover:shadow-md transition-all">
@@ -483,8 +534,63 @@
         .replace(/"/g, '&quot;');
     }
 
-    // Start
-    document.addEventListener('DOMContentLoaded', loadChefDashboard);
+    // Kitchen Creation Handler (API call to /kitchens/api/v1/create)
+    async function createKitchen() {
+      const btn = document.querySelector('#no-kitchen-section a[href="/kitchens/create"]');
+      if (!btn) return;
+      
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> جاري الإنشاء...';
+      btn.style.pointerEvents = 'none';
+      
+      try {
+        const response = await fetch('/kitchens/api/v1/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+          },
+          body: JSON.stringify({})
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.status === 'success') {
+          // Success - reload page to show dashboard
+          window.location.reload();
+        } else {
+          // Show error
+          const errorMsg = data.message || 'حدث خطأ أثناء إنشاء المطبخ';
+          alert(errorMsg);
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          btn.style.pointerEvents = '';
+        }
+      } catch (err) {
+        console.error('Create kitchen error:', err);
+        alert('حدث خطأ في الاتصال بالخادم');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        btn.style.pointerEvents = '';
+      }
+    }
+    
+    // Attach event listener to create kitchen link in the partial
+    document.addEventListener('DOMContentLoaded', () => {
+      // Use event delegation on the no-kitchen-section to catch clicks on the link
+      const noKitchenSection = document.getElementById('no-kitchen-section');
+      if (noKitchenSection) {
+        noKitchenSection.addEventListener('click', (e) => {
+          const link = e.target.closest('a[href="/kitchens/create"]');
+          if (link) {
+            e.preventDefault();
+            createKitchen();
+          }
+        });
+      }
+      loadChefDashboard();
+    });
   </script>
 </body>
 </html>

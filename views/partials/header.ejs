@@ -32,13 +32,57 @@
                 
                 <% if (isLoggedIn) { %>
                     <div class="flex items-center gap-1 sm:gap-2">
-                        <% const roleHome = { admin: ['/admin', 'لوحة الإدارة'], chef: ['/users/orders', 'طلبات المطبخ'], delivery: ['/delivery', 'طلبات التوصيل'], customer: ['/my-orders', 'طلباتي'] }[(typeof currentUser !== 'undefined' && currentUser && currentUser.roles) || '']; %>
-                        <% if (roleHome) { %>
-                            <a href="<%= roleHome[0] %>" class="text-xs sm:text-sm font-bold text-primary hover:bg-surface-container-low px-2 sm:px-3 py-1.5 rounded-full whitespace-nowrap"><%= roleHome[1] %></a>
+                        <% 
+                            const role = currentUser?.roles;
+                            let dashboardHref = '/';
+                            let dashboardLabel = 'لوحة التحكم';
+                            let dashboardIcon = 'dashboard';
+                            
+                            if (role === 'admin') {
+                                dashboardHref = '/admin';
+                                dashboardLabel = 'لوحة الإدارة';
+                                dashboardIcon = 'admin_panel_settings';
+                            } else if (role === 'chef') {
+                                dashboardHref = '/users/dashboard';
+                                dashboardLabel = 'لوحة المطبخ';
+                                dashboardIcon = 'restaurant';
+                            } else if (role === 'delivery') {
+                                dashboardHref = '/delivery';
+                                dashboardLabel = 'لوحة التوصيل';
+                                dashboardIcon = 'local_shipping';
+                            } else if (role === 'customer') {
+                                dashboardHref = '/my-orders';
+                                dashboardLabel = 'طلباتي';
+                                dashboardIcon = 'receipt_long';
+                            }
+                        %>
+                        
+                        <% if (role === 'customer') { %>
+                            <!-- Customer: My Orders button -->
+                            <a href="/my-orders" class="text-xs sm:text-sm font-bold text-primary hover:bg-surface-container-low px-2 sm:px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                                <span>طلباتي</span>
+                            </a>
+                            <!-- Customer: Back to menu button -->
+                            <a href="/dishes" class="text-xs sm:text-sm font-bold text-primary hover:bg-surface-container-low px-2 sm:px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                                <span>العودة للمنيو</span>
+                            </a>
+                        <% } else { %>
+                            <!-- Admin, Chef, Delivery: Dashboard button -->
+                            <a href="<%= dashboardHref %>" class="text-xs sm:text-sm font-bold text-primary hover:bg-surface-container-low px-2 sm:px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[18px]"><%= dashboardIcon %></span>
+                                <span><%= dashboardLabel %></span>
+                            </a>
                         <% } %>
-                        <a href="/notifications" aria-label="الإشعارات" class="hidden sm:block p-1.5 sm:p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors">
+                        
+                        <!-- Notification icon with badge - circular -->
+                        <a href="/notifications" aria-label="الإشعارات" class="hidden sm:block p-1.5 sm:p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center relative" id="notification-bell">
                             <span class="material-symbols-outlined text-xl sm:text-2xl">notifications</span>
+                            <span id="notification-badge" class="absolute -top-0.5 -right-0.5 w-5 h-5 min-w-[18px] bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden">0</span>
                         </a>
+                        
+                        <!-- Profile avatar - circular -->
                         <a href="/users/profile" class="block w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full overflow-hidden border-2 border-primary hover:border-secondary transition-all hover:scale-105 active:scale-95 shadow-sm">
                             <img src="<%= '/assests/avatar.jpeg'%>" alt="صورة المستخدم" class="w-full h-full object-cover" loading="lazy">
                         </a>
@@ -88,6 +132,11 @@
                             <span class="text-[10px] sm:text-xs text-on-surface-variant/60">عرض الملف الشخصي</span>
                         </div>
                         <span class="mr-auto material-symbols-outlined text-on-surface-variant text-xl">chevron_left</span>
+                    </a>
+                    <a href="/notifications" class="flex items-center gap-2.5 sm:gap-3 text-sm sm:text-base text-on-surface-variant hover:text-primary hover:bg-surface-container-low px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all relative" id="mobile-notification-bell">
+                        <span class="material-symbols-outlined text-xl sm:text-2xl">notifications</span>
+                        <span>الإشعارات</span>
+                        <span id="mobile-notification-badge" class="ml-auto w-5 h-5 min-w-[18px] bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden">0</span>
                     </a>
                     <a href="/auth/logout" class="text-sm sm:text-base text-error hover:bg-error-container/10 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all flex items-center gap-2.5 sm:gap-3">
                         <span class="material-symbols-outlined text-xl sm:text-2xl">logout</span>

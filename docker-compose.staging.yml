@@ -1,0 +1,45 @@
+# ============================================================
+# DOQ Staging Override - docker-compose.staging.yml
+# Overrides for staging environment
+# ============================================================
+
+services:
+  app:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/${GITHUB_REPOSITORY}:latest
+    environment:
+      - NODE_ENV=staging
+      - PUBLIC_URL=https://staging.doq.example.com
+      - DOQ_DOMAIN=staging.doq.example.com
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  db:
+    environment:
+      - MYSQL_DATABASE=DOQ_staging
+    volumes:
+      - staging_mysql_data:/var/lib/mysql
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  caddy:
+    environment:
+      - DOMAIN=staging.doq.example.com
+      - ACME_EMAIL=admin@staging.doq.example.com
+    volumes:
+      - ./Caddyfile.staging:/etc/caddy/Caddyfile:ro
+    ports:
+      - "80:80"
+      - "443:443"
+
+volumes:
+  staging_mysql_data:
+    driver: local

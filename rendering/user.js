@@ -59,12 +59,14 @@ async function dashboard_render(req, res) {
     let path = './chef/dashboard';
     const response = {
         ...checkLogin(req, res),
-        dashboard: req.dashboard || {}
+        dashboard: req.dashboard || {},
+        csrfToken: req.csrfToken()
     };
 
     if (req.user.roles === 'admin') {
         path = './admin/dashboard';
         delete response.dashboard;
+        delete response.csrfToken
         response.pageTitle = 'لوحة التحكم | دوق DOQ';
     }
 

@@ -6,6 +6,7 @@
 const jwt = require('jsonwebtoken');
 const pool = require('../database/pool');
 const HttpError = require('../utiles/httpError');
+const removeSecrets = require('../utiles/remove_password');
 
 /**
  * Extracts and verifies a session JWT, then loads the user from the database.
@@ -44,7 +45,7 @@ async function identify(req) {
  */
 async function auth(req, res, next) {
   try {
-    req.user = await identify(req);
+    req.user = removeSecrets(await identify(req));
     if (req.user) return next();
     if (req.path.includes('/api') || req.get('accept')?.includes('application/json') || req.method !== 'GET') {
       return res.status(401).json({status: 'error', message: 'سجل دخول الأول'});
@@ -64,7 +65,7 @@ async function auth(req, res, next) {
  */
 auth.optional = async (req, res, next) => {
   try {
-    req.user = await identify(req);
+      req.user = removeSecrets(await identify(req));
     next();
   } catch (error) {
     next(error);

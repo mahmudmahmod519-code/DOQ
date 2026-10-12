@@ -1,4 +1,4 @@
-const pool = require("./database/pool"); // عدّل المسار حسب مشروعك
+const pool = require("../database/pool");
 const bcrypt = require("bcrypt");
 
 // ============================================================
@@ -455,6 +455,7 @@ async function seedDatabase() {
     const NUM_ADMINS = 5;
     const NUM_CHEFS = 1500;
     const NUM_CUSTOMERS = 5000;
+    const NUM_DELIVERY = 500;
     const NUM_KITCHENS = 1500; // مطبخ لكل شيف تقريباً
     const DISHES_PER_KITCHEN_MIN = 10;
     const DISHES_PER_KITCHEN_MAX = 25;
@@ -540,6 +541,19 @@ async function seedDatabase() {
         phone: uniquePhone(),
         email: uniqueEmail("user", i),
         role: "customer",
+        city: pick(cities),
+      });
+    }
+
+    // Delivery Users
+    for (let i = 1; i <= NUM_DELIVERY; i++) {
+      const isMale = Math.random() > 0.3;
+      allUsers.push({
+        first_name: isMale ? pick(firstNamesMale) : pick(firstNamesFemale),
+        last_name: pick(familyNames),
+        phone: uniquePhone(),
+        email: uniqueEmail("delivery", i),
+        role: "delivery",
         city: pick(cities),
       });
     }
@@ -775,6 +789,435 @@ async function seedDatabase() {
       `\r   → ${insertedReviews}/${reviewsToInsert.length} ✅\n`,
     );
     console.log(`✅ تم إضافة ${insertedReviews} تقييم\n`);
+
+    // ======================================================
+    // 6. Payment Webhook Events
+    // ======================================================
+    console.log("💳 إضافة أحداث ويب هوك الدفع...");
+    const paymentEventsToInsert = [];
+    const paymentEventTypes = [
+      "payment_created",
+      "payment_succeeded",
+      "payment_failed",
+      "refund_initiated",
+      "refund_completed",
+      "subscription_created",
+      "subscription_cancelled",
+      "invoice_paid",
+      "invoice_failed",
+    ];
+    for (let i = 0; i < 500; i++) {
+      const eventId = `evt_${Date.now()}_${rand(1000, 9999)}_${i}`;
+      paymentEventsToInsert.push([
+        eventId,
+        pick(paymentEventTypes),
+        JSON.stringify({ amount: rand(100, 50000), currency: "EGP" }),
+      ]);
+    }
+    for (let i = 0; i < paymentEventsToInsert.length; i += BATCH) {
+      const chunk = paymentEventsToInsert.slice(i, i + BATCH);
+      await connection.query(
+        `INSERT IGNORE INTO payment_webhook_events (event_id, received_at) VALUES ?`,
+        [chunk.map(e => [e[0], new Date(Date.now() - rand(0, 86400000 * 30))])],
+      );
+    }
+    console.log(`✅ تم إضافة ${paymentEventsToInsert.length} حدث ويب هوك\n`);
+
+    // ======================================================
+    // 7. Daily Reports
+    // ======================================================
+    console.log("📊 إضافة التقارير اليومية...");
+    const dailyReportsToInsert = [];
+    for (let d = 0; d < 30; d++) {
+      const reportDate = new Date();
+      reportDate.setDate(reportDate.getDate() - d);
+      const dateStr = reportDate.toISOString().split("T")[0];
+      dailyReportsToInsert.push([
+        dateStr,
+        new Date(),
+        null,
+        rand(10, 200),
+        null,
+      ]);
+    }
+    await connection.query(
+      `INSERT IGNORE INTO daily_reports (report_date, created_at, emailed_at, completed_count, purged_at) VALUES ?`,
+      [dailyReportsToInsert],
+    );
+    console.log(`✅ تم إضافة ${dailyReportsToInsert.length} تقرير يومي\n`);
+
+    // ======================================================
+    // 8. Email Outbox
+    // ======================================================
+    console.log("📧 إضافة قائمة انتظار الإيميلات...");
+    const emailTypes = [
+      "welcome",
+      "order_confirmation",
+      "order_status_update",
+      "delivery_assigned",
+      "payment_receipt",
+      "subscription_renewal",
+      "password_reset",
+      "verification_code",
+      "promotional",
+      "daily_report",
+    ];
+    const emailOutboxToInsert = [];
+    for (let i = 0; i < 2000; i++) {
+      const type = pick(emailTypes);
+      const user = pick(createdUsers);
+      const recipient = `${user.id}@doq.com`;
+      const subject = `DOQ - ${type.replace("_", " ")}`;
+      const body = `This is a ${type} email for user ${user.name}`;
+      const htmlBody = `<html><body><h1>${subject}</h1><p>${body}</p></body></html>`;
+      const dedupeKey = `${type}:${user.id}:${Date.now()}-${i}`;
+      const createdAt = new Date(Date.now() - rand(0, 86400000 * 7));
+      const sentAt = Math.random() > 0.3 ? new Date(createdAt.getTime() + rand(1000, 300000)) : null;
+      const attempts = sentAt ? rand(1, 3) : rand(0, 3);
+      emailOutboxToInsert.push([
+        recipient,
+        subject,
+        body,
+        htmlBody,
+        dedupeKey,
+        createdAt,
+        sentAt,
+        attempts,
+      ]);
+    }
+    for (let i = 0; i < emailOutboxToInsert.length; i += BATCH) {
+      const chunk = emailOutboxToInsert.slice(i, i + BATCH);
+      await connection.query(
+        `INSERT IGNORE INTO email_outbox (recipient, subject, body, html_body, dedupe_key, created_at, sent_at, attempts) VALUES ?`,
+        [chunk],
+      );
+    }
+    console.log(`✅ تم إضافة ${emailOutboxToInsert.length} إيميل في قائمة الانتظار\n`);
+
+    // ======================================================
+    // 9. Settlements
+    // ======================================================
+    console.log("💰 إضافة التسويات...");
+    const settlementsToInsert = [];
+    // chefs already declared at line 596
+    const deliveryUsers = createdUsers.filter(u => u.role === "delivery");
+    const periodStart = new Date();
+    periodStart.setDate(1);
+    periodStart.setHours(0, 0, 0, 0);
+    const periodEnd = new Date(periodStart);
+    periodEnd.setMonth(periodEnd.getMonth() + 1);
+    periodEnd.setDate(0);
+    periodEnd.setHours(23, 59, 59, 999);
+
+    for (const chef of chefs.slice(0, 100)) {
+      const gross = (rand(10000, 500000) / 100).toFixed(2);
+      const commission = (gross * 0.07).toFixed(2);
+      settlementsToInsert.push([
+        periodStart.toISOString().split("T")[0],
+        periodEnd.toISOString().split("T")[0],
+        "kitchen",
+        chef.id,
+        gross,
+        commission,
+        new Date(),
+      ]);
+    }
+    for (const delivery of deliveryUsers.slice(0, 50)) {
+      const gross = (rand(5000, 200000) / 100).toFixed(2);
+      const commission = (gross * 0.07).toFixed(2);
+      settlementsToInsert.push([
+        periodStart.toISOString().split("T")[0],
+        periodEnd.toISOString().split("T")[0],
+        "delivery",
+        delivery.id,
+        gross,
+        commission,
+        new Date(),
+      ]);
+    }
+    await connection.query(
+      `INSERT IGNORE INTO settlements (period_start, period_end, party_type, party_id, gross_amount, commission_amount, created_at) VALUES ?`,
+      [settlementsToInsert],
+    );
+    console.log(`✅ تم إضافة ${settlementsToInsert.length} تسوية\n`);
+
+    // ======================================================
+    // 10. Coupon Redemptions
+    // ======================================================
+    console.log("🎫 إضافة استردادات الكوبونات...");
+    const [coupons] = await connection.query(
+      `SELECT id, dish_id FROM dish_coupons WHERE deleted_at IS NULL LIMIT 500`
+    );
+    const couponRedemptionsToInsert = [];
+    // customers already declared
+    const [ordersForCoupons] = await connection.query(
+      `SELECT id FROM orders LIMIT 1000`
+    );
+    for (let i = 0; i < Math.min(coupons.length, 200); i++) {
+      const coupon = coupons[i];
+      const customer = pick(customers);
+      const order = pick(ordersForCoupons);
+      couponRedemptionsToInsert.push([
+        coupon.id,
+        customer.id,
+        order ? order.id : null,
+        new Date(Date.now() - rand(0, 86400000 * 30)),
+      ]);
+    }
+    if (couponRedemptionsToInsert.length > 0) {
+      await connection.query(
+        `INSERT IGNORE INTO coupon_redemptions (coupon_id, customer_id, order_id, redeemed_at) VALUES ?`,
+        [couponRedemptionsToInsert],
+      );
+    }
+    console.log(`✅ تم إضافة ${couponRedemptionsToInsert.length} استرداد كوبون\n`);
+
+    // ======================================================
+    // 11. Referral Signups
+    // ======================================================
+    console.log("👥 إضافة تسجيلات الإحالة...");
+    const [referrals] = await connection.query(
+      `SELECT id, dish_id FROM dish_referrals LIMIT 200`
+    );
+    const referralSignupsToInsert = [];
+    for (let i = 0; i < Math.min(referrals.length, 100); i++) {
+      const referral = referrals[i];
+      const customer = pick(customers.filter(u => u.role === "customer"));
+      referralSignupsToInsert.push([
+        customer.id,
+        referral.id,
+        new Date(Date.now() - rand(0, 86400000 * 30)),
+      ]);
+    }
+    if (referralSignupsToInsert.length > 0) {
+      await connection.query(
+        `INSERT IGNORE INTO referral_signups (customer_id, referral_id, created_at) VALUES ?`,
+        [referralSignupsToInsert],
+      );
+    }
+    console.log(`✅ تم إضافة ${referralSignupsToInsert.length} تسجيل إحالة\n`);
+
+    // ======================================================
+    // 12. Chat Messages
+    // ======================================================
+    console.log("💬 إضافة رسائل الشات...");
+    const [ordersForChat] = await connection.query(
+      `SELECT id FROM orders WHERE status IN ('accepted', 'out_for_delivery', 'completed') LIMIT 500`
+    );
+    const chatMessagesToInsert = [];
+    const messageTemplates = [
+      "الطلب في الطريق",
+      "وصلت للمطعم",
+      "غادرت المطعم",
+      "قريب من عنوانك",
+      "وصلت للعنوان",
+      "تم التسليم",
+      "العميل غير متاح",
+      "أحتاج لتوضيح العنوان",
+      "طلب إضافة للمطبخ",
+      "تأكيد الطلب",
+    ];
+    for (let i = 0; i < 1000; i++) {
+      const order = pick(ordersForChat);
+      if (!order) continue;
+      const [orderDetails] = await connection.query(
+        `SELECT customer_id, kitchen_id, delivery_id FROM orders WHERE id = ?`,
+        [order.id]
+      );
+      if (!orderDetails.length) continue;
+      const od = orderDetails[0];
+      const participants = [od.customer_id, od.kitchen_id ? pick(createdUsers.filter(u => u.role === "chef" && u.id === od.kitchen_id))?.id : null, od.delivery_id].filter(Boolean);
+      if (participants.length < 2) continue;
+      const sender = pick(participants);
+      const recipient = pick(participants.filter(p => p !== sender));
+      chatMessagesToInsert.push([
+        order.id,
+        sender,
+        recipient,
+        pick(messageTemplates),
+        new Date(Date.now() - rand(0, 86400000 * 7)),
+      ]);
+    }
+    for (let i = 0; i < chatMessagesToInsert.length; i += BATCH) {
+      const chunk = chatMessagesToInsert.slice(i, i + BATCH);
+      await connection.query(
+        `INSERT IGNORE INTO chat_messages (order_id, sender_id, recipient_id, body, created_at) VALUES ?`,
+        [chunk],
+      );
+    }
+    console.log(`✅ تم إضافة ${chatMessagesToInsert.length} رسالة شات\n`);
+
+    // ======================================================
+    // 13. Auth Challenges
+    // ======================================================
+    console.log("🔐 إضافة تحديات المصادقة...");
+    const authChallengesToInsert = [];
+    const challengePurposes = ["login", "register", "password_reset", "email_verification", "phone_verification", "2fa_setup", "2fa_login"];
+    for (let i = 0; i < 5000; i++) {
+      const user = pick(createdUsers);
+      const purpose = pick(challengePurposes);
+      const nonceHash = require("crypto").randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + rand(300000, 1800000)); // 5-30 min
+      const consumedAt = Math.random() > 0.4 ? new Date(Date.now() + rand(0, 1700000)) : null;
+      const attempts = Math.random() > 0.8 ? rand(1, 3) : 0;
+      authChallengesToInsert.push([
+        nonceHash,
+        user.id,
+        purpose,
+        attempts,
+        expiresAt,
+        consumedAt,
+      ]);
+    }
+    for (let i = 0; i < authChallengesToInsert.length; i += BATCH) {
+      const chunk = authChallengesToInsert.slice(i, i + BATCH);
+      await connection.query(
+        `INSERT IGNORE INTO auth_challenges (nonce_hash, user_id, purpose, attempts, expires_at, consumed_at) VALUES ?`,
+        [chunk],
+      );
+    }
+    console.log(`✅ تم إضافة ${authChallengesToInsert.length} تحدي مصادقة\n`);
+
+    // ======================================================
+    // 14. Password Resets
+    // ======================================================
+    console.log("🔑 إضافة طلبات إعادة تعيين كلمة المرور...");
+    const passwordResetsToInsert = [];
+    for (let i = 0; i < 200; i++) {
+      const user = pick(createdUsers);
+      const tokenHash = require("crypto").randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + rand(3600000, 86400000)); // 1-24 hours
+      const usedAt = Math.random() > 0.6 ? new Date(Date.now() + rand(0, 86300000)) : null;
+      passwordResetsToInsert.push([
+        tokenHash,
+        user.id,
+        expiresAt,
+        usedAt,
+      ]);
+    }
+    await connection.query(
+      `INSERT IGNORE INTO password_resets (token_hash, user_id, expires_at, used_at) VALUES ?`,
+      [passwordResetsToInsert],
+    );
+    console.log(`✅ تم إضافة ${passwordResetsToInsert.length} طلب إعادة تعيين\n`);
+
+    // ======================================================
+    // 15. Delivery Vehicles
+    // ======================================================
+    console.log("🚗 إضافة مركبات التوصيل...");
+    // deliveryUsers already declared
+    const deliveryVehiclesToInsert = [];
+    const vehicleLabels = [
+      "دراجة نارية 1", "دراجة نارية 2", "دراجة نارية 3",
+      "سيارة صغيرة 1", "سيارة صغيرة 2",
+      "سكوتر كهربائي 1", "سكوتر كهربائي 2",
+      "دراجة هوائية 1", "فان توصيل 1",
+    ];
+    for (const delivery of deliveryUsers.slice(0, 100)) {
+      const numVehicles = rand(1, 3);
+      const shuffled = [...vehicleLabels].sort(() => 0.5 - Math.random());
+      for (let v = 0; v < numVehicles; v++) {
+        deliveryVehiclesToInsert.push([
+          delivery.id,
+          shuffled[v] + ` ${delivery.id}`,
+          Math.random() > 0.1 ? 1 : 0,
+          new Date(Date.now() - rand(0, 86400000 * 90)),
+        ]);
+      }
+    }
+    if (deliveryVehiclesToInsert.length > 0) {
+      await connection.query(
+        `INSERT INTO delivery_vehicles (delivery_user_id, label, active, created_at) VALUES ?`,
+        [deliveryVehiclesToInsert],
+      );
+    }
+    console.log(`✅ تم إضافة ${deliveryVehiclesToInsert.length} مركبة توصيل\n`);
+
+    // ======================================================
+    // 16. Dish Coupons
+    // ======================================================
+    console.log("🎟️ إضافة كوبونات الأطباق...");
+    const dishCouponsToInsert = [];
+    const couponCodes = [
+      "WELCOME10", "WELCOME20", "FIRSTORDER", "SAVE15", "SAVE25",
+      "RAMADAN20", "EID30", "FRIDAY50", "WEEKEND20", "NEWUSER",
+      "LOYALTY10", "BIRTHDAY25", "FLASH15", "WEEKDAY10", "HOLIDAY30",
+    ];
+    const [dishesForCoupons] = await connection.query(
+      `SELECT id, kitchen_id FROM dishes WHERE kitchen_id IN (SELECT id FROM kitchens WHERE status='ACTIVE') LIMIT 500`
+    );
+    for (let i = 0; i < Math.min(couponCodes.length, 100); i++) {
+      const dish = pick(dishesForCoupons);
+      if (!dish) continue;
+      const code = couponCodes[i] + rand(100, 999);
+      dishCouponsToInsert.push([
+        dish.kitchen_id,
+        dish.id,
+        code,
+        rand(5, 50),
+        new Date(Date.now() + rand(86400000 * 7, 86400000 * 90)),
+        null,
+        new Date(),
+      ]);
+    }
+    await connection.query(
+      `INSERT INTO dish_coupons (kitchen_id, dish_id, code, discount_percent, expires_at, deleted_at, created_at) VALUES ?`,
+      [dishCouponsToInsert],
+    );
+    console.log(`✅ تم إضافة ${dishCouponsToInsert.length} كوبون طبق\n`);
+
+    // ======================================================
+    // 17. Dish Referrals
+    // ======================================================
+    console.log("🔗 إضافة إحالات الأطباق...");
+    const dishReferralsToInsert = [];
+    const rewardPercents = [5, 10, 15, 20, 25, 30];
+    for (let i = 0; i < 500; i++) {
+      const dish = pick(dishesForCoupons);
+      if (!dish) continue;
+      const referrer = pick(createdUsers.filter(u => u.role === "chef"));
+      const token = require("crypto").randomUUID();
+      dishReferralsToInsert.push([
+        dish.id,
+        referrer.id,
+        token,
+        pick(rewardPercents),
+        new Date(),
+      ]);
+    }
+    await connection.query(
+      `INSERT INTO dish_referrals (dish_id, referrer_id, token, reward_percent, created_at) VALUES ?`,
+      [dishReferralsToInsert],
+    );
+    console.log(`✅ تم إضافة ${dishReferralsToInsert.length} إحالة طبق\n`);
+
+    // ======================================================
+    // 18. Favourite Dishes
+    // ======================================================
+    console.log("❤️ إضافة الأطباق المفضلة...");
+    const favouriteDishesToInsert = [];
+    const customerUsers = createdUsers.filter(u => u.role === "customer");
+    const usedFavPairs = new Set();
+    for (let i = 0; i < 5000; i++) {
+      const customer = pick(customerUsers);
+      const dish = pick(createdDishes);
+      const pairKey = `${customer.id}-${dish.id}`;
+      if (usedFavPairs.has(pairKey)) continue;
+      usedFavPairs.add(pairKey);
+      favouriteDishesToInsert.push([
+        customer.id,
+        dish.id,
+        new Date(Date.now() - rand(0, 86400000 * 60)),
+      ]);
+    }
+    for (let i = 0; i < favouriteDishesToInsert.length; i += BATCH) {
+      const chunk = favouriteDishesToInsert.slice(i, i + BATCH);
+      await connection.query(
+        `INSERT IGNORE INTO favourite_dishes (customer_id, dish_id, created_at) VALUES ?`,
+        [chunk],
+      );
+    }
+    console.log(`✅ تم إضافة ${favouriteDishesToInsert.length} طبق مفضل\n`);
 
     // ======================================================
     // Summary

@@ -199,8 +199,8 @@
 <script>
   // قراءة المعاملات من URL
   const urlParams = new URLSearchParams(window.location.search);
-  const initialType = urlParams.get('type') || null;
-  const initialId = urlParams.get('id') || null;
+  const initialType = '<%= type || "" %>' || null;
+  const initialId = '<%= id || "" %>' || null;
   
   let currentPage = 1;
   const limit = 10;

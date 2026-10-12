@@ -75,6 +75,8 @@
                                 <span class="material-symbols-outlined text-[24px] text-error" style="font-variation-settings: 'FILL' 1;">admin_panel_settings</span>
                             <% } else if (userRole === 'chef') { %>
                                 <span class="material-symbols-outlined text-[24px] text-secondary-container" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+                            <% } else if (userRole === 'delivery') { %>
+                                <span class="material-symbols-outlined text-[24px] text-green-600" style="font-variation-settings: 'FILL' 1;">local_shipping</span>
                             <% } else { %>
                                 <span class="material-symbols-outlined text-[24px] text-tertiary" style="font-variation-settings: 'FILL' 1;">person</span>
                             <% } %>
@@ -87,10 +89,11 @@
                         </h1>
                         <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold mb-3 <%= 
                             userRole === 'admin' ? 'bg-red-100 text-red-700' : 
-                            (userRole === 'chef' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700') 
+                            (userRole === 'chef' ? 'bg-orange-100 text-orange-700' : 
+                            (userRole === 'delivery' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700')) 
                         %>">
                             <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">verified</span>
-                            <%= userRole === 'admin' ? 'مسؤول النظام' : (userRole === 'chef' ? 'طباخ محترف' : 'عميل مميز') %>
+                            <%= userRole === 'admin' ? 'مسؤول النظام' : (userRole === 'chef' ? 'طباخ محترف' : (userRole === 'delivery' ? 'مندوب توصيل' : 'عميل مميز')) %>
                         </div>
                         <div class="flex flex-wrap justify-center md:justify-start gap-4 text-on-surface-variant text-sm">
                             <div class="flex items-center gap-1.5">
@@ -196,6 +199,11 @@
             admin: [
                 { id: 'overview', label: 'نظرة عامة', icon: 'dashboard' },
                 { id: 'stats', label: 'الإحصائيات', icon: 'analytics' }
+            ],
+            delivery: [
+                { id: 'overview', label: 'نظرة عامة', icon: 'dashboard' },
+                { id: 'orders', label: 'طلباتي', icon: 'assignment' },
+                { id: 'earnings', label: 'الأرباح', icon: 'account_balance_wallet' }
             ]
         };
 
@@ -228,6 +236,8 @@
             else if (currentTab === 'dishes') await renderChefDishes(container);
             else if (currentTab === 'activity') await renderCustomerActivity(container);
             else if (currentTab === 'stats') await renderAdminStats(container);
+            else if (currentTab === 'orders') await renderDeliveryOrders(container);
+            else if (currentTab === 'earnings') await renderDeliveryEarnings(container);
         }
 
         async function renderOverview(container) {
@@ -450,6 +460,60 @@
                         </div>
                     </div>
                 `;
+            } else if (userRole === 'delivery') {
+                try {
+                    const res = await fetch('/delivery/api/v1/orders');
+                    const data = await res.json();
+                    const orders = data.status === 'success' ? (data.data || []) : [];
+                    const activeOrders = orders.filter(o => o.status === 'accepted' || o.status === 'pending').length;
+                    document.getElementById('mainStat').textContent = activeOrders;
+
+                    container.innerHTML = `
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-in">
+                            <div class="lg:col-span-2 glass-card rounded-3xl p-6 md:p-8 border border-outline-variant/30">
+                                <h2 class="font-cairo font-bold text-2xl text-on-surface mb-4 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 0;">local_shipping</span>
+                                    أهلاً بك، ${DOQ.escape(currentUser.first_name || '')}!
+                                </h2>
+                                <p class="text-on-surface-variant mb-6 leading-relaxed">
+                                    هنا يمكنك متابعة طلبات التوصيل الخاصة بك، إدارة أرباحك، والاطلاع على لوحة التوصيل.
+                                </p>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    <a href="/delivery" class="bg-green-100 hover:bg-green-200 text-green-700 p-4 rounded-2xl transition-all flex flex-col items-center gap-2">
+                                        <span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 0;">assignment</span>
+                                        <span class="text-sm font-bold">طلباتي</span>
+                                    </a>
+                                    <a href="/delivery" class="bg-primary/10 hover:bg-primary/20 text-primary p-4 rounded-2xl transition-all flex flex-col items-center gap-2">
+                                        <span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+                                        <span class="text-sm font-bold">لوحة التوصيل</span>
+                                    </a>
+                                    <a href="/users/settings" class="bg-tertiary/10 hover:bg-tertiary/20 text-tertiary p-4 rounded-2xl transition-all flex flex-col items-center gap-2">
+                                        <span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 0;">settings</span>
+                                        <span class="text-sm font-bold">الإعدادات</span>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="glass-card rounded-3xl p-6 border border-outline-variant/30">
+                                <h3 class="font-cairo font-bold text-lg text-on-surface mb-4 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">bolt</span>
+                                    إجراءات سريعة
+                                </h3>
+                                <div class="space-y-2">
+                                    <a href="/delivery" class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl hover:bg-surface-container transition-all">
+                                        <span class="material-symbols-outlined text-green-600" style="font-variation-settings: 'FILL' 0;">local_shipping</span>
+                                        <span class="font-bold text-sm">طلباتي</span>
+                                    </a>
+                                    <a href="/users/settings" class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl hover:bg-surface-container transition-all">
+                                        <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">settings</span>
+                                        <span class="font-bold text-sm">الإعدادات</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } catch (err) {
+                    container.innerHTML = '<div class="text-center py-12 text-error">حدث خطأ في تحميل البيانات</div>';
+                }
             }
         }
 
@@ -683,6 +747,115 @@
                     </a>
                 </div>
             `;
+        }
+
+        async function renderDeliveryOrders(container) {
+            try {
+                const res = await fetch('/delivery/api/v1/orders');
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const orders = data.data || [];
+                    container.innerHTML = `
+                        <div class="glass-card rounded-3xl p-6 md:p-8 border border-outline-variant/30 fade-in">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="font-cairo font-bold text-2xl text-on-surface flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">assignment</span>
+                                    طلباتي (${orders.length})
+                                </h2>
+                            </div>
+                            ${orders.length === 0 ? `
+                                <div class="text-center py-16">
+                                    <span class="material-symbols-outlined text-7xl text-outline-variant mb-4" style="font-variation-settings: 'FILL' 0;">assignment</span>
+                                    <h3 class="text-xl font-bold text-on-surface mb-2">لا توجد طلبات حالياً</h3>
+                                    <p class="text-on-surface-variant">ستظهر الطلبات هنا عندما يتم قبولها</p>
+                                </div>
+                            ` : `
+                                <div class="space-y-4">
+                                    ${orders.map(o => `
+                                        <div class="bg-surface-container-low p-5 rounded-2xl border border-outline-variant/20 hover:border-primary/30 transition-all">
+                                            <div class="flex items-start gap-4">
+                                                <div class="w-16 h-16 rounded-xl bg-surface overflow-hidden flex-shrink-0">
+                                                    ${o.dish_image ? `<img src="${DOQ.safeImage(o.dish_image)}" class="w-full h-full object-cover">` : 
+                                                    `<div class="w-full h-full flex items-center justify-center"><span class="material-symbols-outlined text-outline-variant text-[32px]" style="font-variation-settings: 'FILL' 0;">restaurant</span></div>`}
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="flex items-start justify-between mb-2 flex-wrap gap-2">
+                                                        <div>
+                                                            <h4 class="font-cairo font-bold text-lg text-on-surface">${DOQ.escape(o.dish_name || 'طلب')}</h4>
+                                                            <p class="text-sm text-secondary font-medium">${DOQ.escape(o.kitchen_name || '')}</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold">${DOQ.escape(o.status || 'pending')}</span>
+                                                            <span class="text-sm font-bold text-primary">${DOQ.escape(o.total_price || 0)} ج.م</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex items-center gap-4 text-sm text-on-surface-variant">
+                                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 0;">person</span>${DOQ.escape(o.customer_name || '')}</span>
+                                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 0;">call</span>${DOQ.escape(o.customer_phone || '')}</span>
+                                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 0;">location_on</span>${DOQ.escape(o.customer_address || '')}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `}
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                container.innerHTML = '<div class="text-center py-12 text-error">حدث خطأ في تحميل الطلبات</div>';
+            }
+        }
+
+        async function renderDeliveryEarnings(container) {
+            try {
+                const res = await fetch('/delivery/api/v1/earnings');
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const earnings = data.data || { total: 0, this_month: 0, pending: 0, completed: 0 };
+                    container.innerHTML = `
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-in">
+                            <div class="glass-card rounded-3xl p-6 md:p-8 border border-outline-variant/30">
+                                <h2 class="font-cairo font-bold text-2xl text-on-surface mb-4 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">account_balance_wallet</span>
+                                    أرباحي
+                                </h2>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                                    <div class="bg-surface-container-low p-3 rounded-xl text-center">
+                                        <div class="text-2xl font-cairo font-bold text-primary">${earnings.total || 0} ج.م</div>
+                                        <div class="text-xs text-on-surface-variant">إجمالي</div>
+                                    </div>
+                                    <div class="bg-surface-container-low p-3 rounded-xl text-center">
+                                        <div class="text-2xl font-cairo font-bold text-secondary">${earnings.this_month || 0} ج.م</div>
+                                        <div class="text-xs text-on-surface-variant">هذا الشهر</div>
+                                    </div>
+                                    <div class="bg-surface-container-low p-3 rounded-xl text-center">
+                                        <div class="text-2xl font-cairo font-bold text-tertiary">${earnings.completed || 0} ج.م</div>
+                                        <div class="text-xs text-on-surface-variant">مكتمل</div>
+                                    </div>
+                                    <div class="bg-surface-container-low p-3 rounded-xl text-center">
+                                        <div class="text-2xl font-cairo font-bold text-orange-500">${earnings.pending || 0} ج.م</div>
+                                        <div class="text-xs text-on-surface-variant">معلق</div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-3">
+                                    <a href="/delivery" class="bg-primary text-white px-5 py-2.5 rounded-xl font-bold hover:bg-primary-container transition-all flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+                                        لوحة التوصيل
+                                    </a>
+                                    <a href="/users/settings" class="bg-surface-container text-on-surface px-5 py-2.5 rounded-xl font-bold hover:bg-surface-container-high transition-all flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">settings</span>
+                                        الإعدادات
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                container.innerHTML = '<div class="text-center py-12 text-error">حدث خطأ في تحميل الأرباح</div>';
+            }
         }
 
         function renderStars(rating) {

@@ -1,0 +1,68 @@
+# ============================================================
+# Caddyfile for Staging
+# ============================================================
+
+{
+    admin off
+    auto_https disable_redirects
+}
+
+staging.doq.com {
+    encode gzip zstd
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        -Server
+    }
+
+    # Rate limiting
+    @login {
+        path /auth*
+        method POST
+    }
+    rate_limit @login {
+        zone login 10r/m
+        key {remote_host}
+    }
+
+    # API rate limiting
+    @api {
+        path /api/*
+    }
+    rate_limit @api {
+        zone api 100r/s
+        key {remote_host}
+    }
+
+    # Health check endpoint (no rate limit)
+    @health {
+        path /health
+    }
+
+    reverse_proxy @health app:3000
+
+    # Static assets with caching
+    @static {
+        path /assets/* /images/* /css/* /js/* /favicon.ico /manifest.webmanifest
+    }
+    reverse_proxy @static app:3000 {
+        header Cache-Control "public, max-age=31536000, immutable"
+    }
+
+    # Main application
+    reverse_proxy app:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        
+        # WebSocket support
+        header_up Connection {>Upgrade}
+        header_up Upgrade {http.request.header.Upgrade}
+    }
+}

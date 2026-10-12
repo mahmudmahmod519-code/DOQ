@@ -37,9 +37,9 @@ router.get('/my-reviews', roles('customer'), catchError(myReviews_render));
 
 // --- API Routes ---
 
-// GET /reviews/v1/api/list - All reviews with pagination/filters (customer, admin)
+// GET /reviews/v1/api/list - All reviews with pagination/filters (public, customer, admin)
 // Query: type=dish|kitchen, id, page, limit, q, rating, sort_order, city, category
-router.get('/v1/api/list', roles('customer', 'admin'), catchError(getReviewsList_controller));
+router.get('/v1/api/list', auth.optional, catchError(getReviewsList_controller));
 
 // GET /reviews/v1/api/dashboard - Admin reviews dashboard with stats (admin)
 router.get('/v1/api/dashboard', roles('admin'), allRows('review'), catchError(getAllReviewsDashboard_controller));

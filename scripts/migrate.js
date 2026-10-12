@@ -103,8 +103,10 @@ async function run() {
       discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
       total_price DECIMAL(10,2) NOT NULL,
       delivery_fee_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
-      status ENUM('pending','accepted','completed','cancelled') NOT NULL DEFAULT 'pending',
+      status ENUM('pending','chef_accepted','out_for_delivery','accepted','completed','cancelled') NOT NULL DEFAULT 'pending',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      chef_accepted_at DATETIME NULL,
+      out_for_delivery_at DATETIME NULL,
       accepted_at DATETIME NULL,
       completed_at DATETIME NULL,
       expires_at DATETIME NULL,
@@ -220,6 +222,20 @@ async function run() {
   await column('orders', 'customer_address', 'VARCHAR(255) NULL');
   await column('orders', 'coupon_id', 'BIGINT NULL');
   await index('orders', 'idx_orders_coupon', 'KEY idx_orders_coupon(coupon_id)');
+
+  // Add chef_accepted_at column for chef acceptance tracking
+  await column('orders', 'chef_accepted_at', 'DATETIME NULL');
+
+  // Add out_for_delivery_at column for when chef hands to delivery
+  await column('orders', 'out_for_delivery_at', 'DATETIME NULL');
+
+  // Update status enum to include chef_accepted and out_for_delivery
+  const [statusType] = await pool.query(
+    "SELECT COLUMN_TYPE AS type FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='orders' AND column_name='status'"
+  );
+  if (statusType[0] && !String(statusType[0].type).includes('out_for_delivery')) {
+    await pool.query("ALTER TABLE orders MODIFY COLUMN status ENUM('pending','chef_accepted','out_for_delivery','accepted','completed','cancelled') NOT NULL DEFAULT 'pending'");
+  }
 
   await pool.query(
     `CREATE TABLE IF NOT EXISTS order_financial_events (

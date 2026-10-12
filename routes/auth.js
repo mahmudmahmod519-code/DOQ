@@ -61,7 +61,7 @@ router.post("/signup", catchError(signUp_controller));
 router.post('/signup2', catchError(signUp2_verify_controller));
 
 // POST /auth/logout - User logout
-router.post("/logout", catchError(logout_controller));
+router.get("/logout", catchError(logout_controller));
 
 // POST /auth/forgetpassword - Request password reset email
 router.post("/forgetpassword", catchError(forgetPassword_controller));

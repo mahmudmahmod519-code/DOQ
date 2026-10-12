@@ -14,6 +14,9 @@ router.get('/', auth, roles('admin', 'chef', 'customer', 'delivery'), (req, res)
 // GET /notifications/api - List notifications (all authenticated roles)
 router.get('/api', auth, roles('admin', 'chef', 'customer', 'delivery'), catchError(c.listNotifications_controller));
 
+// GET /notifications/api/unread-count - Get unread notification count (all authenticated roles)
+router.get('/api/unread-count', auth, roles('admin', 'chef', 'customer', 'delivery'), catchError(c.unreadNotificationCount_controller));
+
 // PATCH /notifications/api/:id/read - Mark notification as read (all authenticated roles)
 router.patch('/api/:id/read', auth, roles('admin', 'chef', 'customer', 'delivery'), catchError(c.readNotification_controller));
 
