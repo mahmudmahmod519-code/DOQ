@@ -12,3 +12,5 @@ database/.cron.lock
 npm-debug.log*
 fresh_start.sh
 *.md
+!docs/PAGES.md
+!mobile/README.md

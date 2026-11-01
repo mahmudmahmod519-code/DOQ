@@ -146,7 +146,8 @@ test('security boundaries keep callback exemption exact and never expose the tes
   const index=read('index.js');
   assert.match(security,/req\.path === '\/payment\/webhook'/);
   assert.doesNotMatch(security,/startsWith\('\/payment\/webhook'\)/);
-  assert.match(index,/NODE_ENV !== 'production' && process\.env\.ENABLE_TEST_PAGE === 'true'/);
+  assert.doesNotMatch(index,/ENABLE_TEST_PAGE/);
+  assert.doesNotMatch(index,/app\.get\(['"]\/test['"]/);
 });
 
 test('payment webhooks have a replay ledger and only activate chef subscriptions',()=>{
