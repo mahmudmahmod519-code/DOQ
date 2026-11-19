@@ -117,6 +117,15 @@
                                     <option value="delivery">دليفري</option>
                                 </select>
                             </div>
+                            <div class="flex-1">
+                                <label class="block text-xs font-bold text-on-surface-variant mb-1.5">حالة الحساب</label>
+                                <select id="statusFilter" class="w-full py-2.5 px-4 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-on-surface outline-none text-sm font-medium">
+                                    <option value="all">كل الحالات</option>
+                                    <option value="approved">نشط ومفعل</option>
+                                    <option value="suspended">موقوف ومحظور</option>
+                                    <option value="pending">قيد المراجعة</option>
+                                </select>
+                            </div>
                             <button type="submit" class="sm:mt-6 px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary-container transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm">
                                 <span class="material-symbols-outlined text-[18px]">search</span>بحث
                             </button>
@@ -135,6 +144,7 @@
                                     <th class="p-3 md:p-4 font-bold text-xs hidden md:table-cell">البريد الإلكتروني</th>
                                     <th class="p-3 md:p-4 font-bold text-xs hidden sm:table-cell">الهاتف</th>
                                     <th class="p-3 md:p-4 font-bold text-xs">الدور</th>
+                                    <th class="p-3 md:p-4 font-bold text-xs text-center">الحالة</th>
                                     <th class="p-3 md:p-4 font-bold text-xs hidden lg:table-cell">التاريخ</th>
                                     <th class="p-3 md:p-4 font-bold text-xs text-center">إجراءات</th>
                                 </tr>
@@ -415,6 +425,8 @@
                 const params = new URLSearchParams({ page, limit: 10 });
                 if (currentQ) params.append('q', currentQ);
                 if (currentRole !== 'all') params.append('role', currentRole);
+                const statusFilterVal = document.getElementById('statusFilter')?.value || 'all';
+                if (statusFilterVal !== 'all') params.append('account_status', statusFilterVal);
 
                 const res = await fetch(`/admin/api/v1/users?${params.toString()}`);
                 const json = await res.json();
@@ -458,26 +470,47 @@
             let html = '';
             users.forEach((user, index) => {
                 const roleClass = user.roles === 'admin' ? 'bg-primary/10 text-primary' : 
-                                  user.roles === 'chef' ? 'bg-secondary-container text-on-secondary-container' : 'bg-surface-container text-on-surface-variant';
-                const roleName = user.roles === 'admin' ? 'مدير' : user.roles === 'chef' ? 'شيف' : 'عميل';
+                                  user.roles === 'chef' ? 'bg-secondary-container text-on-secondary-container' : 
+                                  user.roles === 'delivery' ? 'bg-amber-100 text-amber-900' : 'bg-surface-container text-on-surface-variant';
+                const roleName = user.roles === 'admin' ? 'مدير' : user.roles === 'chef' ? 'شيف' : user.roles === 'delivery' ? 'دليفري' : 'عميل';
                 const rowNumber = (pagination.page - 1) * pagination.limit + index + 1;
 
+                const isSuspended = user.account_status === 'suspended';
+                const statusBadge = isSuspended
+                    ? `<span class="inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5 rounded-lg bg-error-container text-error">موقوف</span>`
+                    : user.account_status === 'pending'
+                        ? `<span class="inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5 rounded-lg bg-amber-100 text-amber-800">قيد المراجعة</span>`
+                        : `<span class="inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5 rounded-lg bg-green-100 text-green-800">نشط</span>`;
+
+                const suspendBtn = user.roles !== 'admin'
+                    ? (isSuspended
+                        ? `<button onclick="toggleSuspend(event, ${user.id}, false)" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-700 hover:bg-green-100 transition-all" title="إلغاء الإيقاف"><span class="material-symbols-outlined text-[18px]">check_circle</span></button>`
+                        : `<button onclick="toggleSuspend(event, ${user.id}, true)" class="w-8 h-8 rounded-lg flex items-center justify-center text-amber-700 hover:bg-amber-100 transition-all" title="إيقاف الحساب"><span class="material-symbols-outlined text-[18px]">block</span></button>`)
+                    : '';
+
                 html += `
-                    <tr class="border-b border-surface-container hover:bg-surface-container-low/60 transition-colors cursor-pointer user-row group" 
+                    <tr class="border-b border-surface-container hover:bg-surface-container-low/60 transition-colors cursor-pointer user-row group ${isSuspended ? 'opacity-70 bg-error-container/10' : ''}" 
                         data-user-id="${user.id}" onclick="loadUserDetails(${user.id})">
                         <td class="p-3 md:p-4 text-on-surface-variant font-medium">${rowNumber}</td>
                         <td class="p-3 md:p-4">
-                            <div class="font-bold text-on-surface text-sm">${DOQ.escape(user.first_name)} ${DOQ.escape(user.last_name)}</div>
+                            <div class="font-bold text-on-surface text-sm flex items-center gap-1.5">
+                                ${DOQ.escape(user.first_name)} ${DOQ.escape(user.last_name)}
+                                ${user.company_name ? `<span class="text-[10px] text-on-surface-variant font-normal">(${DOQ.escape(user.company_name)})</span>` : ''}
+                            </div>
                             <div class="text-xs text-on-surface-variant md:hidden mt-0.5">${DOQ.escape(user.email)}</div>
                         </td>
                         <td class="p-3 md:p-4 text-on-surface-variant text-sm hidden md:table-cell">${DOQ.escape(user.email)}</td>
                         <td class="p-3 md:p-4 text-on-surface-variant font-mono text-xs hidden sm:table-cell">${DOQ.escape(user.phone_number)}</td>
                         <td class="p-3 md:p-4"><span class="inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5 md:px-2.5 md:py-1 rounded-lg ${roleClass}">${roleName}</span></td>
+                        <td class="p-3 md:p-4 text-center">${statusBadge}</td>
                         <td class="p-3 md:p-4 text-on-surface-variant text-xs hidden lg:table-cell">${new Date(user.created_at).toLocaleDateString('ar-EG')}</td>
                         <td class="p-3 md:p-4 text-center">
-                            <button onclick="confirmDelete(event, ${user.id})" class="delete-btn w-8 h-8 rounded-lg flex items-center justify-center text-error hover:bg-error-container transition-all mx-auto">
-                                <span class="material-symbols-outlined text-[18px]">delete</span>
-                            </button>
+                            <div class="flex items-center justify-center gap-1">
+                                ${suspendBtn}
+                                <button onclick="confirmDelete(event, ${user.id})" class="delete-btn w-8 h-8 rounded-lg flex items-center justify-center text-error hover:bg-error-container transition-all" title="حذف المستخدم">
+                                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -669,7 +702,44 @@
         });
 
         // ============================================
-        // 5. التهيئة الأولية
+        // 5. إيقاف / تفعيل المستخدم (حظر)
+        // ============================================
+        async function toggleSuspend(event, userId, shouldSuspend) {
+            if (event) event.stopPropagation();
+            if (shouldSuspend) {
+                const reason = prompt('هل أنت متأكد من رغبتك في إيقاف (حظر) هذا الحساب؟\nاكتب سبب الإيقاف (اختياري):', '');
+                if (reason === null) return;
+                try {
+                    const res = await DOQ.api(`/admin/api/v1/users/${userId}/suspend`, 'PATCH', { reason });
+                    if (res.status === 'success') {
+                        alert('✅ ' + (res.message || 'تم إيقاف الحساب بنجاح'));
+                        loadUsers(currentPage);
+                        if (currentEditingId == userId) loadUserDetails(userId);
+                    } else {
+                        alert('❌ ' + (res.message || 'فشل إيقاف الحساب'));
+                    }
+                } catch (err) {
+                    alert('❌ خطأ: ' + err.message);
+                }
+            } else {
+                if (!confirm('هل تريد تفعيل هذا الحساب وإلغاء الإيقاف؟')) return;
+                try {
+                    const res = await DOQ.api(`/admin/api/v1/users/${userId}/unsuspend`, 'PATCH', {});
+                    if (res.status === 'success') {
+                        alert('✅ ' + (res.message || 'تم تفعيل الحساب بنجاح'));
+                        loadUsers(currentPage);
+                        if (currentEditingId == userId) loadUserDetails(userId);
+                    } else {
+                        alert('❌ ' + (res.message || 'فشل تفعيل الحساب'));
+                    }
+                } catch (err) {
+                    alert('❌ خطأ: ' + err.message);
+                }
+            }
+        }
+
+        // ============================================
+        // 6. التهيئة الأولية
         // ============================================
         document.addEventListener('DOMContentLoaded', function() {
             loadUsers(1);

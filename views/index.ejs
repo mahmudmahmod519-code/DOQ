@@ -57,7 +57,7 @@
       admin: { href: '/admin', label: 'لوحة الإدارة', icon: 'admin_panel_settings' },
       chef: { href: '/users/dashboard', label: 'لوحة المطبخ', icon: 'restaurant' },
       delivery: { href: '/delivery', label: 'لوحة التوصيل', icon: 'local_shipping' },
-      customer: { href: '/my-orders', label: 'طلباتي', icon: 'receipt_long' }
+      customer: { href: '/m', label: 'افتح تطبيق دوق', icon: 'smartphone' }
     };
     const dashboard = dashboards[role];
   %>
@@ -75,7 +75,7 @@
           <h1 class="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">اطلب طبقك من المطبخ اللي يناسبك</h1>
           <p class="mt-5 max-w-xl text-base leading-8 text-white/75 sm:text-lg">شوف الأطباق والمطابخ المتاحة واختار طلبك بوضوح. كل مطبخ له منيوه وتفاصيله وتقييماته.</p>
           <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a href="/kitchens" class="inline-flex items-center justify-center gap-2 rounded-xl bg-secondary px-6 py-3.5 font-extrabold text-white shadow-soft transition hover:bg-orange-500 focus:outline-none focus:ring-2 focus:ring-white">
+            <a href="/m/kitchens" class="inline-flex items-center justify-center gap-2 rounded-xl bg-secondary px-6 py-3.5 font-extrabold text-white shadow-soft transition hover:bg-orange-500 focus:outline-none focus:ring-2 focus:ring-white">
               <span class="material-symbols-outlined">search</span>
               استكشف المطابخ
             </a>
@@ -109,7 +109,7 @@
         <div class="shrink-0 pl-2 text-sm font-extrabold text-muted">اتفرج على التصنيفات</div>
         <% if (categories && categories.length) { %>
           <% categories.slice(0, 8).forEach(category => { %>
-            <a href="/kitchens?category=<%= encodeURIComponent(category.name) %>" class="group flex shrink-0 items-center gap-2 rounded-full border border-line/70 bg-surface px-3 py-2 transition hover:border-secondary hover:bg-surface-low">
+            <a href="/m?q=<%= encodeURIComponent(category.name) %>" class="group flex shrink-0 items-center gap-2 rounded-full border border-line/70 bg-surface px-3 py-2 transition hover:border-secondary hover:bg-surface-low">
               <img src="<%= category.image || '/assests/category.jpeg' %>" alt="<%= category.name %>" class="h-9 w-9 rounded-full object-cover" loading="lazy">
               <span class="text-sm font-bold text-ink group-hover:text-primary"><%= category.name %></span>
             </a>
@@ -127,13 +127,13 @@
           <h2 class="mt-2 text-3xl font-black text-primary sm:text-4xl">مطابخ تقدر تبدأ منها</h2>
           <p class="mt-2 text-sm text-muted">افتح صفحة المطبخ وشوف المنيو والتقييمات والعنوان قبل ما تطلب</p>
         </div>
-        <a href="/kitchens" class="inline-flex items-center gap-1 font-bold text-primary hover:text-secondary">كل المطابخ <span class="material-symbols-outlined text-lg">arrow_back</span></a>
+        <a href="/m/kitchens" class="inline-flex items-center gap-1 font-bold text-primary hover:text-secondary">كل المطابخ <span class="material-symbols-outlined text-lg">arrow_back</span></a>
       </div>
       <div class="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         <% if (kitchens && kitchens.length) { %>
           <% kitchens.slice(0, 6).forEach(kitchen => { %>
             <article class="group overflow-hidden rounded-2xl border border-line/50 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-card">
-              <a href="/kitchens/<%= kitchen.id %>" class="block">
+              <a href="/m/kitchens/<%= kitchen.id %>" class="block">
                 <div class="relative h-52 overflow-hidden bg-surface-high">
                   <img src="<%= kitchen.image || kitchen.portfolio_url || '/assests/profile_kitchen.jpeg' %>" alt="<%= kitchen.title %>" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" onerror="this.src='/assests/profile_kitchen.jpeg'">
                   <span class="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-white/95 px-3 py-1 text-xs font-extrabold text-ink shadow-sm"><span class="material-symbols-outlined text-sm text-amber-500">star</span><%= kitchen.avg_rating || kitchen.rating || 'جديد' %></span>

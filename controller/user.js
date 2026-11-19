@@ -165,6 +165,7 @@ async function changePortfolio_controller(req, res) {
     }
 
     const validatedData = checker(userUpdateSchema, req.body, res);
+    if (res.headersSent) return; // validation failed and the 400 was already sent
     const first_name = validatedData.first_name || req.user.first_name;
     const last_name = validatedData.last_name || req.user.last_name;
     const phone_number = validatedData.phone_number || req.user.phone_number;

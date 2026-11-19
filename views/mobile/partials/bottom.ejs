@@ -1,0 +1,22 @@
+  </main>
+<% const showTabbarB = typeof tabbar === 'undefined' ? true : tabbar; %>
+<% if (showTabbarB) { %>
+  <nav class="tabbar" aria-label="التنقل الرئيسي">
+    <% const tabs = [
+      ['home', '/m', 'home', 'الرئيسية'],
+      ['kitchens', '/m/kitchens', 'store', 'المطابخ'],
+      ['orders', '/m/orders', 'receipt', 'طلباتي'],
+      ['favourites', '/m/favourites', 'heart', 'المفضلة'],
+      ['account', '/m/account', 'user', 'حسابي']
+    ]; %>
+    <% tabs.forEach(function (t) { const on = activeTab === t[0] || (t[0] === 'kitchens' && activeTab === 'kitchen') || (t[0] === 'orders' && activeTab === 'order'); %>
+      <a href="<%= t[1] %>" class="<%= on ? 'active' : '' %>"<%= on ? ' aria-current="page"' : '' %>>
+        <i data-icon="<%= t[2] %>"></i>
+        <span><%= t[3] %></span>
+        <% if (t[0] === 'orders') { %><span class="badge hidden" data-active-orders></span><% } %>
+      </a>
+    <% }) %>
+  </nav>
+<% } %>
+</body>
+</html>

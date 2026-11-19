@@ -29,7 +29,7 @@ const for_main = require("../middlware/for_main");
 // --- Page Routes ---
 
 // GET /auth - Login/signup page
-router.get("/", auth_render);
+router.get("/", auth.optional, auth_render);
 
 // GET /auth/signup2 - 2FA OTP entry page
 router.get("/signup2", authSignUp2_render);
@@ -60,8 +60,11 @@ router.post("/signup", catchError(signUp_controller));
 // POST /auth/signup2 - Verify 2FA OTP during signup/enrollment
 router.post('/signup2', catchError(signUp2_verify_controller));
 
-// POST /auth/logout - User logout
+// GET /auth/logout - Logout from a plain link (clears cookies then redirects to /auth)
 router.get("/logout", catchError(logout_controller));
+
+// POST /auth/logout - Logout via fetch (app-client.js and the mobile app use this)
+router.post("/logout", catchError(logout_controller));
 
 // POST /auth/forgetpassword - Request password reset email
 router.post("/forgetpassword", catchError(forgetPassword_controller));

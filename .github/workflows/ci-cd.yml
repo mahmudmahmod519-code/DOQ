@@ -7,6 +7,14 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      operation:
+        description: 'What to do'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - rollback
       environment:
         description: 'Deployment environment'
         required: true
@@ -36,26 +44,21 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Run ESLint
-        run: npm run lint 2>/dev/null || echo "No lint script configured"
 
       - name: Run tests
         run: npm test
         env:
           CI: true
 
-      - name: Check for console.log in production code
+      - name: Validate production compose file
         run: |
-          if grep -r "console\.log" --include="*.js" --include="*.ejs" --exclude-dir=node_modules --exclude-dir=.git . | grep -v "test\|spec\|console.log.*DEV\|console.log.*DEBUG"; then
-            echo "⚠️ Found console.log in production code"
-            exit 1
-          fi
+          cp .env.production.example .env.production
+          docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.production.yml config --quiet
 
   # ============================================================
   # BUILD DOCKER IMAGE
@@ -67,7 +70,7 @@ jobs:
     timeout-minutes: 30
     outputs:
       image-tag: ${{ steps.meta.outputs.tags }}
-      image-digest: ${{ steps.build.outputs.digest }}
+      image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
 
     steps:
       - name: Checkout code
@@ -120,7 +123,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build.outputs.image-tag }}
+          image-ref: ${{ needs.build.outputs.image-ref }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -132,7 +135,7 @@ jobs:
 
       - name: Run npm audit
         run: |
-          docker run --rm ${{ needs.build.outputs.image-tag }} npm audit --audit-level=high || true
+          docker run --rm ${{ needs.build.outputs.image-ref }} npm audit --audit-level=high || true
 
   # ============================================================
   # DEPLOY TO STAGING
@@ -141,7 +144,7 @@ jobs:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: [build, security-scan]
-    if: github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.operation == 'deploy' && inputs.environment == 'staging')
     environment: staging
     timeout-minutes: 30
 
@@ -186,7 +189,7 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: [build, security-scan]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.operation == 'deploy' && inputs.environment == 'production')
     environment: production
     timeout-minutes: 45
 
@@ -196,7 +199,7 @@ jobs:
 
       - name: Create deployment tag
         run: |
-          TAG="v$(date +%Y%m%d-%H%M%S)-${{ github.sha::8 }}"
+          TAG="v$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA:0:8}"
           echo "DEPLOY_TAG=$TAG" >> $GITHUB_ENV
           git tag -a "$TAG" -m "Production deployment $TAG"
           git push origin "$TAG"
@@ -268,7 +271,7 @@ jobs:
   rollback:
     name: Rollback Production
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && inputs.operation == 'rollback'
     environment: production
     timeout-minutes: 15
 

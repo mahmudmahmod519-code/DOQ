@@ -34,10 +34,20 @@ const {
     getAllCategoriesAdmin_controller,
     createCategoryAdmin_controller,
     updateCategoryAdmin_controller,
-    deleteCategoryAdmin_controller
+    deleteCategoryAdmin_controller,
+
+    // Suspend & Reports
+    suspendUser_controller,
+    unsuspendUser_controller,
+    suspendKitchen_controller,
+    unsuspendKitchen_controller,
+    getKitchensReport_controller,
+    getKitchenOrdersReport_controller,
+    getDeliveryReport_controller,
+    getDeliveryOrdersReport_controller
 } = require('../controller/admin');
 
-const { Dashboard_render } = require("../rendering/admin.js");
+const { Dashboard_render, reports_render } = require("../rendering/admin.js");
 const {
     approveUser_controller,
     rejectUser_controller,
@@ -59,6 +69,9 @@ router.use(auth, roles('admin'));
 
 // GET /admin - Admin dashboard page
 router.get('/', catchError(Dashboard_render));
+
+// GET /admin/reports - Admin financial reports & settlements page
+router.get('/reports', catchError(reports_render));
 
 // GET /admin/operations - Admin operations page (pending accounts, etc.)
 router.get('/operations', (req, res) => res.render('./admin/operations', { currentUser: req.user, pageTitle: 'DOQ operations' }));
@@ -95,6 +108,8 @@ router.get('/api/v1/users', catchError(getAllUsers_controller));
 router.get('/api/v1/users/:id', catchError(getUserById_controller));
 router.put('/api/v1/users/:id', catchError(updateUserByAdmin_controller));
 router.delete('/api/v1/users/:id', catchError(deleteUserByAdmin_controller));
+router.patch('/api/v1/users/:id/suspend', catchError(suspendUser_controller));
+router.patch('/api/v1/users/:id/unsuspend', catchError(unsuspendUser_controller));
 
 // =========================================================
 // KITCHENS
@@ -103,6 +118,16 @@ router.get('/api/v1/kitchens', catchError(getAllKitchensAdmin_controller));
 router.get('/api/v1/kitchens/:id', catchError(getKitchenByIdAdmin_controller));
 router.put('/api/v1/kitchens/:id', catchError(updateKitchenByAdmin_controller));
 router.delete('/api/v1/kitchens/:id', catchError(deleteKitchenByAdmin_controller));
+router.patch('/api/v1/kitchens/:id/suspend', catchError(suspendKitchen_controller));
+router.patch('/api/v1/kitchens/:id/unsuspend', catchError(unsuspendKitchen_controller));
+
+// =========================================================
+// REPORTS & SETTLEMENTS
+// =========================================================
+router.get('/api/v1/reports/kitchens', catchError(getKitchensReport_controller));
+router.get('/api/v1/reports/kitchens/:id/orders', catchError(getKitchenOrdersReport_controller));
+router.get('/api/v1/reports/delivery', catchError(getDeliveryReport_controller));
+router.get('/api/v1/reports/delivery/:id/orders', catchError(getDeliveryOrdersReport_controller));
 
 // =========================================================
 // DISHES

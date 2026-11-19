@@ -51,6 +51,12 @@ module.exports = (resource, pass = false, withPagination = true) => {
             if (!req.user)
                 return res.status(401).redirect('/auth');
 
+            if (req.user.account_status === 'suspended') {
+                req.my = isCollection ? [] : null;
+                req.pagination = { page: 1, limit: 10, total: 0, total_pages: 1 };
+                return next();
+            }
+
             const userId = req.user.id;
 
             switch (resource) {

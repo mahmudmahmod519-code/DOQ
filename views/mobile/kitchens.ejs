@@ -1,0 +1,14 @@
+<%- include('partials/top') %>
+  <section class="section">
+    <form class="search" role="search" id="search-form">
+      <i data-icon="search"></i>
+      <label class="sr-only" for="q">ابحث عن مطبخ</label>
+      <input id="q" name="q" type="search" placeholder="ابحث باسم المطبخ" autocomplete="off" enterkeyhint="search">
+    </form>
+    <div class="chips" id="cities" style="margin-top:12px" aria-label="المدن"></div>
+  </section>
+  <section class="section">
+    <div class="stack" id="kitchens" aria-live="polite"></div>
+    <div data-feed-status="kitchens"></div>
+  </section>
+<%- include('partials/bottom') %>

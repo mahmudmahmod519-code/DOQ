@@ -5,11 +5,14 @@
 
 services:
   app:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/${GITHUB_REPOSITORY}:latest
+    image: ghcr.io/${GITHUB_REPOSITORY:-doq/doq}:latest
+    env_file: !override
+      - ${DOQ_ENV_FILE:-.env.staging}
     environment:
-      - NODE_ENV=staging
-      - PUBLIC_URL=https://staging.doq.example.com
-      - DOQ_DOMAIN=staging.doq.example.com
+      NODE_ENV: staging
+      PUBLIC_URL: ${PUBLIC_URL:-https://staging.doq.example.com}
+      DOQ_DOMAIN: ${DOQ_DOMAIN:-staging.doq.example.com}
+    ports: !reset []
     deploy:
       resources:
         limits:
@@ -21,7 +24,8 @@ services:
 
   db:
     environment:
-      - MYSQL_DATABASE=DOQ_staging
+      MYSQL_DATABASE: ${DB_NAME:-DOQ_staging}
+    ports: !reset []
     volumes:
       - staging_mysql_data:/var/lib/mysql
     deploy:
@@ -31,11 +35,17 @@ services:
           memory: 1G
 
   caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
     environment:
-      - DOMAIN=staging.doq.example.com
-      - ACME_EMAIL=admin@staging.doq.example.com
+      DOQ_DOMAIN: ${DOQ_DOMAIN:-staging.doq.example.com}
+    depends_on:
+      app:
+        condition: service_healthy
     volumes:
       - ./Caddyfile.staging:/etc/caddy/Caddyfile:ro
+      - staging_caddy_data:/data
+      - staging_caddy_config:/config
     ports:
       - "80:80"
       - "443:443"
@@ -43,3 +53,5 @@ services:
 volumes:
   staging_mysql_data:
     driver: local
+  staging_caddy_data:
+  staging_caddy_config:

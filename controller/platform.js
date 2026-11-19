@@ -150,6 +150,9 @@ async function createReferral_controller(req, res) {
  * @returns {Promise<void>} 200 with success message.
  */
 async function addFavourite_controller(req, res) {
+    if (req.user?.account_status === 'suspended') {
+        return respondError(res, 403, 'حسابك موقوف');
+    }
     await pool.query('INSERT IGNORE INTO favourite_dishes (customer_id,dish_id) VALUES (?,?)', [req.user.id, Number(req.params.dishId)]);
     return res.json({ status: 'success', message: 'تمت إضافة الطبق للمفضلة' });
 }
@@ -172,6 +175,9 @@ async function removeFavourite_controller(req, res) {
  * @returns {Promise<void>} 200 with favorites array.
  */
 async function listFavourites_controller(req, res) {
+    if (req.user?.account_status === 'suspended') {
+        return res.json({ status: 'success', data: [] });
+    }
     const [rows] = await pool.query(
         'SELECT d.id,d.name,d.price,d.image_url,k.title AS kitchen_name FROM favourite_dishes f JOIN dishes d ON d.id=f.dish_id JOIN kitchens k ON k.id=d.kitchen_id WHERE f.customer_id=? ORDER BY f.created_at DESC',
         [req.user.id]
@@ -190,6 +196,9 @@ async function listFavourites_controller(req, res) {
  * @returns {Promise<void>} 200 with notifications array.
  */
 async function listNotifications_controller(req, res) {
+    if (req.user?.account_status === 'suspended') {
+        return res.json({ status: 'success', data: [] });
+    }
     const [rows] = await pool.query(
         'SELECT id,type,title,body,read_at,created_at FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 100',
         [req.user.id]
@@ -215,11 +224,56 @@ async function readNotification_controller(req, res) {
  * @returns {Promise<void>} 200 with unread count.
  */
 async function unreadNotificationCount_controller(req, res) {
+    if (req.user?.account_status === 'suspended') {
+        return res.json({ status: 'success', data: { count: 0 } });
+    }
     const [[row]] = await pool.query(
         'SELECT COUNT(*) as count FROM notifications WHERE user_id=? AND read_at IS NULL',
         [req.user.id]
     );
     return res.json({ status: 'success', data: { count: Number(row.count) } });
+}
+
+/**
+ * Lightweight polling endpoint used by every page (web + mobile) to show floating toasts.
+ * GET /notifications/api/poll?after=<lastSeenId>
+ * - Without `after`: returns the unread count and the newest id (no items) so the client
+ *   can start from "now" without replaying old notifications.
+ * - With `after`: returns up to 10 notifications newer than that id (oldest first).
+ * @param {Object} req - Authenticated user; query.after (optional numeric id).
+ * @param {Object} res - Express response.
+ * @returns {Promise<void>} 200 { count, latest_id, items }.
+ */
+async function pollNotifications_controller(req, res) {
+    res.set('Cache-Control', 'no-store');
+    if (req.user?.account_status !== 'approved') {
+        return res.json({ status: 'success', data: { count: 0, latest_id: 0, items: [] } });
+    }
+    const after = Number(req.query.after);
+    const [[counts]] = await pool.query(
+        'SELECT COUNT(CASE WHEN read_at IS NULL THEN 1 END) AS count, COALESCE(MAX(id),0) AS latest_id FROM notifications WHERE user_id=?',
+        [req.user.id]
+    );
+    let items = [];
+    if (Number.isInteger(after) && after >= 0) {
+        [items] = await pool.query(
+            'SELECT id,type,title,body,entity_type,entity_id,created_at FROM notifications WHERE user_id=? AND id>? ORDER BY id ASC LIMIT 10',
+            [req.user.id, after]
+        );
+    }
+    return res.json({
+        status: 'success',
+        data: { count: Number(counts.count || 0), latest_id: Number(counts.latest_id || 0), items }
+    });
+}
+
+/**
+ * Marks every unread notification of the current user as read.
+ * PATCH /notifications/api/read-all
+ */
+async function readAllNotifications_controller(req, res) {
+    await pool.query('UPDATE notifications SET read_at=NOW() WHERE user_id=? AND read_at IS NULL', [req.user.id]);
+    return res.json({ status: 'success' });
 }
 
 // ============================================
@@ -248,6 +302,9 @@ function cleanChatBody(value) {
  * @returns {Promise<void>} 201 with message data, 400/403/404 on error.
  */
 async function sendChatMessage_controller(req, res) {
+    if (req.user?.account_status === 'suspended') {
+        return respondError(res, 403, 'حسابك موقوف');
+    }
     const body = cleanChatBody(req.body.body);
     if (!body) return respondError(res, 400, 'الرسالة فارغة أو تحتوي على رابط أو محتوى خارجي');
     const [orders] = await pool.query(
@@ -301,6 +358,8 @@ module.exports = {
     listNotifications_controller,
     readNotification_controller,
     unreadNotificationCount_controller,
+    pollNotifications_controller,
+    readAllNotifications_controller,
     sendChatMessage_controller,
     listChatMessages_controller,
     cleanChatBody

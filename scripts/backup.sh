@@ -22,7 +22,7 @@ error()  { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 step()   { echo -e "\n${CYAN}=== $* ===${NC}\n"; }
 
 ENVIRONMENT="${1:-production}"
-PROJECT_DIR="/opt/doq"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
 # Files
@@ -37,7 +37,7 @@ fi
 COMPOSE_CMD="docker compose ${COMPOSE_FILES} --env-file ${ENV_FILE}"
 
 # Backup configuration
-BACKUP_DIR="/opt/doq/backups"
+BACKUP_DIR="${PROJECT_DIR}/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 RETENTION_DAYS=30
 
@@ -53,25 +53,29 @@ mkdir -p "${BACKUP_DIR}/uploads"
 # 1. Database backup
 step "1/3 Creating database backup"
 DB_BACKUP="${BACKUP_DIR}/database/doq_${ENVIRONMENT}_${TIMESTAMP}.sql"
-$COMPOSE_CMD exec -T db mysqldump -u doq_user -p"${DB_PASSWORD}" DOQ > "${DB_BACKUP}"
-gzip "${DB_BACKUP}"
+# Credentials come from the db container's own environment; no shell secrets needed.
+$COMPOSE_CMD exec -T db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysqldump --single-transaction --quick -u "$MYSQL_USER" "$MYSQL_DATABASE"' > "${DB_BACKUP}"
+if [[ ! -s "${DB_BACKUP}" ]]; then
+    error "Database backup is empty: ${DB_BACKUP}"
+fi
+gzip -f "${DB_BACKUP}"
 success "Database backup: ${DB_BACKUP}.gz"
 
-# 2. Uploads backup
+# 2. Uploads backup (stored in the doq_uploads docker volume)
 step "2/3 Backing up uploads"
-if [[ -d "/opt/doq/uploads" ]]; then
-    UPLOAD_BACKUP="${BACKUP_DIR}/uploads/uploads_${ENVIRONMENT}_${TIMESTAMP}.tar.gz"
-    tar -czf "${UPLOAD_BACKUP}" -C /opt/doq uploads
+UPLOAD_BACKUP="${BACKUP_DIR}/uploads/uploads_${ENVIRONMENT}_${TIMESTAMP}.tar.gz"
+if $COMPOSE_CMD exec -T app tar -czf - -C /app/public upload > "${UPLOAD_BACKUP}" 2>/dev/null && [[ -s "${UPLOAD_BACKUP}" ]]; then
     success "Uploads backup: ${UPLOAD_BACKUP}"
 else
-    warn "No uploads directory found, skipping"
+    rm -f "${UPLOAD_BACKUP}"
+    warn "Uploads volume not available, skipping"
 fi
 
 # 3. Configuration backup
 step "3/3 Backing up configuration"
 CONFIG_BACKUP="${BACKUP_DIR}/config_${ENVIRONMENT}_${TIMESTAMP}.tar.gz"
 tar -czf "${CONFIG_BACKUP}" \
-    -C /opt/doq \
+    -C "$PROJECT_DIR" \
     .env.production .env.staging docker-compose.yml docker-compose.production.yml docker-compose.staging.yml \
     2>/dev/null || true
 success "Configuration backup: ${CONFIG_BACKUP}"

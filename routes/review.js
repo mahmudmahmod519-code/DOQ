@@ -8,6 +8,7 @@ const catchError = require("../utiles/catchError");
 const allRows = require("../middlware/allRows");
 const auth = require("../middlware/auth");
 const roles = require("../middlware/roles");
+const toMobile = require('../middlware/customerToMobile');
 
 const {
     getReviewsList_controller,
@@ -30,10 +31,10 @@ router.use(auth.optional);
 // --- Page Routes ---
 
 // GET /reviews - Reviews page (dish/kitchen reviews with type/id query)
-router.get('/', catchError(reviews_render));
+router.get('/', toMobile('/m'), catchError(reviews_render));
 
 // GET /reviews/my-reviews - Customer's reviews page (customer)
-router.get('/my-reviews', roles('customer'), catchError(myReviews_render));
+router.get('/my-reviews', toMobile('/m/account'), roles('customer'), catchError(myReviews_render));
 
 // --- API Routes ---
 

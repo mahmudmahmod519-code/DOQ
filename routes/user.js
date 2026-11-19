@@ -10,6 +10,7 @@ const allRows = require('../middlware/allRows');
 const auth = require('../middlware/auth');
 const upload = require("../middlware/upload");
 const catchError = require('../utiles/catchError');
+const toMobile = require('../middlware/customerToMobile');
 
 const { getChefOrders_controller } = require('../controller/orders');
 
@@ -32,7 +33,7 @@ const {
 router.use(auth);
 
 // GET /users/profile - User profile page (with reviews via for_main middleware)
-router.get('/profile', for_main('review', true, true), catchError(portfolio_render));
+router.get('/profile', toMobile('/m/account'), for_main('review', true, true), catchError(portfolio_render));
 
 // GET /users/orders - Chef orders page (chef)
 router.get('/orders', roles('chef'), (req, res) => res.render('./chef/orders', { ...require('../utiles/checkLogin')(req, res), pageTitle: 'طلبات المطبخ | دوق' }));
@@ -48,7 +49,7 @@ router.get('/dashboard', roles('chef', 'admin'), getUnifiedChefDashboard, catchE
 router.get('/', roles('admin'), catchError(users_render));
 
 // GET /users/settings - User settings page
-router.get('/settings', catchError(setting_render))
+router.get('/settings', toMobile('/m/account'), catchError(setting_render))
 
 // POST /users/api/v1 - Create user (admin)
 router.post('/api/v1', roles('admin'), catchError(createUser_controller));

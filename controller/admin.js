@@ -200,24 +200,29 @@ async function getAllUsers_controller(req, res) {
     const offset = (page - 1) * limit;
     const q = req.query.q || '';
     const role = req.query.role || '';
+    const accountStatus = req.query.account_status || req.query.status || '';
 
     let whereClauses = [];
     let params = [];
 
     if (q) {
         const keyword = `%${q}%`;
-        whereClauses.push(`(first_name LIKE ? OR last_name LIKE ? OR email LIKE ? OR phone_number LIKE ?)`);
-        params.push(keyword, keyword, keyword, keyword);
+        whereClauses.push(`(first_name LIKE ? OR last_name LIKE ? OR email LIKE ? OR phone_number LIKE ? OR company_name LIKE ?)`);
+        params.push(keyword, keyword, keyword, keyword, keyword);
     }
-    if (role && ['customer', 'chef', 'admin'].includes(role)) {
+    if (role && ['customer', 'chef', 'delivery', 'admin'].includes(role)) {
         whereClauses.push(`roles = ?`);
         params.push(role);
+    }
+    if (accountStatus && ['approved', 'pending', 'suspended', 'rejected'].includes(accountStatus)) {
+        whereClauses.push(`account_status = ?`);
+        params.push(accountStatus);
     }
 
     const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
     const [users] = await pool.query(`
-        SELECT id, first_name, last_name, email, phone_number, roles, created_at
+        SELECT id, first_name, last_name, email, phone_number, roles, company_name, account_status, suspended_at, suspend_reason, created_at
         FROM users
         ${whereSQL}
         ORDER BY created_at DESC
@@ -245,7 +250,7 @@ async function getUserById_controller(req, res) {
     if (!id) return;
 
     const [users] = await pool.query(`
-        SELECT id, first_name, last_name, email, phone_number, roles, created_at
+        SELECT id, first_name, last_name, email, phone_number, roles, company_name, account_status, suspended_at, suspend_reason, created_at
         FROM users WHERE id = ?
     `, [id]);
 
@@ -370,6 +375,7 @@ async function getAllKitchensAdmin_controller(req, res) {
         const offset = (page - 1) * limit;
         const q = req.query.q || '';
         const city = req.query.city || '';
+        const status = req.query.status || '';
 
         let whereClauses = [];
         let params = [];
@@ -383,14 +389,19 @@ async function getAllKitchensAdmin_controller(req, res) {
             whereClauses.push(`k.city = ?`);
             params.push(city);
         }
+        if (status) {
+            whereClauses.push(`k.status = ?`);
+            params.push(status);
+        }
 
         const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
         const [kitchens] = await pool.query(`
             SELECT 
-                k.id, k.title, k.city, k.address, k.phone_number, k.image_url, k.portfolio_url, k.created_at,
+                k.id, k.title, k.city, k.address, k.phone_number, k.image_url, k.portfolio_url, k.status, k.created_at,
                 CONCAT(u.first_name, ' ', u.last_name) AS chef_name,
                 u.id AS chef_id,
+                u.account_status AS chef_status,
                 COUNT(DISTINCT d.id) AS dishes_count,
                 COUNT(r.id) AS reviews_count,
                 ROUND(AVG(r.rating), 2) AS avg_rating
@@ -883,6 +894,599 @@ async function deleteCategoryAdmin_controller(req, res) {
 }
 
 // =========================================================
+// 7. USER & KITCHEN SUSPENSION / BAN MANAGEMENT
+// =========================================================
+
+/**
+ * Suspend (ban) a user account.
+ * Also suspends associated kitchen if user is a chef.
+ * Increments session_version so all active user sessions are invalidated.
+ */
+async function suspendUser_controller(req, res) {
+    const { id } = checker(idParamSchema, req.params, res);
+    if (!id) return;
+
+    if (parseInt(id) === req.user.id) {
+        return res.status(400).json({ status: 'error', message: 'لا يمكنك إيقاف حسابك الحالي' });
+    }
+
+    try {
+        const [existing] = await pool.query('SELECT id, roles, account_status FROM users WHERE id = ?', [id]);
+        if (existing.length === 0) {
+            return res.status(404).json({ status: 'error', message: 'المستخدم غير موجود' });
+        }
+
+        if (existing[0].roles === 'admin') {
+            return res.status(400).json({ status: 'error', message: 'لا يمكن إيقاف حساب مدير' });
+        }
+
+        const reason = req.body.reason ? String(req.body.reason).trim().slice(0, 500) : null;
+
+        await pool.query(
+            `UPDATE users 
+             SET account_status = 'suspended', 
+                 suspended_at = UTC_TIMESTAMP(), 
+                 suspended_by = ?, 
+                 suspend_reason = ?,
+                 session_version = session_version + 1
+             WHERE id = ?`,
+            [req.user.id, reason, id]
+        );
+
+        if (existing[0].roles === 'chef') {
+            await pool.query("UPDATE kitchens SET status = 'SUSPENDED' WHERE user_id = ?", [id]);
+        }
+
+        return res.status(200).json({ status: 'success', message: 'تم إيقاف الحساب بنجاح' });
+    } catch (error) {
+        console.error('Suspend User Error:', error && error.message);
+        return res.status(500).json({ status: 'error', message: 'حدث خطأ أثناء إيقاف الحساب' });
+    }
+}
+
+/**
+ * Unsuspend (activate) a suspended user account.
+ * Also reactivates kitchen if chef.
+ */
+async function unsuspendUser_controller(req, res) {
+    const { id } = checker(idParamSchema, req.params, res);
+    if (!id) return;
+
+    try {
+        const [existing] = await pool.query('SELECT id, roles, account_status FROM users WHERE id = ?', [id]);
+        if (existing.length === 0) {
+            return res.status(404).json({ status: 'error', message: 'المستخدم غير موجود' });
+        }
+
+        await pool.query(
+            `UPDATE users 
+             SET account_status = 'approved', 
+                 suspended_at = NULL, 
+                 suspended_by = NULL, 
+                 suspend_reason = NULL,
+                 session_version = session_version + 1
+             WHERE id = ?`,
+            [id]
+        );
+
+        if (existing[0].roles === 'chef') {
+            await pool.query("UPDATE kitchens SET status = 'ACTIVE' WHERE user_id = ?", [id]);
+        }
+
+        return res.status(200).json({ status: 'success', message: 'تم تفعيل الحساب وإلغاء الإيقاف بنجاح' });
+    } catch (error) {
+        console.error('Unsuspend User Error:', error && error.message);
+        return res.status(500).json({ status: 'error', message: 'حدث خطأ أثناء تفعيل الحساب' });
+    }
+}
+
+/**
+ * Suspend a kitchen directly by kitchen ID.
+ * Also suspends the owning chef.
+ */
+async function suspendKitchen_controller(req, res) {
+    const { id } = checker(idParamSchema, req.params, res);
+    if (!id) return;
+
+    try {
+        const [kitchens] = await pool.query('SELECT id, user_id FROM kitchens WHERE id = ?', [id]);
+        if (kitchens.length === 0) {
+            return res.status(404).json({ status: 'error', message: 'المطبخ غير موجود' });
+        }
+
+        const reason = req.body.reason ? String(req.body.reason).trim().slice(0, 500) : null;
+        const chefId = kitchens[0].user_id;
+
+        await pool.query("UPDATE kitchens SET status = 'SUSPENDED' WHERE id = ?", [id]);
+        await pool.query(
+            `UPDATE users 
+             SET account_status = 'suspended', 
+                 suspended_at = UTC_TIMESTAMP(), 
+                 suspended_by = ?, 
+                 suspend_reason = ?,
+                 session_version = session_version + 1
+             WHERE id = ?`,
+            [req.user.id, reason, chefId]
+        );
+
+        return res.status(200).json({ status: 'success', message: 'تم إيقاف المطبخ وحساب الشيف بنجاح' });
+    } catch (error) {
+        console.error('Suspend Kitchen Error:', error && error.message);
+        return res.status(500).json({ status: 'error', message: 'حدث خطأ أثناء إيقاف المطبخ' });
+    }
+}
+
+/**
+ * Unsuspend a kitchen directly by kitchen ID.
+ * Also reactivates the owning chef.
+ */
+async function unsuspendKitchen_controller(req, res) {
+    const { id } = checker(idParamSchema, req.params, res);
+    if (!id) return;
+
+    try {
+        const [kitchens] = await pool.query('SELECT id, user_id FROM kitchens WHERE id = ?', [id]);
+        if (kitchens.length === 0) {
+            return res.status(404).json({ status: 'error', message: 'المطبخ غير موجود' });
+        }
+
+        const chefId = kitchens[0].user_id;
+        await pool.query("UPDATE kitchens SET status = 'ACTIVE' WHERE id = ?", [id]);
+        await pool.query(
+            `UPDATE users 
+             SET account_status = 'approved', 
+                 suspended_at = NULL, 
+                 suspended_by = NULL, 
+                 suspend_reason = NULL,
+                 session_version = session_version + 1
+             WHERE id = ?`,
+            [chefId]
+        );
+
+        return res.status(200).json({ status: 'success', message: 'تم تفعيل المطبخ وحساب الشيف بنجاح' });
+    } catch (error) {
+        console.error('Unsuspend Kitchen Error:', error && error.message);
+        return res.status(500).json({ status: 'error', message: 'حدث خطأ أثناء تفعيل المطبخ' });
+    }
+}
+
+// =========================================================
+// 8. KITCHEN ORDERS & FINANCIAL SETTLEMENT REPORTS
+// =========================================================
+
+/**
+ * Aggregated report of all kitchens with order counts, sales, and platform commissions.
+ * Query params: month (YYYY-MM), from_date, to_date, q, kitchen_id.
+ */
+async function getKitchensReport_controller(req, res) {
+    try {
+        const month = req.query.month ? String(req.query.month).trim() : null;
+        const fromDate = req.query.from_date ? String(req.query.from_date).trim() : null;
+        const toDate = req.query.to_date ? String(req.query.to_date).trim() : null;
+        const q = req.query.q ? String(req.query.q).trim() : '';
+        const kitchenId = req.query.kitchen_id ? Number(req.query.kitchen_id) : null;
+
+        let orderDateConditions = [];
+        let orderDateParams = [];
+
+        if (month && /^\d{4}-\d{2}$/.test(month)) {
+            orderDateConditions.push("DATE_FORMAT(o.created_at, '%Y-%m') = ?");
+            orderDateParams.push(month);
+        } else {
+            if (fromDate) {
+                orderDateConditions.push("o.created_at >= ?");
+                orderDateParams.push(fromDate + ' 00:00:00');
+            }
+            if (toDate) {
+                orderDateConditions.push("o.created_at <= ?");
+                orderDateParams.push(toDate + ' 23:59:59');
+            }
+        }
+
+        const orderJoinOn = orderDateConditions.length
+            ? `AND ${orderDateConditions.join(' AND ')}`
+            : '';
+
+        let kitchenWhere = [];
+        let kitchenParams = [];
+
+        if (kitchenId) {
+            kitchenWhere.push('k.id = ?');
+            kitchenParams.push(kitchenId);
+        }
+        if (q) {
+            kitchenWhere.push('(k.title LIKE ? OR CONCAT(u.first_name, " ", u.last_name) LIKE ? OR k.phone_number LIKE ?)');
+            const kw = `%${q}%`;
+            kitchenParams.push(kw, kw, kw);
+        }
+
+        const whereSQL = kitchenWhere.length ? `WHERE ${kitchenWhere.join(' AND ')}` : '';
+
+        const commissionRate = Number(process.env.CHEF_COMMISSION_PERCENT || 7);
+
+        const sql = `
+            SELECT 
+                k.id AS kitchen_id,
+                k.title AS kitchen_name,
+                k.city AS kitchen_city,
+                k.address AS kitchen_address,
+                k.phone_number AS kitchen_phone,
+                k.status AS kitchen_status,
+                u.id AS chef_id,
+                CONCAT_WS(' ', u.first_name, u.last_name) AS chef_name,
+                u.email AS chef_email,
+                u.phone_number AS chef_phone,
+                u.account_status AS chef_status,
+                COUNT(o.id) AS total_orders,
+                SUM(CASE WHEN o.status = 'completed' THEN 1 ELSE 0 END) AS completed_orders,
+                SUM(CASE WHEN o.status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled_orders,
+                SUM(CASE WHEN o.status NOT IN ('completed', 'cancelled') THEN 1 ELSE 0 END) AS active_orders,
+                COALESCE(SUM(CASE WHEN o.status = 'completed' THEN o.total_price ELSE 0 END), 0) AS completed_sales,
+                COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN o.total_price ELSE 0 END), 0) AS non_cancelled_sales,
+                COALESCE(SUM(o.total_price), 0) AS total_orders_value
+            FROM kitchens k
+            JOIN users u ON u.id = k.user_id
+            LEFT JOIN orders o ON o.kitchen_id = k.id ${orderJoinOn}
+            ${whereSQL}
+            GROUP BY k.id, u.id
+            ORDER BY completed_sales DESC, total_orders DESC
+        `;
+
+        const [rows] = await pool.query(sql, [...orderDateParams, ...kitchenParams]);
+
+        let overallTotalOrders = 0;
+        let overallCompletedOrders = 0;
+        let overallCancelledOrders = 0;
+        let overallActiveOrders = 0;
+        let overallCompletedSales = 0;
+        let overallCommissionDue = 0;
+        let overallNetPayout = 0;
+
+        const data = rows.map(r => {
+            const completedSales = Number(Number(r.completed_sales).toFixed(2));
+            const commission = Number((completedSales * (commissionRate / 100)).toFixed(2));
+            const netPayout = Number((completedSales - commission).toFixed(2));
+
+            overallTotalOrders += Number(r.total_orders);
+            overallCompletedOrders += Number(r.completed_orders);
+            overallCancelledOrders += Number(r.cancelled_orders);
+            overallActiveOrders += Number(r.active_orders);
+            overallCompletedSales += completedSales;
+            overallCommissionDue += commission;
+            overallNetPayout += netPayout;
+
+            return {
+                ...r,
+                total_orders: Number(r.total_orders),
+                completed_orders: Number(r.completed_orders),
+                cancelled_orders: Number(r.cancelled_orders),
+                active_orders: Number(r.active_orders),
+                completed_sales: completedSales,
+                non_cancelled_sales: Number(Number(r.non_cancelled_sales).toFixed(2)),
+                total_orders_value: Number(Number(r.total_orders_value).toFixed(2)),
+                commission_rate: commissionRate,
+                platform_commission: commission,
+                net_kitchen_payout: netPayout
+            };
+        });
+
+        return res.status(200).json({
+            status: 'success',
+            period: { month, from_date: fromDate, to_date: toDate },
+            summary: {
+                total_kitchens: data.length,
+                overall_total_orders: overallTotalOrders,
+                overall_completed_orders: overallCompletedOrders,
+                overall_cancelled_orders: overallCancelledOrders,
+                overall_active_orders: overallActiveOrders,
+                overall_completed_sales: Number(overallCompletedSales.toFixed(2)),
+                overall_commission_due: Number(overallCommissionDue.toFixed(2)),
+                overall_net_payout: Number(overallNetPayout.toFixed(2)),
+                commission_rate: commissionRate
+            },
+            data
+        });
+    } catch (error) {
+        console.error('Kitchens Report Error:', error && error.message);
+        return res.status(500).json({ status: 'error', message: 'حدث خطأ أثناء جلب تقرير المطابخ' });
+    }
+}
+
+/**
+ * Detailed list of orders for a specific kitchen.
+ */
+async function getKitchenOrdersReport_controller(req, res) {
+    const { id } = checker(idParamSchema, req.params, res);
+    if (!id) return;
+
+    try {
+        const month = req.query.month ? String(req.query.month).trim() : null;
+        const status = req.query.status ? String(req.query.status).trim() : null;
+
+        let whereClauses = ['o.kitchen_id = ?'];
+        let params = [id];
+
+        if (status) {
+            whereClauses.push('o.status = ?');
+            params.push(status);
+        }
+        if (month && /^\d{4}-\d{2}$/.test(month)) {
+            whereClauses.push("DATE_FORMAT(o.created_at, '%Y-%m') = ?");
+            params.push(month);
+        }
+
+        const [kitchens] = await pool.query(
+            'SELECT k.id, k.title, k.city, k.phone_number, k.status, CONCAT_WS(" ", u.first_name, u.last_name) AS chef_name FROM kitchens k JOIN users u ON u.id = k.user_id WHERE k.id = ?',
+            [id]
+        );
+
+        if (kitchens.length === 0) {
+            return res.status(404).json({ status: 'error', message: 'المطبخ غير موجود' });
+        }
+
+        const [orders] = await pool.query(
+            `SELECT o.id, o.public_id, o.order_name, o.dish_name, o.quantity, o.unit_price, o.discount_amount,
+                    o.total_price, o.delivery_fee_amount, o.status, o.customer_name, o.customer_phone, o.customer_address,
+                    o.created_at, o.completed_at, o.delivery_id,
+                    CONCAT_WS(' ', d.first_name, d.last_name) AS delivery_name,
+                    d.phone_number AS delivery_phone,
+                    d.company_name AS delivery_company
+             FROM orders o
+             LEFT JOIN users d ON d.id = o.delivery_id
+             WHERE ${whereClauses.join(' AND ')}
+             ORDER BY o.created_at DESC`,
+            params
+        );
+
+        const ordersWithCode = orders.map(o => ({
+            ...o,
+            order_code: String(o.public_id).slice(0, 8).toUpperCase()
+        }));
+
+        const commissionRate = Number(process.env.CHEF_COMMISSION_PERCENT || 7);
+        const completedSales = orders
+            .filter(o => o.status === 'completed')
+            .reduce((sum, o) => sum + Number(o.total_price), 0);
+        const commission = Number((completedSales * (commissionRate / 100)).toFixed(2));
+        const netPayout = Number((completedSales - commission).toFixed(2));
+
+        return res.status(200).json({
+            status: 'success',
+            kitchen: kitchens[0],
+            financials: {
+                total_orders: orders.length,
+                completed_orders: orders.filter(o => o.status === 'completed').length,
+                completed_sales: Number(completedSales.toFixed(2)),
+                commission_rate: commissionRate,
+                commission_amount: commission,
+                net_payout: netPayout
+            },
+            data: ordersWithCode
+        });
+    } catch (error) {
+        console.error('Kitchen Orders Report Error:', error && error.message);
+        return res.status(500).json({ status: 'error', message: 'حدث خطأ أثناء جلب تفاصيل طلبات المطبخ' });
+    }
+}
+
+// =========================================================
+// 9. DELIVERY COMPANIES ORDERS & FINANCIAL SETTLEMENT REPORTS
+// =========================================================
+
+/**
+ * Aggregated report of all delivery companies with orders count, fees, and commissions.
+ * Query params: month (YYYY-MM), from_date, to_date, q, delivery_id.
+ */
+async function getDeliveryReport_controller(req, res) {
+    try {
+        const month = req.query.month ? String(req.query.month).trim() : null;
+        const fromDate = req.query.from_date ? String(req.query.from_date).trim() : null;
+        const toDate = req.query.to_date ? String(req.query.to_date).trim() : null;
+        const q = req.query.q ? String(req.query.q).trim() : '';
+        const deliveryId = req.query.delivery_id ? Number(req.query.delivery_id) : null;
+
+        let orderDateConditions = [];
+        let orderDateParams = [];
+
+        if (month && /^\d{4}-\d{2}$/.test(month)) {
+            orderDateConditions.push("DATE_FORMAT(o.created_at, '%Y-%m') = ?");
+            orderDateParams.push(month);
+        } else {
+            if (fromDate) {
+                orderDateConditions.push("o.created_at >= ?");
+                orderDateParams.push(fromDate + ' 00:00:00');
+            }
+            if (toDate) {
+                orderDateConditions.push("o.created_at <= ?");
+                orderDateParams.push(toDate + ' 23:59:59');
+            }
+        }
+
+        const orderJoinOn = orderDateConditions.length
+            ? `AND ${orderDateConditions.join(' AND ')}`
+            : '';
+
+        let deliveryWhere = ["u.roles = 'delivery'"];
+        let deliveryParams = [];
+
+        if (deliveryId) {
+            deliveryWhere.push('u.id = ?');
+            deliveryParams.push(deliveryId);
+        }
+        if (q) {
+            deliveryWhere.push('(u.company_name LIKE ? OR CONCAT(u.first_name, " ", u.last_name) LIKE ? OR u.phone_number LIKE ?)');
+            const kw = `%${q}%`;
+            deliveryParams.push(kw, kw, kw);
+        }
+
+        const commissionRate = Number(process.env.DELIVERY_COMMISSION_PERCENT || 7);
+        const commissionBasis = process.env.DELIVERY_COMMISSION_BASIS || 'order_total';
+
+        const sql = `
+            SELECT 
+                u.id AS delivery_id,
+                COALESCE(u.company_name, CONCAT_WS(' ', u.first_name, u.last_name)) AS company_name,
+                CONCAT_WS(' ', u.first_name, u.last_name) AS contact_name,
+                u.email,
+                u.phone_number,
+                u.city,
+                u.account_status,
+                u.created_at,
+                COUNT(o.id) AS total_assigned_orders,
+                SUM(CASE WHEN o.status = 'completed' THEN 1 ELSE 0 END) AS completed_orders,
+                SUM(CASE WHEN o.status IN ('accepted', 'out_for_delivery') THEN 1 ELSE 0 END) AS active_orders,
+                COALESCE(SUM(CASE WHEN o.status = 'completed' THEN o.total_price ELSE 0 END), 0) AS completed_order_value,
+                COALESCE(SUM(CASE WHEN o.status = 'completed' THEN o.delivery_fee_amount ELSE 0 END), 0) AS total_delivery_fees
+            FROM users u
+            LEFT JOIN orders o ON o.delivery_id = u.id ${orderJoinOn}
+            WHERE ${deliveryWhere.join(' AND ')}
+            GROUP BY u.id
+            ORDER BY completed_orders DESC, total_delivery_fees DESC
+        `;
+
+        const [rows] = await pool.query(sql, [...orderDateParams, ...deliveryParams]);
+
+        let overallAssignedOrders = 0;
+        let overallCompletedOrders = 0;
+        let overallActiveOrders = 0;
+        let overallOrderValue = 0;
+        let overallDeliveryFees = 0;
+        let overallCommissionDue = 0;
+        let overallNetPayout = 0;
+
+        const data = rows.map(r => {
+            const completedValue = Number(Number(r.completed_order_value).toFixed(2));
+            const deliveryFees = Number(Number(r.total_delivery_fees).toFixed(2));
+
+            const baseAmount = commissionBasis === 'delivery_fee' ? deliveryFees : completedValue;
+            const commission = Number((baseAmount * (commissionRate / 100)).toFixed(2));
+            const netPayout = Number((deliveryFees - commission).toFixed(2));
+
+            overallAssignedOrders += Number(r.total_assigned_orders);
+            overallCompletedOrders += Number(r.completed_orders);
+            overallActiveOrders += Number(r.active_orders);
+            overallOrderValue += completedValue;
+            overallDeliveryFees += deliveryFees;
+            overallCommissionDue += commission;
+            overallNetPayout += netPayout;
+
+            return {
+                ...r,
+                total_assigned_orders: Number(r.total_assigned_orders),
+                completed_orders: Number(r.completed_orders),
+                active_orders: Number(r.active_orders),
+                completed_order_value: completedValue,
+                total_delivery_fees: deliveryFees,
+                commission_rate: commissionRate,
+                commission_basis: commissionBasis,
+                platform_commission: commission,
+                net_delivery_payout: netPayout
+            };
+        });
+
+        return res.status(200).json({
+            status: 'success',
+            period: { month, from_date: fromDate, to_date: toDate },
+            summary: {
+                total_delivery_companies: data.length,
+                overall_assigned_orders: overallAssignedOrders,
+                overall_completed_orders: overallCompletedOrders,
+                overall_active_orders: overallActiveOrders,
+                overall_order_value: Number(overallOrderValue.toFixed(2)),
+                overall_delivery_fees: Number(overallDeliveryFees.toFixed(2)),
+                overall_commission_due: Number(overallCommissionDue.toFixed(2)),
+                overall_net_payout: Number(overallNetPayout.toFixed(2)),
+                commission_rate: commissionRate,
+                commission_basis: commissionBasis
+            },
+            data
+        });
+    } catch (error) {
+        console.error('Delivery Report Error:', error && error.message);
+        return res.status(500).json({ status: 'error', message: 'حدث خطأ أثناء جلب تقرير شركات الدليفري' });
+    }
+}
+
+/**
+ * Detailed list of orders handled by a specific delivery company.
+ */
+async function getDeliveryOrdersReport_controller(req, res) {
+    const { id } = checker(idParamSchema, req.params, res);
+    if (!id) return;
+
+    try {
+        const month = req.query.month ? String(req.query.month).trim() : null;
+        const status = req.query.status ? String(req.query.status).trim() : null;
+
+        let whereClauses = ['o.delivery_id = ?'];
+        let params = [id];
+
+        if (status) {
+            whereClauses.push('o.status = ?');
+            params.push(status);
+        }
+        if (month && /^\d{4}-\d{2}$/.test(month)) {
+            whereClauses.push("DATE_FORMAT(o.created_at, '%Y-%m') = ?");
+            params.push(month);
+        }
+
+        const [users] = await pool.query(
+            'SELECT id, company_name, first_name, last_name, email, phone_number, city, account_status FROM users WHERE id = ? AND roles = "delivery"',
+            [id]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({ status: 'error', message: 'شركة الدليفري غير موجودة' });
+        }
+
+        const [orders] = await pool.query(
+            `SELECT o.id, o.public_id, o.order_name, o.dish_name, o.kitchen_name, o.kitchen_phone, o.kitchen_address,
+                    o.customer_name, o.customer_phone, o.customer_address, o.quantity, o.unit_price,
+                    o.total_price, o.delivery_fee_amount, o.status, o.created_at, o.accepted_at, o.completed_at
+             FROM orders o
+             WHERE ${whereClauses.join(' AND ')}
+             ORDER BY o.created_at DESC`,
+            params
+        );
+
+        const ordersWithCode = orders.map(o => ({
+            ...o,
+            order_code: String(o.public_id).slice(0, 8).toUpperCase()
+        }));
+
+        const commissionRate = Number(process.env.DELIVERY_COMMISSION_PERCENT || 7);
+        const commissionBasis = process.env.DELIVERY_COMMISSION_BASIS || 'order_total';
+
+        const completedOrders = orders.filter(o => o.status === 'completed');
+        const completedValue = completedOrders.reduce((sum, o) => sum + Number(o.total_price), 0);
+        const deliveryFees = completedOrders.reduce((sum, o) => sum + Number(o.delivery_fee_amount), 0);
+
+        const baseAmount = commissionBasis === 'delivery_fee' ? deliveryFees : completedValue;
+        const commission = Number((baseAmount * (commissionRate / 100)).toFixed(2));
+        const netPayout = Number((deliveryFees - commission).toFixed(2));
+
+        return res.status(200).json({
+            status: 'success',
+            delivery_user: users[0],
+            financials: {
+                total_orders: orders.length,
+                completed_orders: completedOrders.length,
+                total_order_value: Number(completedValue.toFixed(2)),
+                total_delivery_fees: Number(deliveryFees.toFixed(2)),
+                commission_rate: commissionRate,
+                commission_basis: commissionBasis,
+                commission_amount: commission,
+                net_payout: netPayout
+            },
+            data: ordersWithCode
+        });
+    } catch (error) {
+        console.error('Delivery Orders Report Error:', error && error.message);
+        return res.status(500).json({ status: 'error', message: 'حدث خطأ أثناء جلب تفاصيل طلبات شركة الدليفري' });
+    }
+}
+
+// =========================================================
 // EXPORTS
 // =========================================================
 module.exports = {
@@ -894,12 +1498,16 @@ module.exports = {
     getUserById_controller,
     updateUserByAdmin_controller,
     deleteUserByAdmin_controller,
+    suspendUser_controller,
+    unsuspendUser_controller,
 
     // Kitchens
     getAllKitchensAdmin_controller,
     getKitchenByIdAdmin_controller,
     updateKitchenByAdmin_controller,
     deleteKitchenByAdmin_controller,
+    suspendKitchen_controller,
+    unsuspendKitchen_controller,
 
     // Dishes
     getAllDishesAdmin_controller,
@@ -913,5 +1521,11 @@ module.exports = {
     getAllCategoriesAdmin_controller,
     createCategoryAdmin_controller,
     updateCategoryAdmin_controller,
-    deleteCategoryAdmin_controller
+    deleteCategoryAdmin_controller,
+
+    // Financial Reports & Settlements
+    getKitchensReport_controller,
+    getKitchenOrdersReport_controller,
+    getDeliveryReport_controller,
+    getDeliveryOrdersReport_controller
 };

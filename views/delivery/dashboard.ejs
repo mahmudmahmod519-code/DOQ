@@ -128,7 +128,7 @@
                   dashboardLabel = 'لوحة التوصيل';
                   dashboardIcon = 'local_shipping';
                 } else if (role === 'customer') {
-                  dashboardHref = '/my-orders';
+                  dashboardHref = '/m';
                   dashboardLabel = 'طلباتي';
                   dashboardIcon = 'receipt_long';
                 }
@@ -147,8 +147,9 @@
               <% } %>
               
               <!-- Notification icon -->
-              <a href="/notifications" aria-label="الإشعارات" class="hidden sm:block p-1.5 sm:p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center">
+              <a href="/notifications" id="notification-bell" aria-label="الإشعارات" class="relative p-1.5 sm:p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center">
                 <span class="material-symbols-outlined text-xl sm:text-2xl">notifications</span>
+                <span id="notification-badge" class="absolute -top-0.5 -right-0.5 w-5 h-5 min-w-[18px] bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden">0</span>
               </a>
               
               <!-- Profile avatar -->
@@ -261,6 +262,14 @@
       <!-- Notice Area -->
       <div id="toast-container"></div>
 
+      <!-- Filter tabs -->
+      <div id="order-tabs" class="flex flex-wrap gap-2" role="tablist">
+        <button type="button" data-tab="all" class="tab-btn rounded-full px-4 py-2 text-sm font-bold bg-primary text-white">الكل</button>
+        <button type="button" data-tab="open" class="tab-btn rounded-full px-4 py-2 text-sm font-bold bg-white border border-outline-variant/50">مفتوحة للقبول</button>
+        <button type="button" data-tab="mine" class="tab-btn rounded-full px-4 py-2 text-sm font-bold bg-white border border-outline-variant/50">معايا دلوقتي</button>
+        <button type="button" data-tab="done" class="tab-btn rounded-full px-4 py-2 text-sm font-bold bg-white border border-outline-variant/50">اتسلمت / اتلغت</button>
+      </div>
+
       <!-- Orders Grid -->
       <section id="orders" class="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <!-- سيتم ملء هذا القسم تلقائياً بواسطة JavaScript -->
@@ -331,12 +340,6 @@
   function tel(v) { return v ? `<a dir="ltr" class="text-primary underline font-bold" href="tel:${esc(v)}">${esc(v)}</a>` : 'مش متاح'; }
   function row(l, v) { return `<div class="flex justify-between gap-3 border-b border-outline-variant/40 py-2 last:border-0"><span class="text-on-surface-variant">${l}</span><span class="text-left font-medium">${v}</span></div>`; }
   
-  function chip(s) {
-    const m = { pending: ['مفتوح', 'bg-amber-100 text-amber-900'], accepted: ['مقبول', 'bg-blue-100 text-blue-900'], completed: ['اتسلم', 'bg-green-100 text-green-900'], cancelled: ['ملغى', 'bg-red-100 text-red-900'] };
-    const x = m[s] || [s, 'bg-gray-100 text-gray-800'];
-    return `<span class="rounded-full px-2 md:px-3 py-1 text-[10px] md:text-xs font-bold ${x[1]}">${x[0]}</span>`;
-  }
-
   // ==========================================
   // Card Renderer (تم إزالة اختيار العربية)
   // ==========================================
@@ -387,6 +390,9 @@
       html += row('تليفون العميل', tel(o.customer_phone));
       html += row('عنوان التسليم', esc(o.customer_address || 'اسأل العميل على التليفون'));
       html += `</div>`;
+      html += o.status === 'accepted'
+        ? `<p class="mb-2 text-xs md:text-sm text-indigo-900 bg-indigo-50 border border-indigo-100 p-3 rounded-xl">روح استلم الطلب من المطبخ. المطبخ هيأكد إنه سلمهولك.</p>`
+        : `<p class="mb-2 text-xs md:text-sm text-purple-900 bg-purple-50 border border-purple-100 p-3 rounded-xl">الطلب معاك. وصّله للعميل وأكد التسليم.</p>`;
       html += `<button class="w-full rounded-xl bg-primary px-4 py-2.5 md:py-3 font-bold text-white hover:bg-primary-container transition-colors flex items-center justify-center gap-2 text-sm md:text-base" data-action="complete" data-id="${esc(o.public_id)}">
         <span class="material-symbols-outlined">check_circle</span> تأكيد إن الطلب وصل
       </button>`;
@@ -396,8 +402,10 @@
         <span class="material-symbols-outlined">local_shipping</span> قبول الطلب
       </button>`;
       html += `</div>`;
+    } else if (o.status === 'cancelled') {
+      html += `<p class="mt-4 text-xs md:text-sm text-red-800 bg-red-50 p-3 rounded-xl text-center">الطلب ده اتلغى</p>`;
     } else {
-      html += `<p class="mt-4 text-xs md:text-sm text-on-surface-variant bg-surface-container-low p-3 rounded-xl text-center">تم تسليم هذا الطلب مسبقاً</p>`;
+      html += `<p class="mt-4 text-xs md:text-sm text-green-800 bg-green-50 p-3 rounded-xl text-center">تم تسليم الطلب للعميل ✓</p>`;
     }
     
     html += `</article>`;
@@ -407,25 +415,50 @@
   // ==========================================
   // Data Fetching
   // ==========================================
-  async function load() {
-    try {
-      const ordersContainer = document.getElementById('orders');
+  let allRows = [];
+  let currentTab = 'all';
+  const isOpen = o => o.status === 'chef_accepted' && !o.delivery_id;
+  const isMine = o => (o.status === 'accepted' || o.status === 'out_for_delivery') && Number(o.delivery_id) > 0;
+  const isDone = o => o.status === 'completed' || o.status === 'cancelled';
+  const filters = { all: () => true, open: isOpen, mine: isMine, done: isDone };
+
+  function render() {
+    const ordersContainer = document.getElementById('orders');
+    const rows = allRows.filter(filters[currentTab] || filters.all);
+    document.getElementById('count-open').textContent = allRows.filter(isOpen).length;
+    document.getElementById('count-active').textContent = allRows.filter(isMine).length;
+    document.getElementById('count-done').textContent = allRows.filter(o => o.status === 'completed').length;
+    ordersContainer.innerHTML = rows.length
+      ? rows.map(card).join('')
+      : `<div class="col-span-full rounded-2xl border border-dashed border-outline-variant bg-white p-8 md:p-12 text-center"><span class="material-symbols-outlined text-4xl md:text-5xl text-outline-variant mb-3">inbox</span><p class="text-on-surface-variant font-medium text-sm md:text-base">مفيش طلبات هنا دلوقتي. أول ما مطبخ يقبل طلب هيظهر لكل شركات التوصيل.</p></div>`;
+  }
+
+  async function load(silent) {
+    const ordersContainer = document.getElementById('orders');
+    if (!silent) {
       ordersContainer.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center py-12 gap-3"><div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div><p class="text-on-surface-variant">جاري تحميل الطلبات...</p></div>`;
-      
-      const url = '/orders/api/v1/delivery';
-      const rows = (await DOQ.api(url)).data || [];
-      
-      document.getElementById('count-open').textContent = rows.filter(o => o.status === 'chef_accepted' && !o.delivery_id).length;
-      document.getElementById('count-active').textContent = rows.filter(o => (o.status === 'accepted' || o.status === 'out_for_delivery') && Number(o.delivery_id) > 0).length;
-      document.getElementById('count-done').textContent = rows.filter(o => o.status === 'completed').length;
-      
-      ordersContainer.innerHTML = rows.length 
-        ? rows.map(card).join('') 
-        : `<div class="col-span-full rounded-2xl border border-dashed border-outline-variant bg-white p-8 md:p-12 text-center"><span class="material-symbols-outlined text-4xl md:text-5xl text-outline-variant mb-3">inbox</span><p class="text-on-surface-variant font-medium text-sm md:text-base">مفيش طلبات مفتوحة دلوقتي</p></div>`;
+    }
+    try {
+      allRows = (await DOQ.api('/orders/api/v1/delivery')).data || [];
+      render();
     } catch (e) {
-      showNotice(e.message || 'حدث خطأ في تحميل البيانات', false);
+      if (e.status === 401) { location.assign('/auth'); return; }
+      // Never leave the spinner hanging: show the error with a retry button
+      ordersContainer.innerHTML = `<div class="col-span-full rounded-2xl border border-red-200 bg-red-50 p-8 text-center"><p class="text-red-900 font-bold mb-3">${esc(e.message || 'حصل خطأ في تحميل الطلبات')}</p><button type="button" id="retry-load" class="rounded-xl bg-primary px-5 py-2 font-bold text-white">حاول تاني</button></div>`;
+      document.getElementById('retry-load').addEventListener('click', () => load());
     }
   }
+
+  document.getElementById('order-tabs').addEventListener('click', e => {
+    const t = e.target.closest('button[data-tab]');
+    if (!t) return;
+    currentTab = t.dataset.tab;
+    document.querySelectorAll('#order-tabs .tab-btn').forEach(x => {
+      const active = x === t;
+      x.className = 'tab-btn rounded-full px-4 py-2 text-sm font-bold ' + (active ? 'bg-primary text-white' : 'bg-white border border-outline-variant/50');
+    });
+    render();
+  });
 
   // ==========================================
   // Event Listeners
@@ -458,7 +491,9 @@
   // ==========================================
   // Initialization
   // ==========================================
-  load().catch(e => showNotice(e.message, false));
+  load();
+  // Auto refresh so new open orders appear for every delivery account at the same time
+  setInterval(() => { if (!document.hidden) load(true); }, 20000);
 </script>
 </body>
 </html>

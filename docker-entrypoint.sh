@@ -1,10 +1,16 @@
 #!/bin/sh
 set -eu
 
+DB_HOST="${DB_HOST:-${MYSQLHOST:-db}}"
+DB_PORT="${DB_PORT:-${MYSQLPORT:-3306}}"
+DB_USER="${DB_USER:-${MYSQLUSER:-doq_user}}"
+DB_PASSWORD="${DB_PASSWORD:-${MYSQLPASSWORD:-${MYSQL_ROOT_PASSWORD:-}}}"
+DB_NAME="${DB_NAME:-${MYSQLDATABASE:-DOQ}}"
+
 if [ "${WAIT_FOR_DB:-true}" = "true" ]; then
-  echo "Waiting for MySQL..."
+  echo "Waiting for MySQL at ${DB_HOST}:${DB_PORT}..."
   i=0
-  until MYSQL_PWD="${DB_PASSWORD:-}" mysql --protocol=tcp -h "${DB_HOST:-db}" -P "${DB_PORT:-3306}" -u "${DB_USER:-doq_user}" -D "${DB_NAME:-DOQ}" -N -e 'SELECT 1' >/dev/null 2>&1; do
+  until MYSQL_PWD="${DB_PASSWORD}" mysql --protocol=tcp -h "${DB_HOST}" -P "${DB_PORT}" -u "${DB_USER}" -D "${DB_NAME}" -N -e 'SELECT 1' >/dev/null 2>&1; do
     i=$((i + 1))
     if [ "$i" -ge "${DB_WAIT_ATTEMPTS:-60}" ]; then
       echo "database_unavailable"

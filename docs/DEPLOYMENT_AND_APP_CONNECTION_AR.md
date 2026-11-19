@@ -59,11 +59,25 @@ docker compose --env-file .env.development -f docker-compose.yml up --build
 ```
 
 أو شغل Node مباشرة بعد وضع قاعدة البيانات المحلية على القيم الموجودة في الملف
+(أسرع في التطوير لأن تعديل الكود لا يحتاج إعادة بناء الصورة)
 
 ```powershell
+docker compose --env-file .env.development up -d db
 $env:DOQ_ENV_FILE='.env.development'
 npm start
 ```
+
+### التحقق من أن الخادم شغال
+
+نقطتا فحص خفيفتان لا تحتاجان قاعدة بيانات
+
+```text
+GET /health          -> {"status":"ok","uptime":12}
+GET /api/v1/status   -> {"status":"ok"}
+GET /security/csrf   -> {"token":"..."}
+```
+
+نفس `/health` هي اللي بيستخدمها Docker healthcheck و`run.sh` و`scripts/deploy-vps.sh` و CI
 
 ## بيئة الإنتاج
 
@@ -82,6 +96,27 @@ docker compose --env-file .env.production -f docker-compose.yml -f docker-compos
 في الإنتاج قاعدة البيانات غير منشورة على الإنترنت والتطبيق لا يفتح منفذاً عاماً. خادم Caddy هو المنفذ العام الوحيد ويتولى HTTPS تلقائياً بعد توجيه النطاق إلى عنوان الخادم
 
 ملف الإنتاج يستخدم أوامر دمج Compose لإزالة المنافذ وملفات البيئة الموروثة. استخدم إصداراً حديثاً من Compose يدعم علامات إعادة الضبط والاستبدال
+
+### إنتاج محلي كامل على جهاز واحد (HTTPS + شهادة محلية)
+
+```bash
+./run.sh
+```
+
+السكربت يجهّز `.env.production.local` ويضيف `doq.local` إلى `/etc/hosts` ويشغل db/app/cron/caddy
+ثم يشغل الترحيلات وينشئ حساب الإدارة وحسابات الاختبار. يفتح الموقع على `https://doq.local`
+وشهادة المتصفح تكون ذاتية التوقيع في هذه الحالة فقط
+
+### بيئة staging
+
+```bash
+cp .env.production.example .env.staging   # عدّل النطاق إلى staging
+./scripts/deploy-vps.sh staging
+```
+
+staging يستخدم `docker-compose.staging.yml` + `Caddyfile.staging`. قاعدة البيانات والتطبيق غير منشورين،
+وCaddy هو المنفذ الوحيد (80/443). الصورة الافتراضية `ghcr.io/<owner>/<repo>:latest`، ولو عايز تبني نسخة محلية
+استخدم `docker compose ... build app`.
 
 ## شروط التشغيل قبل النشر
 

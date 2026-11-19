@@ -10,6 +10,7 @@ const allRows = require("../middlware/allRows");
 const roles = require('../middlware/roles');
 const auth = require('../middlware/auth');
 const isOwner = require('../middlware/isOwner');
+const toMobile = require('../middlware/customerToMobile');
 
 const {
     SpecificDish_render,
@@ -40,10 +41,10 @@ router.use(auth.optional);
 // --- Page Routes ---
 
 // GET /dishes - Dishes dashboard page (admin/customer/chef)
-router.get('/', catchError(Dishes_render));
+router.get('/', toMobile('/m'), catchError(Dishes_render));
 
 // GET /dishes/:id - Single dish detail page
-router.get('/:id', dish_get_id, catchError(SpecificDish_render));
+router.get('/:id', toMobile(req => '/m/dishes/' + encodeURIComponent(req.params.id)), dish_get_id, catchError(SpecificDish_render));
 
 // --- API Routes ---
 

@@ -19,6 +19,13 @@ const pool = require('../database/pool');
  */
 async function notify(db, userId, type, title, body, entityType = null, entityId = null, dedupe = null) {
   if (!userId) return;
+  // If user is suspended, do not send notification
+  try {
+    const [[user]] = await db.query('SELECT account_status FROM users WHERE id=? LIMIT 1', [userId]);
+    if (user && user.account_status === 'suspended') return;
+  } catch (err) {
+    // If table/column error, continue to prevent blocking
+  }
   await db.query(
     'INSERT IGNORE INTO notifications (user_id,type,title,body,entity_type,entity_id,dedupe_key) VALUES (?,?,?,?,?,?,?)',
     [userId, type, title, body, entityType, entityId, dedupe]

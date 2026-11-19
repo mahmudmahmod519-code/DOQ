@@ -14,3 +14,4 @@ fresh_start.sh
 *.md
 !docs/PAGES.md
 !mobile/README.md
+to_delete/

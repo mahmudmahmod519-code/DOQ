@@ -185,28 +185,29 @@
           </div>
         </section>
 
-        <div id="notice" class="mb-5 hidden rounded-xl p-4" role="status"></div>
+        <!-- Status Filter -->
+        <div class="mb-4 flex flex-wrap gap-3 items-center">
+          <label for="status-filter" class="flex items-center gap-2 text-sm text-on-surface-variant">
+            <span class="material-symbols-outlined">filter_list</span>
+            <span>فلترة حسب الحالة:</span>
+          </label>
+          <select id="status-filter" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-background text-sm">
+            <option value="">جميع الحالات</option>
+            <option value="pending">جديدة (محتاجة قبول)</option>
+            <option value="chef_accepted">مقبولة ومستنية دليفري</option>
+            <option value="accepted">الدليفري جاي يستلم</option>
+            <option value="out_for_delivery">مع الدليفري</option>
+            <option value="completed">اتسلمت</option>
+            <option value="cancelled">ملغية</option>
+          </select>
+          <button id="refresh-btn" type="button" class="px-4 py-2 rounded-xl bg-primary text-on-primary hover:bg-primary/90 transition whitespace-nowrap flex items-center gap-2">
+            <span class="material-symbols-outlined">refresh</span>
+            <span>تحديث</span>
+          </button>
+        </div>
 
-        <section id="orders" class="grid gap-4 md:grid-cols-2">
-          <!-- Status Filter -->
-          <div class="md:col-span-2 mb-4 flex flex-wrap gap-3 items-center">
-            <label class="flex items-center gap-2 text-sm text-on-surface-variant">
-              <span class="material-symbols-outlined">filter_list</span>
-              <span>فلترة حسب الحالة:</span>
-            </label>
-            <select id="status-filter" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-background text-sm">
-              <option value="">جميع الحالات</option>
-              <option value="pending">مفتوح</option>
-              <option value="accepted">مقبولة</option>
-              <option value="delivering">قيد التوصيل</option>
-              <option value="completed">اتسلمت</option>
-              <option value="cancelled">ملغية</option>
-            </select>
-            <button id="refresh-btn" class="px-4 py-2 rounded-xl bg-primary text-on-primary hover:bg-primary/90 transition whitespace-nowrap flex items-center gap-2">
-              <span class="material-symbols-outlined">refresh</span>
-              <span>تحديث</span>
-            </button>
-          </div>
+        <section id="orders" class="grid gap-4 md:grid-cols-2" aria-live="polite"></section>
+        <nav id="pagination" class="mt-6 flex flex-wrap justify-center gap-2" aria-label="صفحات الطلبات"></nav>
       </div>
     </main>
   </div>
@@ -235,8 +236,9 @@
     function chip(s){
       const m = {
         pending: ['مفتوح','bg-amber-100 text-amber-900'],
-        chef_accepted: ['مقبول من المطبخ','bg-blue-100 text-blue-900'],
-        accepted: ['قيد التوصيل','bg-blue-100 text-blue-900'],
+        chef_accepted: ['مستني دليفري','bg-blue-100 text-blue-900'],
+        accepted: ['الدليفري جاي يستلم','bg-indigo-100 text-indigo-900'],
+        out_for_delivery: ['مع الدليفري','bg-purple-100 text-purple-900'],
         completed: ['اتسلم','bg-green-100 text-green-900'],
         cancelled: ['ملغي','bg-red-100 text-red-900']
       };
@@ -280,39 +282,46 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     
+    function btn(action, id, label, cls){
+      return '<button type="button" class="w-full rounded-xl px-4 py-3 font-bold transition-colors '+cls+'" data-action="'+action+'" data-id="'+esc(id)+'">'+label+'</button>';
+    }
+    function info(text, cls){ return '<div class="mt-4 p-4 rounded-xl border '+cls+'"><p class="font-medium">'+text+'</p></div>'; }
+
     function card(o){
-      const isPending = o.status === 'pending';
-      const isChefAccepted = o.status === 'chef_accepted';
-      const isOutForDelivery = o.status === 'out_for_delivery';
-      const isAccepted = o.status === 'accepted';
-      const isCompleted = o.status === 'completed';
-      const isCancelled = o.status === 'cancelled';
-      const isDelivery = o.delivery_id && Number(o.delivery_id) > 0;
-      
-      // For chef's page: show "مقبول" button for pending orders
-      const showChefAccept = isPending;
-      // For chef: show "إرسال مع الدليفري" button when delivery accepted (chef_accepted + delivery_id)
-      const showHandoff = isChefAccepted && isDelivery;
-      // For delivery: show complete button for accepted/out_for_delivery
-      const showDeliveryComplete = (isAccepted || isOutForDelivery) && isDelivery;
-      
+      const deliveryName = o.delivery_company || o.delivery_name;
+      let actions = '';
+      if (o.status === 'pending') {
+        actions = '<div class="mt-5 grid grid-cols-2 gap-2">'
+          + btn('chef-accept', o.public_id, 'قبول الطلب ✓', 'bg-primary text-on-primary hover:bg-primary-container')
+          + btn('chef-cancel', o.public_id, 'اعتذار عن الطلب', 'bg-red-50 text-red-800 border border-red-200 hover:bg-red-100')
+          + '</div>';
+      } else if (o.status === 'chef_accepted') {
+        actions = info('✓ قبلت الطلب وجهّزه. شركات التوصيل اتبلغت ومستنيين أول مندوب يقبل.', 'bg-blue-50 border-blue-200 text-blue-900')
+          + '<div class="mt-2">' + btn('chef-cancel', o.public_id, 'اعتذار عن الطلب', 'bg-red-50 text-red-800 border border-red-200 hover:bg-red-100') + '</div>';
+      } else if (o.status === 'accepted') {
+        actions = info('🚚 المندوب ' + esc(deliveryName || '') + ' قبل الطلب وجاي يستلمه منك. لما تسلمه دوس الزرار.', 'bg-indigo-50 border-indigo-200 text-indigo-900')
+          + '<div class="mt-2">' + btn('chef-handoff', o.public_id, 'سلّمت الطلب للمندوب 🚚', 'bg-tertiary text-white hover:opacity-90') + '</div>';
+      } else if (o.status === 'out_for_delivery') {
+        actions = info('الطلب مع المندوب في الطريق للعميل. لو العميل استلم أكد التسليم.', 'bg-purple-50 border-purple-200 text-purple-900')
+          + '<div class="mt-2">' + btn('complete', o.public_id, 'العميل استلم الطلب ✓', 'bg-green-700 text-white hover:bg-green-800') + '</div>';
+      } else if (o.status === 'completed') {
+        actions = info('✓ تم تسليم الطلب بنجاح', 'bg-green-50 border-green-200 text-green-900');
+      } else if (o.status === 'cancelled') {
+        actions = info('✗ تم إلغاء الطلب', 'bg-red-50 border-red-200 text-red-900');
+      }
+
       return '<article class="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-5 shadow-sm">'
         + '<div class="flex items-start justify-between gap-3"><div><p class="text-sm text-on-surface-variant">كود الطلب</p><p dir="ltr" class="text-right text-xl font-extrabold tracking-wider text-on-surface">' + esc(o.order_code) + '</p></div>' + chip(o.status) + '</div>'
-        + '<p class="mt-3 text-lg font-bold text-on-surface">' + esc(o.dish_name) + ' × ' + o.quantity + '</p>'
-        + '<div class="mt-3 rounded-xl bg-surface-container-low/50 p-3 text-sm">' + row('اسم الطلب',esc(o.order_name||'بدون اسم')) + row('الإجمالي','<b class="text-primary">'+money(o.total_price)+'</b>') + '</div>'
-        + '<h3 class="mt-4 font-bold text-on-surface flex items-center gap-2"><span class="material-symbols-outlined text-primary">storefront</span> الاستلام من المطبخ (الاستلام)</h3>'
-        + '<div class="text-sm bg-blue-50 p-3 rounded-xl border border-blue-100">' + row('المطبخ',esc(o.kitchen_name)) + row('عنوان الاستلام',esc(o.kitchen_address||'مش متاح')) + row('تليفون المطبخ',tel(o.kitchen_phone)) + '</div>'
-        + (isDelivery ? '<h3 class="mt-4 font-bold text-on-surface flex items-center gap-2"><span class="material-symbols-outlined text-secondary">person</span> توصيل للعميل (التسليم)</h3><div class="text-sm bg-green-50 p-3 rounded-xl border border-green-100">' + row('الاسم',esc(o.customer_name||'مش متاح')) + row('التليفون',tel(o.customer_phone)) + row('عنوان التسليم',esc(o.customer_address||'اسأل العميل على التليفون')) + '</div>' : '<p class="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">بيانات العميل هتظهر بعد قبول الطلب من المطبخ</p>')
-        + (showChefAccept ? '<div class="mt-5"><button class="w-full rounded-xl bg-primary text-on-primary px-4 py-3 font-bold hover:bg-primary-container transition-colors" data-action="chef-accept" data-id="'+esc(o.public_id)+'">مقبول ✓</button></div>' 
-          : isChefAccepted ? (isDelivery ? '<div class="mt-5"><button class="w-full rounded-xl bg-tertiary text-on-tertiary px-4 py-3 font-bold hover:bg-tertiary-container transition-colors" data-action="chef-handoff" data-id="'+esc(o.public_id)+'">إرسال مع الدليفري 🚚</button></div>' : '<div class="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-200"><p class="text-blue-900 font-medium">✓ تم قبول الطلب من المطبخ. في انتظار مندوب التوصيل...</p></div>')
-          : isOutForDelivery ? '<div class="mt-4 p-4 rounded-xl bg-purple-50 border border-purple-200"><p class="text-purple-900 font-medium">🚚 تم تسليم الطلب للمندوب. في الطريق للعميل...</p></div>'
-          : isAccepted ? (showDeliveryComplete ? '<div class="mt-5"><button class="w-full rounded-xl bg-primary text-on-primary px-4 py-3 font-bold hover:bg-primary-container transition-colors" data-action="complete" data-id="'+esc(o.public_id)+'">تأكيد التسليم (اتسلم) ✓</button></div>' : '<div class="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-200"><p class="text-blue-900 font-medium">مندوب التوصيل في الطريق للمطبخ...</p></div>')
-          : isCompleted ? '<div class="mt-4 p-4 rounded-xl bg-green-50 border border-green-200"><p class="text-green-900 font-medium">✓ تم تسليم الطلب بنجاح</p></div>'
-          : isCancelled ? '<div class="mt-4 p-4 rounded-xl bg-red-50 border border-red-200"><p class="text-red-900 font-medium">✗ تم إلغاء الطلب</p></div>'
-          : '<p class="mt-4 text-sm text-on-surface-variant">الحالة: ' + (o.status || 'غير معروف') + '</p>')
+        + '<p class="mt-3 text-lg font-bold text-on-surface">' + esc(o.dish_name) + ' × ' + Number(o.quantity) + '</p>'
+        + '<div class="mt-3 rounded-xl bg-surface-container-low/50 p-3 text-sm">'
+        + row('الإجمالي', '<b class="text-primary">' + money(o.total_price) + '</b>')
+        + row('وقت الطلب', esc(new Date(o.created_at).toLocaleString('ar-EG')))
+        + (deliveryName ? row('شركة التوصيل', esc(deliveryName)) : '')
+        + '</div>'
+        + actions
         + '</article>';
     }
-    
+
     async function loadVehicles(){
       vehicles = (await DOQ.api('/orders/api/v1/chef/vehicles')).data || [];
       document.getElementById('vehicles').innerHTML = vehicles.length ? vehicles.map(v => '<span class="rounded-full bg-surface-container-low px-3 py-1 text-sm text-on-surface-variant border border-outline-variant/30">'+esc(v.label)+'</span>').join('') : '<span class="text-sm text-on-surface-variant">لسه مفيش عربيات مضافة</span>';
@@ -347,9 +356,9 @@
         const rows = response.data || [];
         const pagination = response.pagination || { page: 1, limit: 20, total: 0, total_pages: 1 };
         
-        document.getElementById('count-open').textContent = rows.filter(o => o.status === 'pending' || o.status === 'accepted').length;
-        document.getElementById('count-accepted').textContent = rows.filter(o => o.status === 'accepted' && Number(o.delivery_id) > 0).length;
-        document.getElementById('count-delivering').textContent = rows.filter(o => o.status === 'delivering').length;
+        document.getElementById('count-open').textContent = rows.filter(o => o.status === 'pending').length;
+        document.getElementById('count-accepted').textContent = rows.filter(o => o.status === 'chef_accepted' || o.status === 'accepted').length;
+        document.getElementById('count-delivering').textContent = rows.filter(o => o.status === 'out_for_delivery').length;
         document.getElementById('count-done').textContent = rows.filter(o => o.status === 'completed').length;
         document.getElementById('orders').innerHTML = rows.length ? rows.map(card).join('') : '<div class="rounded-2xl border border-dashed border-outline-variant bg-surface-container-lowest p-8 text-center text-on-surface-variant md:col-span-2">مفيش طلبات لسه. أول ما حد يطلب من أطباقك هيوصلك إشعار</div>';
         
@@ -419,9 +428,12 @@
               await DOQ.api('/orders/api/v1/chef/' + encodeURIComponent(b.dataset.id) + '/handoff', 'PATCH', {});
               notice('تم تسليم الطلب للمندوب. تم إشعار المندوب والعميل.');
             } else if (b.dataset.action === 'complete') {
-              // Delivery confirms delivery
               await DOQ.api('/orders/api/v1/' + encodeURIComponent(b.dataset.id) + '/status', 'PATCH', { status: 'completed' });
               notice('تم تأكيد التسليم.');
+            } else if (b.dataset.action === 'chef-cancel') {
+              if (!confirm('متأكد إنك عايز تعتذر عن الطلب ده؟ العميل هيتبلغ.')) { b.disabled = false; return; }
+              await DOQ.api('/orders/api/v1/' + encodeURIComponent(b.dataset.id) + '/status', 'PATCH', { status: 'cancelled' });
+              notice('تم الاعتذار عن الطلب وإبلاغ العميل.');
             }
             load();
           } catch (err) { 
@@ -431,8 +443,9 @@
         });
       }
       
-      await loadVehiclesFirst();
       await load();
+      // Keep the board fresh so new orders / delivery updates appear without manual refresh
+      setInterval(() => { if (!document.hidden) load(); }, 30000);
     });
 
     // Kitchen Creation Handler (API call to /kitchens/api/v1/create)

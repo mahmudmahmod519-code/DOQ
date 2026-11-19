@@ -16,6 +16,20 @@ function Dashboard_render(req, res) {
     });
 }
 
+/**
+ * Renders the admin financial reports & settlement page.
+ * Route: GET /admin/reports
+ * @param {Object} req - Express request.
+ * @param {Object} res - Express response.
+ */
+function reports_render(req, res) {
+    res.render('./admin/reports', {
+        ...checkLogin(req, res),
+        pageTitle: 'تقارير وحسابات الطلبات | دوق DOQ'
+    });
+}
+
 module.exports = {
-    Dashboard_render
+    Dashboard_render,
+    reports_render
 };

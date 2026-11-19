@@ -340,9 +340,12 @@ async function run() {
   const [[statusColumn]] = await pool.query(
     "SELECT COLUMN_TYPE AS type FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='orders' AND column_name='status'"
   );
-  if (statusColumn && !statusColumn.type.includes("'accepted'")) {
-    await pool.query("ALTER TABLE orders MODIFY COLUMN status ENUM('pending','accepted','completed','cancelled') NOT NULL DEFAULT 'pending'");
+  // Keep every lifecycle state: pending -> chef_accepted -> accepted -> out_for_delivery -> completed | cancelled
+  if (statusColumn && !['accepted', 'chef_accepted', 'out_for_delivery'].every(state => statusColumn.type.includes(`'${state}'`))) {
+    await pool.query("ALTER TABLE orders MODIFY COLUMN status ENUM('pending','chef_accepted','accepted','out_for_delivery','completed','cancelled') NOT NULL DEFAULT 'pending'");
   }
+  await column('orders', 'chef_accepted_at', 'DATETIME NULL');
+  await column('orders', 'out_for_delivery_at', 'DATETIME NULL');
 
   await column('order_financial_events', 'vehicle_id', 'INT NULL');
 
@@ -376,6 +379,22 @@ async function run() {
       'ALTER TABLE coupon_redemptions ADD CONSTRAINT fk_coupon_redemption_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL'
     );
   }
+
+  // ── Suspend / Ban Support ──────────────────────────────────────────
+  // Ensure account_status enum includes 'suspended'
+  const [[accountStatusCol]] = await pool.query(
+    "SELECT COLUMN_TYPE AS type FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='users' AND column_name='account_status'"
+  );
+  if (accountStatusCol && !String(accountStatusCol.type).includes("'suspended'")) {
+    await pool.query("ALTER TABLE users MODIFY COLUMN account_status VARCHAR(20) NOT NULL DEFAULT 'approved'");
+  }
+
+  await column('users', 'suspended_at', 'DATETIME NULL');
+  await column('users', 'suspended_by', 'INT NULL');
+  await column('users', 'suspend_reason', 'VARCHAR(500) NULL');
+
+  // Kitchen status: ACTIVE / SUSPENDED
+  await column('kitchens', 'status', "VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'");
 
   console.log('DOQ migration complete');
 }

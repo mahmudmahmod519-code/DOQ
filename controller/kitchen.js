@@ -26,6 +26,7 @@ async function getKitchenById_middleware(req, res, next) {
     let statements = `
         SELECT 
             k.*,
+            u.account_status AS chef_status,
             CONCAT(u.first_name,' ',u.last_name) as chefName
         FROM kitchens k 
         JOIN users u ON u.id=k.user_id
@@ -34,6 +35,9 @@ async function getKitchenById_middleware(req, res, next) {
     const [result] = await pool.query(statements, [id]);
 
     if (result.length === 0) return res.redirect('/');
+    if (req.user?.roles !== 'admin' && (result[0].status === 'SUSPENDED' || result[0].chef_status === 'suspended')) {
+        return res.redirect('/');
+    }
 
     // 2. Dish count (separate query to avoid inflation from review joins)
     statements = `SELECT COUNT(DISTINCT id) AS dishes_count FROM dishes WHERE kitchen_id = ?`;
@@ -103,6 +107,9 @@ async function getKitchenById_middleware(req, res, next) {
  * @returns {Promise<void>} 200 with kitchens array.
  */
 async function Mykitchens_controller(req, res) {
+    if (req.user?.account_status === 'suspended') {
+        return res.status(200).json({ status: 'success', data: [] });
+    }
     return res.status(200).json({
         status: 'success',
         data: req.my || [],
@@ -167,6 +174,11 @@ async function getKitchensPaginated_controller(req, res) {
         LEFT JOIN dishes d ON d.kitchen_id = k.id
         LEFT JOIN reviews r ON r.dish_id = d.id
     `;
+
+    if (req.user?.roles !== 'admin') {
+        whereClauses.push("k.status = 'ACTIVE'");
+        whereClauses.push("u.account_status = 'approved'");
+    }
 
     if (city) {
         whereClauses.push('k.city = ?');
@@ -540,6 +552,7 @@ async function getFeaturedKitchens() {
         FROM kitchens k
         LEFT JOIN dishes d ON d.kitchen_id = k.id
         JOIN users u ON u.id=k.user_id
+        WHERE k.status = 'ACTIVE' AND u.account_status = 'approved'
         GROUP BY k.id
         ORDER BY k.created_at DESC
         LIMIT 6

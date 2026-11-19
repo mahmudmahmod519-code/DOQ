@@ -10,7 +10,8 @@ const checkLogin = require('../utiles/checkLogin');
 const { getCustomerOrders_controller } = require('../controller/orders');
 
 // GET /my-orders - Customer orders page
-router.get('/', auth, roles('customer'), (req, res) => res.render('./customer/orders', { ...checkLogin(req, res), pageTitle: 'طلباتي | دوق' }));
+// Customer orders moved to the mobile app
+router.get('/', (req, res) => res.redirect('/m/orders'));
 
 // GET /my-orders/api/v1/my - Customer's orders API
 router.get('/api/v1/my', auth, roles('customer'), catchError(getCustomerOrders_controller));

@@ -34,6 +34,15 @@ app.use(securityHeaders);
 app.use(issueCsrfCookie);
 app.use(requestRateLimit);
 
+// Health check API: /health (liveness), /health/ready (DB readiness), /api/v1/health (details).
+// Mounted before CSRF so Docker, Caddy, CI smoke tests and uptime monitors can reach it.
+app.use(require('./routes/health.js'));
+
+// Backward compatible status endpoint
+app.get('/api/v1/status', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // Expose CSRF token endpoint for clients; must come before csrfProtection middleware.
 app.get('/security/csrf', (req, res) => res.json({ token: req.csrfToken() }));
 
@@ -71,6 +80,9 @@ app.use('/delivery', require('./routes/delivery.js'));
 app.use('/platform', require('./routes/platform.js'));
 app.use('/notifications', require('./routes/notifications.js'));
 app.use('/share', require('./routes/share.js'));
+
+// Customer mobile app (opened by the Android APK). The web stays for admin / kitchen / delivery.
+app.use('/m', require('./routes/mobile.js'));
 
 // 404 handler for unmatched routes.
 app.use(notFound);

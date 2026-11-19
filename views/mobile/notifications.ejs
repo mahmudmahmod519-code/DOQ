@@ -1,0 +1,10 @@
+<%- include('partials/top', { appbar: 'back', heading: 'الإشعارات' }) %>
+  <section class="section">
+    <div class="row between" style="margin-bottom:12px">
+      <span class="muted small">آخر التحديثات على طلباتك</span>
+      <button class="btn sm ghost" type="button" id="read-all">تحديد الكل كمقروء</button>
+    </div>
+    <div class="stack" id="notifications" aria-live="polite"></div>
+    <div data-feed-status="notifications"></div>
+  </section>
+<%- include('partials/bottom') %>

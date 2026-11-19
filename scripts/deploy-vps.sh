@@ -23,7 +23,7 @@ step()   { echo -e "\n${CYAN}=== $* ===${NC}\n"; }
 
 # Configuration
 ENVIRONMENT="${1:-production}"
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
 # Files
@@ -65,11 +65,16 @@ wait_for_health() {
 
 backup_database() {
     step "Creating database backup"
-    local backup_dir="/opt/doq/backups"
+    local backup_dir="${PROJECT_DIR}/backups"
     local timestamp=$(date +%Y%m%d_%H%M%S)
     mkdir -p "$backup_dir"
-    $COMPOSE_CMD exec -T db mysqldump -u doq_user -p"${DB_PASSWORD}" DOQ > "${backup_dir}/doq_${timestamp}.sql"
-    success "Backup saved to ${backup_dir}/doq_${timestamp}.sql"
+    # Credentials come from the db container's own environment; no shell secrets needed.
+    $COMPOSE_CMD exec -T db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysqldump --single-transaction --quick -u "$MYSQL_USER" "$MYSQL_DATABASE"' > "${backup_dir}/doq_${timestamp}.sql"
+    if [[ ! -s "${backup_dir}/doq_${timestamp}.sql" ]]; then
+        error "Database backup is empty: ${backup_dir}/doq_${timestamp}.sql"
+    fi
+    gzip -f "${backup_dir}/doq_${timestamp}.sql"
+    success "Backup saved to ${backup_dir}/doq_${timestamp}.sql.gz"
 }
 
 # ============================================================
@@ -91,7 +96,7 @@ log "Project: ${PROJECT_DIR}"
 # 1. Check prerequisites
 step "1/10 Checking prerequisites"
 check_cmd docker
-check_cmd "docker compose"
+docker compose version >/dev/null 2>&1 || error "docker compose plugin not found. Install it first."
 check_cmd jq
 check_cmd openssl
 success "All commands available"
@@ -111,9 +116,9 @@ else
     success "DNS resolves correctly"
 fi
 
-# 4. Pull latest images
+# 4. Pull latest images (base images only; the app image is built locally)
 step "4/10 Pulling latest Docker images"
-$COMPOSE_CMD pull
+$COMPOSE_CMD pull --ignore-buildable || warn "Some images could not be pulled; continuing with local builds"
 success "Images pulled"
 
 # 5. Backup database before deployment
@@ -153,10 +158,15 @@ success "Zero-downtime deployment complete"
 # 9. Verify deployment
 step "9/10 Verifying deployment"
 sleep 3
-if curl -k -s "https://${DOMAIN}/security/csrf" | grep -q '"token"'; then
-    success "HTTPS endpoint responding with CSRF token"
+if curl -kfsS "https://${DOMAIN}/health" | grep -q '"status":"ok"'; then
+    success "HTTPS health endpoint responding"
 else
-    error "Deployment verification failed - HTTPS endpoint not responding correctly"
+    error "Deployment verification failed - HTTPS health endpoint not responding correctly"
+fi
+if curl -kfsS "https://${DOMAIN}/security/csrf" | grep -q '"token"'; then
+    success "CSRF endpoint responding"
+else
+    warn "CSRF endpoint check failed"
 fi
 
 # 10. Cleanup old images

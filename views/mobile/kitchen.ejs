@@ -1,0 +1,19 @@
+<%- include('partials/top', { appbar: 'transparent', heading: '' }) %>
+  <div class="kitchen-cover" id="kitchen-cover"></div>
+  <div class="kitchen-head">
+    <img class="avatar lg" id="kitchen-avatar" src="/assests/profile_kitchen.jpeg" alt="">
+    <div class="grow" style="padding-bottom:6px">
+      <h1 id="kitchen-title" style="margin:0;font-size:20px;font-weight:900"><span class="skeleton" style="display:inline-block;width:140px;height:22px"></span></h1>
+      <div class="muted small" id="kitchen-sub"></div>
+    </div>
+  </div>
+  <section class="section">
+    <p class="muted" id="kitchen-desc" style="margin:0 0 12px"></p>
+    <div class="stats" id="kitchen-stats"></div>
+  </section>
+  <section class="section">
+    <div class="section-head"><h2>المنيو</h2></div>
+    <div class="grid-2" id="dishes" aria-live="polite"></div>
+    <div data-feed-status="dishes"></div>
+  </section>
+<%- include('partials/bottom') %>

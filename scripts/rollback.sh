@@ -25,7 +25,7 @@ step()   { echo -e "\n${CYAN}=== $* ===${NC}\n"; }
 TARGET="${1:-previous}"
 ENVIRONMENT="${2:-production}"
 
-PROJECT_DIR="/opt/doq"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
 # Files
@@ -89,10 +89,14 @@ fi
 
 # 4. Backup current state
 step "Creating emergency backup"
-BACKUP_DIR="/opt/doq/backups/emergency"
+BACKUP_DIR="${PROJECT_DIR}/backups/emergency"
 mkdir -p "$BACKUP_DIR"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-$COMPOSE_CMD exec -T db mysqldump -u doq_user -p"${DB_PASSWORD}" DOQ > "${BACKUP_DIR}/pre_rollback_${TIMESTAMP}.sql"
+# Credentials come from the db container's own environment; no shell secrets needed.
+$COMPOSE_CMD exec -T db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysqldump --single-transaction --quick -u "$MYSQL_USER" "$MYSQL_DATABASE"' > "${BACKUP_DIR}/pre_rollback_${TIMESTAMP}.sql"
+if [[ ! -s "${BACKUP_DIR}/pre_rollback_${TIMESTAMP}.sql" ]]; then
+    error "Emergency backup is empty - aborting rollback"
+fi
 success "Emergency backup saved to ${BACKUP_DIR}/pre_rollback_${TIMESTAMP}.sql"
 
 # 5. Checkout target tag

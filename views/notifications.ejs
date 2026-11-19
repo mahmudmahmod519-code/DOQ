@@ -24,7 +24,10 @@
         <h1 class="text-2xl md:text-3xl font-bold">الإشعارات</h1>
       </div>
     </div>
-    <p class="text-sm sm:text-base text-on-surface-variant mt-1 mb-6">آخر التنبيهات الخاصة بحسابك</p>
+    <div class="flex items-center justify-between gap-3 mt-1 mb-6">
+      <p class="text-sm sm:text-base text-on-surface-variant">آخر التنبيهات الخاصة بحسابك</p>
+      <button type="button" id="read-all" class="rounded-lg bg-[#9e2016] text-white px-3 py-2 text-sm font-bold">تحديد الكل كمقروء</button>
+    </div>
 
     <section id="items" class="grid gap-3"></section>
   </main>
@@ -37,7 +40,7 @@
         document.getElementById('items').innerHTML = rows.map(n =>
           '<article class="rounded-2xl border border-[#e1bfb9] bg-white p-4 ' + (n.read_at ? 'opacity-60' : '') + '">'
           + '<div class="flex justify-between gap-3"><h2 class="font-bold">' + esc(n.title) + '</h2><time class="text-xs text-gray-500">' + new Date(n.created_at).toLocaleString('ar-EG') + '</time></div>'
-          + '<p class="mt-2">' + esc(n.body) + '</p>'
+          + '<p class="mt-2" style="white-space:pre-line">' + esc(n.body) + '</p>'
           + (n.read_at ? '' : '<button class="mt-3 rounded-lg bg-[#fce2de] px-3 py-2 text-sm" data-id="' + n.id + '">تحديد كمقروء</button>')
           + '</article>'
         ).join('') || '<p class="text-center py-8 text-on-surface-variant">لا توجد إشعارات جديدة</p>';
@@ -45,8 +48,15 @@
         document.getElementById('items').textContent = e.message;
       }
     }
+    document.getElementById('read-all').addEventListener('click', async () => {
+      await DOQ.api('/notifications/api/read-all', 'PATCH', {});
+      DOQ.notifications.updateBadge(0);
+      load();
+    });
+    // New notification arrived while this page is open: refresh the list
+    window.addEventListener('doq:notification', load);
     document.addEventListener('click', async e => {
-      const b = e.target.closest('[data-id]');
+      const b = e.target.closest('button[data-id]');
       if (!b) return;
       await DOQ.api('/notifications/api/' + encodeURIComponent(b.dataset.id) + '/read', 'PATCH', {});
       load();

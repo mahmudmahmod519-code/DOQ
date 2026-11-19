@@ -14,7 +14,12 @@ const {
 } = require("../rendering/home");
 
 // GET / - Landing page (static & dynamic: top dishes with paid promotion)
-router.get('', auth.optional, catchError(getLandingPage_render));
+// The Android APK (WebView, package com.doq.app) is the customer app: open it on /m directly
+const fromApk = req => req.get('x-requested-with') === 'com.doq.app';
+router.get('', auth.optional, (req, res, next) => {
+    if (fromApk(req) && (!req.user || req.user.roles === 'customer')) return res.redirect('/m');
+    next();
+}, catchError(getLandingPage_render));
 
 // GET /about - About page (static)
 router.get('/about', catchError(about_render));

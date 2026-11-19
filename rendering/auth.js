@@ -3,6 +3,7 @@
  * Provides: login/signup page, 2FA verification page, forgot/reset password pages.
  */
 const checkLogin = require('../utiles/checkLogin');
+const { dashboard } = require('../utiles/session');
 
 /**
  * Renders the main auth page (login/signup).
@@ -11,6 +12,8 @@ const checkLogin = require('../utiles/checkLogin');
  * @param {Object} res - Express response.
  */
 async function auth_render(req, res) {
+    // Already signed in: never show the login form again, go to the role home instead
+    if (req.user) return res.redirect(dashboard(req.user.roles));
     res.render("./auth/auth", checkLogin(req, res));
 }
 

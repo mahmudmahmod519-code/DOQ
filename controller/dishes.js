@@ -36,6 +36,7 @@ async function dish_get_id(req, res, next) {
             d.description as dish_description,
             c.name as category_name,
             u.first_name, u.last_name,
+            u.account_status as chef_account_status,
             k.phone_number,
             k.user_id,
             k.portfolio_url,
@@ -44,6 +45,7 @@ async function dish_get_id(req, res, next) {
             k.city,
             k.description,
             k.title,
+            k.status as kitchen_status,
             d.image_url as dish_image
         FROM dishes d
         JOIN categories c ON d.category_id = c.id
@@ -52,7 +54,7 @@ async function dish_get_id(req, res, next) {
         WHERE d.id = ?
     `, [id]);
 
-    if (dishes.length === 0) {
+    if (dishes.length === 0 || (req.user?.roles !== 'admin' && (dishes[0].kitchen_status === 'SUSPENDED' || dishes[0].chef_account_status === 'suspended'))) {
         return res.status(404).render('./errors/page_404', {
             status: 'error',
             message: 'الطبق غير موجود',
@@ -311,6 +313,14 @@ async function getDish_controller(req, res) {
  * @returns {Promise<void>} 200 with data, pagination, and query echo.
  */
 async function getMyDishes_controller(req, res) {
+    if (req.user?.account_status === 'suspended') {
+        return res.status(200).json({
+            status: 'success',
+            pagination: { page: 1, limit: 10, total: 0, total_pages: 1 },
+            query: req.query || {},
+            data: [],
+        });
+    }
     return res.status(200).json({
         status: 'success',
         pagination: req.pagination || { page: 1, limit: 10, total: 0, total_pages: 1 },
@@ -327,6 +337,14 @@ async function getMyDishes_controller(req, res) {
  * @returns {Promise<void>} 200 with dishes, avg_rating, reviews_count, pagination.
  */
 async function getMyDishesPaginated_controller(req, res) {
+    if (req.user?.account_status === 'suspended') {
+        return res.status(200).json({
+            status: 'success',
+            data: [],
+            pagination: { page: 1, limit: 10, total: 0, total_pages: 1 },
+            query: req.query || {},
+        });
+    }
     const page = parseInt(req.query.page) || 1;
     const limit = Math.min(parseInt(req.query.limit) || 10, 50);
     const offset = (page - 1) * limit;

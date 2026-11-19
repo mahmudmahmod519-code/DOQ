@@ -1,0 +1,12 @@
+<%- include('partials/top') %>
+  <section class="section">
+    <div class="segmented" role="tablist" id="order-tabs">
+      <button type="button" role="tab" data-status="active" class="active" aria-selected="true">الطلبات الحالية</button>
+      <button type="button" role="tab" data-status="done" aria-selected="false">الطلبات السابقة</button>
+    </div>
+  </section>
+  <section class="section">
+    <div class="stack" id="orders" aria-live="polite"></div>
+    <div data-feed-status="orders"></div>
+  </section>
+<%- include('partials/bottom') %>

@@ -35,6 +35,59 @@ const orderCode = publicId => String(publicId).slice(0, 8).toUpperCase();
  */
 const withCode = rows => rows.map(row => ({ ...row, order_code: orderCode(row.public_id) }));
 
+const OPEN_STATUSES = ['pending', 'chef_accepted', 'accepted', 'out_for_delivery'];
+
+/**
+ * Decides whether a user may move an order to the requested status.
+ * Order lifecycle: pending -> chef_accepted -> accepted (delivery took it)
+ *   -> out_for_delivery (chef handed it over) -> completed.
+ * - customer: cancel own order while it is still pending (kitchen did not accept yet).
+ * - chef: cancel own kitchen order before a delivery company takes it;
+ *         confirm completion after handing it to the delivery.
+ * - delivery: confirm delivery of an order assigned to it (accepted / out_for_delivery).
+ * - admin: cancel or complete any open order.
+ * @param {Object} user - Authenticated user (roles, id, account_status).
+ * @param {Object} order - Order row joined with chef_id.
+ * @param {string} status - Requested status ('completed' | 'cancelled').
+ * @returns {{ok: boolean, error?: number, message?: string}}
+ */
+function canTransition(user, order, status) {
+    const deny = (message, error = 403) => ({ ok: false, error, message });
+    if (!user || user.account_status !== 'approved') return deny('حسابك غير مفعل أو موقوف');
+    if (!['completed', 'cancelled'].includes(status)) return deny('الحالة دي بتتغير من الزر الخاص بيها', 400);
+    if (!OPEN_STATUSES.includes(order.status)) return deny('الطلب اتقفل قبل كده', 409);
+
+    if (user.roles === 'admin') return { ok: true };
+
+    if (user.roles === 'customer') {
+        if (order.customer_id !== user.id) return deny('الطلب ده مش بتاعك');
+        if (status !== 'cancelled' || order.status !== 'pending') return deny('تقدر تلغي الطلب قبل ما المطبخ يقبله بس');
+        return { ok: true };
+    }
+
+    if (user.roles === 'chef') {
+        if (order.chef_id !== user.id) return deny('الطلب ده مش من مطبخك');
+        if (status === 'cancelled') {
+            if (order.delivery_id || !['pending', 'chef_accepted'].includes(order.status)) {
+                return deny('المطبخ يقدر يعتذر عن الطلب قبل قبول الدليفري فقط');
+            }
+            return { ok: true };
+        }
+        if (order.status !== 'out_for_delivery') return deny('أكد التسليم بعد ما تسلم الطلب للمندوب');
+        return { ok: true };
+    }
+
+    if (user.roles === 'delivery') {
+        if (Number(order.delivery_id) !== Number(user.id)) return deny('الطلب ده مش متسجل على شركتك');
+        if (status !== 'completed' || !['accepted', 'out_for_delivery'].includes(order.status)) {
+            return deny('الدليفري يقدر يأكد التسليم بعد قبول الطلب فقط');
+        }
+        return { ok: true };
+    }
+
+    return deny('مش مسموح لك تغير حالة الطلب ده');
+}
+
 // ============================================
 // 1. Create Order (customer)
 // ============================================
@@ -47,6 +100,10 @@ const withCode = rows => rows.map(row => ({ ...row, order_code: orderCode(row.pu
  * @returns {Promise<void>} 201 with order details, 200 if duplicate, 400/404/409 on validation/ownership/coupon errors.
  */
 async function createOrder_controller(req, res) {
+    if (req.user?.account_status === 'suspended') {
+        return res.status(403).json({ status: 'error', message: 'حسابك موقوف من قبل الإدارة. لا يمكنك إجراء أي طلبات' });
+    }
+
     const quantity = parseQuantity(req.body.quantity);
     const dishId = Number(req.body.dish_id);
     const couponCode = String(req.body.coupon_code || '').trim().toUpperCase();
@@ -172,6 +229,10 @@ async function createOrder_controller(req, res) {
  * @returns {Promise<void>} 200 on success, 403/404/409 on permission/state errors.
  */
 async function chefAcceptOrder_controller(req, res) {
+    if (req.user?.account_status !== 'approved') {
+        return res.status(403).json({ status: 'error', message: 'حسابك غير مفعل أو موقوف' });
+    }
+
     const result = await transaction(async db => {
         // 1. Verify order belongs to chef's kitchen and is pending
         const [[order]] = await db.query(
@@ -247,18 +308,21 @@ async function chefAcceptOrder_controller(req, res) {
  * @returns {Promise<void>} 200 on success.
  */
 async function chefHandoffOrder_controller(req, res) {
+    if (req.user?.account_status !== 'approved') {
+        return res.status(403).json({ status: 'error', message: 'حسابك غير مفعل أو موقوف' });
+    }
     const result = await transaction(async db => {
         // 1. Verify order belongs to chef's kitchen and is chef_accepted
         const [[order]] = await db.query(
             `SELECT o.id, o.public_id, o.customer_id, o.dish_name, o.kitchen_name, o.kitchen_phone, o.kitchen_address, o.customer_name, o.customer_phone, o.customer_address, o.order_name, o.quantity, o.total_price, o.delivery_id, k.user_id AS chef_id
              FROM orders o
              JOIN kitchens k ON k.id=o.kitchen_id
-             WHERE o.public_id=? AND o.status='chef_accepted' AND k.user_id=? FOR UPDATE`,
+             WHERE o.public_id=? AND o.status='accepted' AND k.user_id=? FOR UPDATE`,
             [req.params.publicId, req.user.id]
         );
         
         if (!order) {
-            return { error: 409, message: 'الطلب غير موجود، ليس لمطبخك، أو ليس في حالة مقبول من المطبخ' };
+            return { error: 409, message: 'الطلب لازم يكون مقبول من مندوب التوصيل الأول قبل ما تسلمه' };
         }
         
         if (!order.delivery_id) {
@@ -267,7 +331,7 @@ async function chefHandoffOrder_controller(req, res) {
         
         // 2. Update status to out_for_delivery
         const [updated] = await db.query(
-            "UPDATE orders SET status='out_for_delivery', out_for_delivery_at=UTC_TIMESTAMP() WHERE id=? AND status='chef_accepted'",
+            "UPDATE orders SET status='out_for_delivery', out_for_delivery_at=UTC_TIMESTAMP() WHERE id=? AND status='accepted'",
             [order.id]
         );
         
@@ -275,7 +339,7 @@ async function chefHandoffOrder_controller(req, res) {
             return { error: 409, message: 'الطلب تم تحديثه من قبل' };
         }
         
-        const code = orderCode(order.publicId || order.public_id);
+        const code = orderCode(order.public_id);
         
         // 3. Notify the delivery user
         await notify(db, order.delivery_id, 'order_out_for_delivery', 'الطلب معك الآن', 
@@ -322,6 +386,9 @@ async function chefHandoffOrder_controller(req, res) {
  * @returns {Promise<void>} 200 with orders array.
  */
 async function getCustomerOrders_controller(req, res) {
+    if (req.user?.account_status === 'suspended') {
+        return res.json({ status: 'success', data: [] });
+    }
     const [orders] = await pool.query(
         `SELECT public_id,order_name,dish_name,kitchen_name,quantity,unit_price,discount_amount,total_price,status,delivery_id IS NOT NULL AS has_delivery,created_at,completed_at
          FROM orders WHERE customer_id=? ORDER BY created_at DESC LIMIT 100`,
@@ -343,9 +410,13 @@ async function getCustomerOrders_controller(req, res) {
  * @returns {Promise<void>} 200 with orders array.
  */
 async function getDeliveryOrders_controller(req, res) {
+    if (req.user?.account_status === 'suspended') {
+        return res.json({ status: 'success', data: [] });
+    }
     const kitchenId = req.query.kitchen_id ? Number(req.query.kitchen_id) : null;
     
-    let whereClause = `(o.status='chef_accepted' AND o.delivery_id IS NULL) OR o.delivery_id=?`;
+    // Open offers are shared by every approved delivery company (suspended kitchens excluded); own orders always visible
+    let whereClause = `((o.status='chef_accepted' AND o.delivery_id IS NULL AND k.status='ACTIVE') OR o.delivery_id=?)`;
     let params = [req.user.id, req.user.id, req.user.id, req.user.id];
     
     if (kitchenId) {
@@ -382,21 +453,29 @@ async function getDeliveryOrders_controller(req, res) {
  * @returns {Promise<void>} 200 with orders array and pagination info.
  */
 async function getChefOrders_controller(req, res) {
+    if (req.user?.account_status === 'suspended') {
+        return res.json({
+            status: 'success',
+            data: [],
+            pagination: { page: 1, limit: 20, total: 0, total_pages: 1 }
+        });
+    }
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
     const offset = (page - 1) * limit;
     const status = req.query.status;
 
-    const VALID_STATUSES = new Set(['pending', 'accepted', 'completed', 'cancelled']);
     const statusFilter = VALID_STATUSES.has(status) ? `AND o.status = ?` : '';
     const statusParam = statusFilter ? [status] : [];
 
     const [orders] = await pool.query(
-        `SELECT o.public_id,o.dish_name,o.quantity,o.unit_price,o.total_price,o.status,o.created_at,o.delivery_id,o.kitchen_name
+        `SELECT o.public_id,o.dish_name,o.quantity,o.unit_price,o.total_price,o.status,o.created_at,o.delivery_id,o.kitchen_name,
+                CONCAT_WS(' ',d.first_name,d.last_name) AS delivery_name,d.company_name AS delivery_company
          FROM orders o
          JOIN kitchens k ON k.id=o.kitchen_id
+         LEFT JOIN users d ON d.id=o.delivery_id
          WHERE k.user_id=? ${statusFilter}
-         ORDER BY o.status='pending' DESC,o.created_at DESC LIMIT ? OFFSET ?`,
+         ORDER BY FIELD(o.status,'pending','accepted','chef_accepted','out_for_delivery','completed','cancelled'),o.created_at DESC LIMIT ? OFFSET ?`,
         [req.user.id, ...statusParam, limit, offset]
     );
 
@@ -431,14 +510,44 @@ async function getChefOrders_controller(req, res) {
  */
 async function listOrdersAdmin_controller(req, res) {
     const status = VALID_STATUSES.has(req.query.status) ? req.query.status : null;
+    const kitchenId = req.query.kitchen_id ? Number(req.query.kitchen_id) : null;
+    const deliveryId = req.query.delivery_id ? Number(req.query.delivery_id) : null;
+    const month = req.query.month ? String(req.query.month).trim() : null;
+
+    let whereClauses = [];
+    let params = [];
+
+    if (status) {
+        whereClauses.push('o.status = ?');
+        params.push(status);
+    }
+    if (kitchenId) {
+        whereClauses.push('o.kitchen_id = ?');
+        params.push(kitchenId);
+    }
+    if (deliveryId) {
+        whereClauses.push('o.delivery_id = ?');
+        params.push(deliveryId);
+    }
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+        whereClauses.push("DATE_FORMAT(o.created_at, '%Y-%m') = ?");
+        params.push(month);
+    }
+
+    const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
     const [orders] = await pool.query(
-        `SELECT o.public_id,o.order_name,o.dish_name,o.kitchen_name,o.quantity,o.total_price,o.status,o.created_at,o.delivery_id,
-                CONCAT_WS(' ',d.first_name,d.last_name) AS delivery_name
+        `SELECT o.id, o.public_id, o.order_name, o.dish_name, o.kitchen_id, o.kitchen_name, o.kitchen_phone, o.kitchen_address,
+                o.quantity, o.unit_price, o.discount_amount, o.total_price, o.delivery_fee_amount, o.status,
+                o.customer_name, o.customer_phone, o.customer_address, o.created_at, o.completed_at, o.delivery_id,
+                CONCAT_WS(' ', d.first_name, d.last_name) AS delivery_name,
+                d.company_name AS delivery_company
          FROM orders o
          LEFT JOIN users d ON d.id=o.delivery_id
-         WHERE (? IS NULL OR o.status=?)
-         ORDER BY CASE WHEN o.status='pending' THEN 0 WHEN o.status='accepted' THEN 1 ELSE 2 END,o.created_at DESC LIMIT 200`,
-        [status, status]
+         ${whereSQL}
+         ORDER BY FIELD(o.status,'pending','chef_accepted','accepted','out_for_delivery','completed','cancelled'), o.created_at DESC
+         LIMIT 300`,
+        params
     );
     return res.json({ status: 'success', data: withCode(orders) });
 }
@@ -456,7 +565,7 @@ async function listOrdersAdmin_controller(req, res) {
 async function listDeliveryUsers_controller(req, res) {
     const [users] = await pool.query(
         `SELECT u.id,CONCAT_WS(' ',u.first_name,u.last_name) AS name,u.company_name,u.phone_number,u.city,
-                (SELECT COUNT(*) FROM orders o WHERE o.delivery_id=u.id AND o.status='accepted') AS active_orders
+                (SELECT COUNT(*) FROM orders o WHERE o.delivery_id=u.id AND o.status IN ('accepted','out_for_delivery')) AS active_orders
          FROM users u WHERE u.roles='delivery' AND u.account_status='approved'
          ORDER BY active_orders ASC,u.id ASC`
     );
@@ -505,7 +614,7 @@ async function listChefDeliveryVehicles_controller(req, res) {
     // Get delivery users who have accepted orders from this chef's kitchens
     // and their vehicles
     const [vehicles] = await pool.query(
-        `SELECT DISTINCT v.id, v.label, v.active, v.created_at, dv.first_name +" "+dv.last_name as delivery_name
+        `SELECT DISTINCT v.id, v.label, v.active, v.created_at, CONCAT_WS(' ', dv.first_name, dv.last_name) AS delivery_name
          FROM delivery_vehicles v
          JOIN users dv ON dv.id = v.delivery_user_id
          JOIN orders o ON o.delivery_id = dv.id
@@ -547,10 +656,13 @@ async function createDeliveryVehicle_controller(req, res) {
  * @returns {Promise<void>} 200 on success, 409 on race condition.
  */
 async function acceptOrder_controller(req, res) {
+  if (req.user?.account_status !== 'approved') {
+    return res.status(403).json({ status: 'error', message: 'حسابك غير مفعل أو موقوف' });
+  }
   const result = await transaction(async db => {
     // 1. Lock row (FOR UPDATE) to prevent race conditions - only chef_accepted orders with no delivery
     const [[order]] = await db.query(
-      "SELECT o.id, o.public_id, o.customer_id, k.user_id AS chef_id FROM orders o JOIN kitchens k ON k.id=o.kitchen_id WHERE o.public_id=? AND o.status='chef_accepted' AND o.delivery_id IS NULL FOR UPDATE",
+      "SELECT o.id, o.public_id, o.customer_id, k.user_id AS chef_id FROM orders o JOIN kitchens k ON k.id=o.kitchen_id WHERE o.public_id=? AND o.status='chef_accepted' AND o.delivery_id IS NULL AND k.status='ACTIVE' FOR UPDATE",
       [req.params.publicId]
     );
     
@@ -612,31 +724,14 @@ async function updateOrderStatus_controller(req, res) {
         );
         if (!order) return { error: 404, message: 'الطلب مش موجود' };
 
-        // Permission checks per role
-        if (req.user.roles === 'delivery') {
-            if (order.delivery_id !== req.user.id || status !== 'completed' || order.status !== 'accepted') {
-                return { error: 403, message: 'الدليفري يقدر يأكد التسليم بعد قبول الطلب فقط' };
-            }
-        } else if (req.user.roles === 'customer') {
-            if (order.customer_id !== req.user.id || status !== 'cancelled' || order.status !== 'pending' || order.delivery_id) {
-                return { error: 403, message: 'مش مسموح بإلغاء الطلب بعد قبوله' };
-            }
-        } else if (req.user.roles === 'chef') {
-            if (order.chef_id !== req.user.id || status !== 'cancelled' || order.status !== 'pending' || order.delivery_id) {
-                return { error: 403, message: 'المطبخ يقدر يعتذر عن الطلب قبل قبول الدليفري فقط' };
-            }
-        } else if (req.user.roles !== 'admin') {
-            return { error: 403, message: 'مش مسموح لك تغير حالة الطلب ده' };
-        }
+        const transition = canTransition(req.user, order, status);
+        if (!transition.ok) return { error: transition.error, message: transition.message };
 
-        if (order.status !== 'pending' && order.status !== 'accepted') {
-            return { error: 409, message: 'الطلب اتقفل قبل كده' };
-        }
-
-        await db.query(
-            "UPDATE orders SET status=?,completed_at=CASE WHEN ?='completed' THEN UTC_TIMESTAMP() ELSE NULL END WHERE id=? AND status IN ('pending','accepted')",
-            [status, status, order.id]
+        const [changed] = await db.query(
+            "UPDATE orders SET status=?,completed_at=CASE WHEN ?='completed' THEN UTC_TIMESTAMP() ELSE completed_at END WHERE id=? AND status=?",
+            [status, status, order.id, order.status]
         );
+        if (!changed.affectedRows) return { error: 409, message: 'حالة الطلب اتغيرت. حدّث الصفحة' };
 
         if (status === 'completed') {
             await db.query(
@@ -646,7 +741,7 @@ async function updateOrderStatus_controller(req, res) {
         }
 
         const code = orderCode(order.public_id);
-        const by = req.user.roles === 'delivery' ? 'مندوب التوصيل' : req.user.roles === 'customer' ? 'العميل' : 'الإدارة';
+        const by = req.user.roles === 'delivery' ? 'مندوب التوصيل' : req.user.roles === 'customer' ? 'العميل' : req.user.roles === 'chef' ? 'المطبخ' : 'الإدارة';
         const key = `order:${order.id}:status:${status}`;
 
         // Always notify the customer about their order status changes
@@ -691,7 +786,7 @@ async function assignDelivery_controller(req, res) {
         if (!delivery) return { error: 404, message: 'شركة الدليفري مش موجودة أو حسابها مش مفعل' };
 
         const [[order]] = await db.query(
-            "SELECT id,customer_id,dish_name FROM orders WHERE public_id=? AND status='pending' AND delivery_id IS NULL FOR UPDATE",
+            "SELECT id,customer_id,dish_name FROM orders WHERE public_id=? AND status IN ('pending','chef_accepted') AND delivery_id IS NULL FOR UPDATE",
             [req.params.publicId]
         );
         if (!order) return { error: 404, message: 'الطلب مش موجود أو اتقفل' };
@@ -800,5 +895,7 @@ module.exports = {
     assignDelivery_controller,
     rejectUser_controller,
     listOrdersAdmin_controller,
-    listDeliveryUsers_controller
+    listDeliveryUsers_controller,
+    canTransition,
+    orderCode
 };

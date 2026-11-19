@@ -76,7 +76,9 @@ async function signIn_controller(req, res) {
         return res.status(403).json({
             message: user.account_status === 'rejected'
                 ? 'طلب الانضمام اترفض. تواصل مع الإدارة لو محتاج تفاصيل'
-                : 'حسابك لسه في انتظار موافقة الإدارة'
+                : user.account_status === 'suspended'
+                    ? (user.suspend_reason ? `تم إيقاف حسابك من قبل الإدارة: ${user.suspend_reason}` : 'تم إيقاف حسابك من قبل الإدارة. لا يمكنك الدخول إلى الموقع')
+                    : 'حسابك لسه في انتظار موافقة الإدارة'
         });
     }
     if (Number(user.two_factor_enabled) || Number(user.two_factor_required)) {
@@ -226,7 +228,11 @@ async function signUp2_verify_controller(req, res) {
 function logout_controller(req, res) {
     res.clearCookie('session_token', { path: '/' });
     res.clearCookie('pending_token', { path: '/' });
-    return res.json({ status: 'success', redirect: '/auth' });
+    const target = String(req.query.next || req.body?.next || '') === '/m' ? '/m/auth' : '/auth';
+    if (req.method === 'GET' && !String(req.get('accept') || '').includes('application/json')) {
+        return res.redirect(target);
+    }
+    return res.json({ status: 'success', redirect: target });
 }
 
 // ============================================

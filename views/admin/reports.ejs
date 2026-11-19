@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <script src="/app-client.js"></script>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>تقارير وحسابات الطلبات | دوق DOQ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#9e2016",
+            "primary-container": "#c0392b",
+            "on-primary": "#ffffff",
+            "secondary": "#a23f00",
+            "secondary-container": "#fc7127",
+            "on-secondary": "#ffffff",
+            "background": "#fff8f6",
+            "surface": "#fff8f6",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#fff0ee",
+            "surface-container": "#ffe9e6",
+            "on-surface": "#261816",
+            "on-surface-variant": "#59413d",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "outline-variant": "#e1bfb9",
+            "success": "#15803d",
+            "success-container": "#dcfce7"
+          },
+          fontFamily: { sans: ["Cairo", "sans-serif"] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Cairo', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+    .zoom-in { animation: zoomIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased">
+
+  <%- include('../partials/admin_sidebar', { activePage: 'reports' }) %>
+
+  <!-- Header -->
+  <header class="fixed top-0 right-0 lg:right-72 left-0 h-16 bg-surface/80 backdrop-blur-xl shadow-sm z-40 flex items-center justify-between px-4 md:px-8">
+    <div class="flex items-center gap-3 flex-1">
+      <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-surface-container transition-colors">
+        <span class="material-symbols-outlined text-on-surface text-[24px]">menu</span>
+      </button>
+      <div class="flex items-center gap-2 text-sm text-on-surface-variant">
+        <span class="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+        <span>/</span>
+        <span class="text-on-surface font-semibold">تقارير وحسابات الطلبات</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="/notifications" aria-label="الإشعارات" class="p-2 text-on-surface-variant hover:text-primary rounded-full hover:bg-surface-container-low transition-colors">
+        <span class="material-symbols-outlined text-2xl">notifications</span>
+      </a>
+      <a href="/users/profile" class="w-9 h-9 rounded-full overflow-hidden border-2 border-primary shadow-sm">
+        <img src="/assests/avatar.jpeg" alt="Avatar" class="w-full h-full object-cover">
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="pt-20 pb-16 px-4 md:px-8 lg:pr-72 min-h-screen bg-surface">
+    <div class="max-w-7xl mx-auto space-y-6">
+
+      <!-- Page Title & Period Controls -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/30 shadow-sm">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-extrabold text-primary flex items-center gap-3">
+            <span class="material-symbols-outlined text-3xl md:text-4xl">payments</span>
+            محاسبة الطلبات والتقارير الشهرية
+          </h1>
+          <p class="text-sm text-on-surface-variant mt-1">
+            متابعة كل طلب خرج من أي مطبخ وحسابات شركات الدليفري وتحديد مستحقات وعمولات المنصة في آخر الشهر
+          </p>
+        </div>
+
+        <!-- Month Filter Selector -->
+        <div class="flex flex-wrap items-center gap-3">
+          <label class="text-xs font-bold text-on-surface-variant flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">calendar_month</span>الشهر:
+          </label>
+          <input type="month" id="monthFilter" class="px-3 py-2 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm font-bold text-on-surface outline-none focus:ring-2 focus:ring-primary/20">
+          <button onclick="clearMonthFilter()" class="px-3 py-2 text-xs font-semibold bg-surface-container hover:bg-surface-container-high rounded-xl transition-all">
+            كل الأوقات
+          </button>
+        </div>
+      </div>
+
+      <!-- Overview Stats Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="statsCardsContainer">
+        <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/30 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl">restaurant</span>
+          </div>
+          <div>
+            <span class="text-xs text-on-surface-variant font-medium block">مبيعات المطابخ المكتملة</span>
+            <span class="text-xl font-extrabold text-primary" id="statKitchenSales">0 ج.م</span>
+            <span class="text-[11px] text-on-surface-variant block mt-0.5" id="statKitchenOrders">0 طلب مكتمل</span>
+          </div>
+        </div>
+
+        <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/30 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl">local_shipping</span>
+          </div>
+          <div>
+            <span class="text-xs text-on-surface-variant font-medium block">إجمالي رسوم التوصيل</span>
+            <span class="text-xl font-extrabold text-secondary" id="statDeliveryFees">0 ج.م</span>
+            <span class="text-[11px] text-on-surface-variant block mt-0.5" id="statDeliveryOrders">0 طلب تم تسليمه</span>
+          </div>
+        </div>
+
+        <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/30 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl">price_check</span>
+          </div>
+          <div>
+            <span class="text-xs text-on-surface-variant font-medium block">أرباح عمولة المنصة</span>
+            <span class="text-xl font-extrabold text-success" id="statTotalCommission">0 ج.م</span>
+            <span class="text-[11px] text-on-surface-variant block mt-0.5">عمولة المطابخ والدليفري</span>
+          </div>
+        </div>
+
+        <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/30 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-surface-container text-on-surface flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl">receipt_long</span>
+          </div>
+          <div>
+            <span class="text-xs text-on-surface-variant font-medium block">إجمالي كل الطلبات</span>
+            <span class="text-xl font-extrabold text-on-surface" id="statTotalOrders">0</span>
+            <span class="text-[11px] text-on-surface-variant block mt-0.5" id="statKitchensCount">0 مطبخ مسجل</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs Navigation -->
+      <div class="flex items-center gap-2 border-b border-outline-variant/30 pb-2">
+        <button id="tabKitchensBtn" onclick="switchTab('kitchens')" class="px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 bg-primary text-white shadow-sm transition-all">
+          <span class="material-symbols-outlined text-lg">storefront</span>
+          حسابات المطابخ والطلبات
+        </button>
+        <button id="tabDeliveryBtn" onclick="switchTab('delivery')" class="px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all">
+          <span class="material-symbols-outlined text-lg">two_wheeler</span>
+          حسابات شركات الدليفري
+        </button>
+      </div>
+
+      <!-- TAB 1: Kitchens Settlement & Orders -->
+      <div id="kitchensTabSection" class="space-y-4">
+        <!-- Kitchens Filter & Search -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30 shadow-sm">
+          <div class="relative w-full sm:w-80">
+            <span class="material-symbols-outlined absolute right-3 top-2.5 text-on-surface-variant text-lg">search</span>
+            <input type="text" id="kitchenSearchInput" placeholder="ابحث باسم المطبخ أو الشيف أو الهاتف..." oninput="debounceLoadKitchens()" class="w-full pr-10 pl-3 py-2 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20">
+          </div>
+          <div class="text-xs text-on-surface-variant flex items-center gap-2 font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-success"></span> نسبة عمولة المنصة من المطبخ: <b id="kitchenCommissionRateLabel">7%</b>
+          </div>
+        </div>
+
+        <!-- Kitchens Table -->
+        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+              <thead class="bg-surface-container-low/70 text-on-surface-variant text-xs font-bold border-b border-outline-variant/30">
+                <tr>
+                  <th class="p-3.5">المطبخ والشيف</th>
+                  <th class="p-3.5">المدينة والهاتف</th>
+                  <th class="p-3.5 text-center">حالة الحساب</th>
+                  <th class="p-3.5 text-center">الطلبات</th>
+                  <th class="p-3.5 text-center">مبيعات مكتملة</th>
+                  <th class="p-3.5 text-center">عمولة المنصة</th>
+                  <th class="p-3.5 text-center">صافي مستحق للمطبخ</th>
+                  <th class="p-3.5 text-center">الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="kitchensTableBody" class="divide-y divide-outline-variant/20 font-medium">
+                <tr><td colspan="8" class="p-8 text-center text-on-surface-variant">جاري تحميل بيانات المطابخ...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Delivery Companies Settlement & Orders -->
+      <div id="deliveryTabSection" class="space-y-4 hidden">
+        <!-- Delivery Filter & Search -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30 shadow-sm">
+          <div class="relative w-full sm:w-80">
+            <span class="material-symbols-outlined absolute right-3 top-2.5 text-on-surface-variant text-lg">search</span>
+            <input type="text" id="deliverySearchInput" placeholder="ابحث باسم شركة الدليفري أو المندوب..." oninput="debounceLoadDelivery()" class="w-full pr-10 pl-3 py-2 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20">
+          </div>
+          <div class="text-xs text-on-surface-variant flex items-center gap-2 font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-secondary"></span> نسبة عمولة المنصة من الدليفري: <b id="deliveryCommissionRateLabel">7%</b>
+          </div>
+        </div>
+
+        <!-- Delivery Table -->
+        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+              <thead class="bg-surface-container-low/70 text-on-surface-variant text-xs font-bold border-b border-outline-variant/30">
+                <tr>
+                  <th class="p-3.5">الشركة والمندوب</th>
+                  <th class="p-3.5">المدينة والهاتف</th>
+                  <th class="p-3.5 text-center">حالة الحساب</th>
+                  <th class="p-3.5 text-center">الطلبات المسندة</th>
+                  <th class="p-3.5 text-center">طلبات مكتملة</th>
+                  <th class="p-3.5 text-center">إجمالي رسوم التوصيل</th>
+                  <th class="p-3.5 text-center">عمولة المنصة</th>
+                  <th class="p-3.5 text-center">صافي مستحق للدليفري</th>
+                  <th class="p-3.5 text-center">الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="deliveryTableBody" class="divide-y divide-outline-variant/20 font-medium">
+                <tr><td colspan="9" class="p-8 text-center text-on-surface-variant">جاري تحميل بيانات شركات الدليفري...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Detailed Orders Modal -->
+  <div id="ordersModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-surface-container-lowest rounded-2xl w-full max-w-5xl max-h-[90vh] shadow-2xl zoom-in border border-outline-variant/30 flex flex-col overflow-hidden">
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-outline-variant/30 flex items-center justify-between bg-surface-container-low/50">
+        <div>
+          <h2 class="text-xl font-bold text-primary flex items-center gap-2" id="modalTitle">
+            <span class="material-symbols-outlined text-2xl">receipt_long</span>
+            تفاصيل الطلبات
+          </h2>
+          <p class="text-xs text-on-surface-variant mt-1" id="modalSubtitle">عرض كامل لكافة الطلبات الصادرة والماليات</p>
+        </div>
+        <button onclick="closeOrdersModal()" class="w-9 h-9 rounded-lg hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-all">
+          <span class="material-symbols-outlined text-2xl">close</span>
+        </button>
+      </div>
+
+      <!-- Financial Mini Summary -->
+      <div class="px-5 py-3 bg-surface-container-lowest border-b border-outline-variant/20 flex flex-wrap gap-4 text-xs font-bold" id="modalFinancials">
+      </div>
+
+      <!-- Orders Table Container -->
+      <div class="p-5 overflow-y-auto flex-1">
+        <div class="overflow-x-auto rounded-xl border border-outline-variant/30">
+          <table class="w-full text-right text-xs">
+            <thead class="bg-surface-container-low text-on-surface-variant font-bold">
+              <tr>
+                <th class="p-2.5">كود الطلب</th>
+                <th class="p-2.5">الطبق والكمية</th>
+                <th class="p-2.5">العميل والعنوان</th>
+                <th class="p-2.5">المطبخ / الدليفري</th>
+                <th class="p-2.5 text-center">السعر الإجمالي</th>
+                <th class="p-2.5 text-center">خدمة التوصيل</th>
+                <th class="p-2.5 text-center">الحالة</th>
+                <th class="p-2.5 text-center">التاريخ</th>
+              </tr>
+            </thead>
+            <tbody id="modalOrdersTableBody" class="divide-y divide-outline-variant/20 font-medium">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-outline-variant/30 bg-surface-container-low/30 flex justify-between items-center">
+        <span class="text-xs text-on-surface-variant">البيانات محدثة ومربوطة بالنظام المالي</span>
+        <button onclick="closeOrdersModal()" class="px-5 py-2 bg-surface-container text-on-surface font-bold text-xs rounded-xl hover:bg-surface-container-high transition-all">
+          إغلاق
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Suspend Account Confirmation Modal -->
+  <div id="suspendModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-surface-container-lowest rounded-2xl w-full max-w-md p-6 shadow-2xl zoom-in border border-outline-variant/30">
+      <div class="w-14 h-14 rounded-full bg-error-container text-error flex items-center justify-center mx-auto mb-4">
+        <span class="material-symbols-outlined text-3xl">block</span>
+      </div>
+      <h3 class="text-xl font-bold text-center text-on-surface mb-1">إيقاف الحساب (حظر)</h3>
+      <p class="text-xs text-center text-on-surface-variant mb-4">
+        عند إيقاف هذا الحساب لن يتمكن صاحبه من تسجيل الدخول أو رؤية أي بيانات وسيعتبر حسابه محظوراً بالكامل.
+      </p>
+
+      <div class="mb-4">
+        <label class="block text-xs font-bold text-on-surface-variant mb-1">سبب الإيقاف (اختياري)</label>
+        <textarea id="suspendReasonInput" rows="3" placeholder="اكتب سبب إيقاف الحساب ليظهر عند الحاجة..." class="w-full p-2.5 bg-surface-container-low border border-outline-variant/40 rounded-xl text-xs outline-none focus:ring-2 focus:ring-error/20"></textarea>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="confirmSuspendBtn" onclick="submitSuspend()" class="flex-1 py-2.5 bg-error text-white text-xs font-bold rounded-xl hover:bg-red-700 transition-all flex items-center justify-center gap-1">
+          <span class="material-symbols-outlined text-sm">check</span>
+          تأكيد الإيقاف
+        </button>
+        <button onclick="closeSuspendModal()" class="px-5 py-2.5 bg-surface-container text-on-surface text-xs font-bold rounded-xl hover:bg-surface-container-high transition-all">
+          إلغاء
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeTab = 'kitchens';
+    let kitchensData = [];
+    let deliveryData = [];
+    let currentKitchenId = null;
+    let currentDeliveryId = null;
+    let pendingSuspendUserId = null;
+    let pendingSuspendType = 'user'; // 'user' or 'kitchen'
+    let kitchenDebounceTimer = null;
+    let deliveryDebounceTimer = null;
+
+    const esc = str => DOQ.escape(str || '');
+    const money = n => Number(n || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م';
+
+    const STATUS_MAP = {
+      pending: { text: 'قيد التنفيذ', class: 'bg-amber-100 text-amber-900 border-amber-300' },
+      chef_accepted: { text: 'مقبول من المطبخ', class: 'bg-blue-100 text-blue-900 border-blue-300' },
+      out_for_delivery: { text: 'مع الدليفري', class: 'bg-indigo-100 text-indigo-900 border-indigo-300' },
+      accepted: { text: 'قيد التوصيل', class: 'bg-sky-100 text-sky-900 border-sky-300' },
+      completed: { text: 'اتسلم ومكتمل', class: 'bg-green-100 text-green-900 border-green-300' },
+      cancelled: { text: 'ملغي', class: 'bg-red-100 text-red-900 border-red-300' }
+    };
+
+    function statusBadge(s) {
+      const conf = STATUS_MAP[s] || { text: s, class: 'bg-gray-100 text-gray-800 border-gray-300' };
+      return `<span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${conf.class}">${esc(conf.text)}</span>`;
+    }
+
+    function accountStatusBadge(status) {
+      if (status === 'suspended') {
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-error-container text-error border border-error/30"><span class="w-1.5 h-1.5 rounded-full bg-error"></span>موقوف</span>`;
+      }
+      if (status === 'pending') {
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300"><span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>قيد المراجعة</span>`;
+      }
+      return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-success-container text-success border border-success/30"><span class="w-1.5 h-1.5 rounded-full bg-success"></span>نشط ومفعل</span>`;
+    }
+
+    // Switch Tab
+    function switchTab(tab) {
+      activeTab = tab;
+      const kBtn = document.getElementById('tabKitchensBtn');
+      const dBtn = document.getElementById('tabDeliveryBtn');
+      const kSec = document.getElementById('kitchensTabSection');
+      const dSec = document.getElementById('deliveryTabSection');
+
+      if (tab === 'kitchens') {
+        kBtn.className = "px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 bg-primary text-white shadow-sm transition-all";
+        dBtn.className = "px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all";
+        kSec.classList.remove('hidden');
+        dSec.classList.add('hidden');
+      } else {
+        dBtn.className = "px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 bg-primary text-white shadow-sm transition-all";
+        kBtn.className = "px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all";
+        dSec.classList.remove('hidden');
+        kSec.classList.add('hidden');
+      }
+    }
+
+    // Month filter change
+    document.getElementById('monthFilter').addEventListener('change', () => {
+      loadKitchensReport();
+      loadDeliveryReport();
+    });
+
+    function clearMonthFilter() {
+      document.getElementById('monthFilter').value = '';
+      loadKitchensReport();
+      loadDeliveryReport();
+    }
+
+    function debounceLoadKitchens() {
+      clearTimeout(kitchenDebounceTimer);
+      kitchenDebounceTimer = setTimeout(loadKitchensReport, 350);
+    }
+
+    function debounceLoadDelivery() {
+      clearTimeout(deliveryDebounceTimer);
+      deliveryDebounceTimer = setTimeout(loadDeliveryReport, 350);
+    }
+
+    // Load Kitchens Report
+    async function loadKitchensReport() {
+      const month = document.getElementById('monthFilter').value;
+      const q = document.getElementById('kitchenSearchInput').value.trim();
+
+      const params = new URLSearchParams();
+      if (month) params.append('month', month);
+      if (q) params.append('q', q);
+
+      try {
+        const res = await DOQ.api('/admin/api/v1/reports/kitchens?' + params.toString());
+        if (res.status === 'success') {
+          kitchensData = res.data || [];
+          renderKitchensTable(kitchensData);
+          updateOverviewStats(res.summary, 'kitchens');
+          document.getElementById('kitchenCommissionRateLabel').textContent = res.summary.commission_rate + '%';
+        }
+      } catch (e) {
+        document.getElementById('kitchensTableBody').innerHTML = `<tr><td colspan="8" class="p-8 text-center text-error font-bold">خطأ في جلب بيانات المطابخ: ${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    function renderKitchensTable(kitchens) {
+      const tbody = document.getElementById('kitchensTableBody');
+      if (!kitchens.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-on-surface-variant font-bold">لا توجد مطابخ مسجلة في هذا النطاق</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = kitchens.map(k => {
+        const isSuspended = k.chef_status === 'suspended' || k.kitchen_status === 'SUSPENDED';
+        const suspendActionBtn = isSuspended
+          ? `<button onclick="toggleUnsuspendUser(${k.chef_id}, 'kitchen')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-green-100 text-green-800 hover:bg-green-200 transition-all flex items-center gap-1 mx-auto" title="إلغاء الإيقاف"><span class="material-symbols-outlined text-sm">check_circle</span>تفعيل</button>`
+          : `<button onclick="openSuspendModal(${k.chef_id}, 'kitchen')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-100 text-red-800 hover:bg-red-200 transition-all flex items-center gap-1 mx-auto" title="إيقاف المطبخ"><span class="material-symbols-outlined text-sm">block</span>إيقاف</button>`;
+
+        return `
+          <tr class="hover:bg-surface-container-low/50 transition-colors">
+            <td class="p-3.5">
+              <div class="font-bold text-on-surface text-sm">${esc(k.kitchen_name)}</div>
+              <div class="text-xs text-on-surface-variant font-normal">الشيف: ${esc(k.chef_name)}</div>
+            </td>
+            <td class="p-3.5">
+              <div class="text-xs font-semibold text-on-surface">${esc(k.kitchen_city || 'غير محدد')}</div>
+              <div class="text-xs font-mono text-on-surface-variant" dir="ltr">${esc(k.kitchen_phone || k.chef_phone)}</div>
+            </td>
+            <td class="p-3.5 text-center">
+              ${accountStatusBadge(isSuspended ? 'suspended' : k.chef_status)}
+            </td>
+            <td class="p-3.5 text-center">
+              <span class="font-extrabold text-on-surface">${k.total_orders}</span>
+              <span class="text-[11px] text-on-surface-variant block">(${k.completed_orders} مكتمل)</span>
+            </td>
+            <td class="p-3.5 text-center font-bold text-primary">
+              ${money(k.completed_sales)}
+            </td>
+            <td class="p-3.5 text-center font-bold text-success">
+              ${money(k.platform_commission)}
+              <span class="text-[10px] text-on-surface-variant block">(${k.commission_rate}%)</span>
+            </td>
+            <td class="p-3.5 text-center font-extrabold text-on-surface">
+              ${money(k.net_kitchen_payout)}
+            </td>
+            <td class="p-3.5 text-center">
+              <div class="flex items-center justify-center gap-2">
+                <button onclick="viewKitchenOrders(${k.kitchen_id}, '${esc(k.kitchen_name)}')" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">visibility</span>
+                  الطلبات
+                </button>
+                ${suspendActionBtn}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Load Delivery Report
+    async function loadDeliveryReport() {
+      const month = document.getElementById('monthFilter').value;
+      const q = document.getElementById('deliverySearchInput').value.trim();
+
+      const params = new URLSearchParams();
+      if (month) params.append('month', month);
+      if (q) params.append('q', q);
+
+      try {
+        const res = await DOQ.api('/admin/api/v1/reports/delivery?' + params.toString());
+        if (res.status === 'success') {
+          deliveryData = res.data || [];
+          renderDeliveryTable(deliveryData);
+          updateOverviewStats(res.summary, 'delivery');
+          document.getElementById('deliveryCommissionRateLabel').textContent = res.summary.commission_rate + '%';
+        }
+      } catch (e) {
+        document.getElementById('deliveryTableBody').innerHTML = `<tr><td colspan="9" class="p-8 text-center text-error font-bold">خطأ في جلب بيانات الدليفري: ${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    function renderDeliveryTable(couriers) {
+      const tbody = document.getElementById('deliveryTableBody');
+      if (!couriers.length) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-on-surface-variant font-bold">لا توجد شركات دليفري مسجلة في هذا النطاق</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = couriers.map(c => {
+        const isSuspended = c.account_status === 'suspended';
+        const suspendActionBtn = isSuspended
+          ? `<button onclick="toggleUnsuspendUser(${c.delivery_id}, 'delivery')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-green-100 text-green-800 hover:bg-green-200 transition-all flex items-center gap-1 mx-auto" title="إلغاء الإيقاف"><span class="material-symbols-outlined text-sm">check_circle</span>تفعيل</button>`
+          : `<button onclick="openSuspendModal(${c.delivery_id}, 'delivery')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-100 text-red-800 hover:bg-red-200 transition-all flex items-center gap-1 mx-auto" title="إيقاف الشركة"><span class="material-symbols-outlined text-sm">block</span>إيقاف</button>`;
+
+        return `
+          <tr class="hover:bg-surface-container-low/50 transition-colors">
+            <td class="p-3.5">
+              <div class="font-bold text-on-surface text-sm">${esc(c.company_name)}</div>
+              <div class="text-xs text-on-surface-variant font-normal">المسؤول: ${esc(c.contact_name)}</div>
+            </td>
+            <td class="p-3.5">
+              <div class="text-xs font-semibold text-on-surface">${esc(c.city || 'غير محدد')}</div>
+              <div class="text-xs font-mono text-on-surface-variant" dir="ltr">${esc(c.phone_number)}</div>
+            </td>
+            <td class="p-3.5 text-center">
+              ${accountStatusBadge(c.account_status)}
+            </td>
+            <td class="p-3.5 text-center font-bold text-on-surface">
+              ${c.total_assigned_orders}
+            </td>
+            <td class="p-3.5 text-center font-bold text-secondary">
+              ${c.completed_orders}
+              <span class="text-[11px] text-on-surface-variant block">(${money(c.completed_order_value)})</span>
+            </td>
+            <td class="p-3.5 text-center font-bold text-primary">
+              ${money(c.total_delivery_fees)}
+            </td>
+            <td class="p-3.5 text-center font-bold text-success">
+              ${money(c.platform_commission)}
+              <span class="text-[10px] text-on-surface-variant block">(${c.commission_rate}%)</span>
+            </td>
+            <td class="p-3.5 text-center font-extrabold text-on-surface">
+              ${money(c.net_delivery_payout)}
+            </td>
+            <td class="p-3.5 text-center">
+              <div class="flex items-center justify-center gap-2">
+                <button onclick="viewDeliveryOrders(${c.delivery_id}, '${esc(c.company_name)}')" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 transition-all flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">visibility</span>
+                  الطلبات
+                </button>
+                ${suspendActionBtn}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updateOverviewStats(summary, source) {
+      if (source === 'kitchens' && summary) {
+        document.getElementById('statKitchenSales').textContent = money(summary.overall_completed_sales);
+        document.getElementById('statKitchenOrders').textContent = `${summary.overall_completed_orders} طلب مكتمل`;
+        document.getElementById('statTotalOrders').textContent = summary.overall_total_orders;
+        document.getElementById('statKitchensCount').textContent = `${summary.total_kitchens} مطبخ مسجل`;
+      }
+      if (source === 'delivery' && summary) {
+        document.getElementById('statDeliveryFees').textContent = money(summary.overall_delivery_fees);
+        document.getElementById('statDeliveryOrders').textContent = `${summary.overall_completed_orders} طلب تم تسليمه`;
+      }
+
+      // Re-sum commissions
+      const kSales = kitchensData.reduce((acc, k) => acc + (k.platform_commission || 0), 0);
+      const dFees = deliveryData.reduce((acc, d) => acc + (d.platform_commission || 0), 0);
+      document.getElementById('statTotalCommission').textContent = money(kSales + dFees);
+    }
+
+    // View Orders Modal for Kitchen
+    async function viewKitchenOrders(kitchenId, kitchenName) {
+      currentKitchenId = kitchenId;
+      document.getElementById('modalTitle').innerHTML = `<span class="material-symbols-outlined text-2xl">storefront</span> طلبات مطبخ: ${esc(kitchenName)}`;
+      document.getElementById('modalSubtitle').textContent = 'سجل كافة الطلبات الصادرة من هذا المطبخ مع التفاصيل والأسعار';
+      document.getElementById('ordersModal').classList.remove('hidden');
+      document.getElementById('ordersModal').classList.add('flex');
+      document.getElementById('modalOrdersTableBody').innerHTML = `<tr><td colspan="8" class="p-8 text-center text-on-surface-variant font-bold">جاري تحميل طلبات المطبخ...</td></tr>`;
+
+      const month = document.getElementById('monthFilter').value;
+      const params = new URLSearchParams();
+      if (month) params.append('month', month);
+
+      try {
+        const res = await DOQ.api(`/admin/api/v1/reports/kitchens/${kitchenId}/orders?${params.toString()}`);
+        if (res.status === 'success') {
+          renderModalOrders(res.data || [], 'kitchen', res.financials);
+        }
+      } catch (err) {
+        document.getElementById('modalOrdersTableBody').innerHTML = `<tr><td colspan="8" class="p-8 text-center text-error font-bold">فشل جلب الطلبات: ${esc(err.message)}</td></tr>`;
+      }
+    }
+
+    // View Orders Modal for Delivery
+    async function viewDeliveryOrders(deliveryId, companyName) {
+      currentDeliveryId = deliveryId;
+      document.getElementById('modalTitle').innerHTML = `<span class="material-symbols-outlined text-2xl">two_wheeler</span> طلبات شركة دليفري: ${esc(companyName)}`;
+      document.getElementById('modalSubtitle').textContent = 'سجل كافة الطلبات التي تم إسنادها أو توصيلها بواسطة هذه الشركة';
+      document.getElementById('ordersModal').classList.remove('hidden');
+      document.getElementById('ordersModal').classList.add('flex');
+      document.getElementById('modalOrdersTableBody').innerHTML = `<tr><td colspan="8" class="p-8 text-center text-on-surface-variant font-bold">جاري تحميل طلبات شركة الدليفري...</td></tr>`;
+
+      const month = document.getElementById('monthFilter').value;
+      const params = new URLSearchParams();
+      if (month) params.append('month', month);
+
+      try {
+        const res = await DOQ.api(`/admin/api/v1/reports/delivery/${deliveryId}/orders?${params.toString()}`);
+        if (res.status === 'success') {
+          renderModalOrders(res.data || [], 'delivery', res.financials);
+        }
+      } catch (err) {
+        document.getElementById('modalOrdersTableBody').innerHTML = `<tr><td colspan="8" class="p-8 text-center text-error font-bold">فشل جلب الطلبات: ${esc(err.message)}</td></tr>`;
+      }
+    }
+
+    function renderModalOrders(orders, type, financials) {
+      const tbody = document.getElementById('modalOrdersTableBody');
+      const finContainer = document.getElementById('modalFinancials');
+
+      if (financials) {
+        if (type === 'kitchen') {
+          finContainer.innerHTML = `
+            <span class="text-on-surface">إجمالي الطلبات: <b class="text-primary">${financials.total_orders}</b></span>
+            <span class="text-on-surface">طلبات مكتملة: <b class="text-success">${financials.completed_orders}</b></span>
+            <span class="text-on-surface">المبيعات المكتملة: <b class="text-primary">${money(financials.completed_sales)}</b></span>
+            <span class="text-on-surface">عمولة المنصة (${financials.commission_rate}%): <b class="text-secondary">${money(financials.commission_amount)}</b></span>
+            <span class="text-on-surface">صافي المستحق للمطبخ: <b class="text-success">${money(financials.net_payout)}</b></span>
+          `;
+        } else {
+          finContainer.innerHTML = `
+            <span class="text-on-surface">إجمالي الطلبات: <b class="text-primary">${financials.total_orders}</b></span>
+            <span class="text-on-surface">طلبات تم تسليمها: <b class="text-success">${financials.completed_orders}</b></span>
+            <span class="text-on-surface">رسوم التوصيل: <b class="text-primary">${money(financials.total_delivery_fees)}</b></span>
+            <span class="text-on-surface">عمولة المنصة (${financials.commission_rate}%): <b class="text-secondary">${money(financials.commission_amount)}</b></span>
+            <span class="text-on-surface">صافي المستحق للدليفري: <b class="text-success">${money(financials.net_payout)}</b></span>
+          `;
+        }
+      }
+
+      if (!orders.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-on-surface-variant font-bold">لا توجد طلبات مسجلة</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = orders.map(o => {
+        const orderDate = o.created_at ? new Date(o.created_at).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+        const thirdParty = type === 'kitchen'
+          ? (o.delivery_name ? `<span class="font-bold text-secondary">${esc(o.delivery_name)}</span>` : '<span class="text-on-surface-variant">بدون مندوب</span>')
+          : `<span class="font-bold text-primary">${esc(o.kitchen_name)}</span>`;
+
+        return `
+          <tr class="hover:bg-surface-container-low/40">
+            <td class="p-2.5 font-mono font-bold text-primary" dir="ltr">${esc(o.order_code)}</td>
+            <td class="p-2.5">
+              <div class="font-bold text-on-surface">${esc(o.dish_name)}</div>
+              <div class="text-[11px] text-on-surface-variant">الكمية: ${o.quantity} × ${money(o.unit_price)}</div>
+            </td>
+            <td class="p-2.5">
+              <div class="font-semibold text-on-surface">${esc(o.customer_name)}</div>
+              <div class="text-[11px] text-on-surface-variant" dir="ltr">${esc(o.customer_phone)}</div>
+              ${o.customer_address ? `<div class="text-[10px] text-on-surface-variant truncate max-w-[150px]">${esc(o.customer_address)}</div>` : ''}
+            </td>
+            <td class="p-2.5">${thirdParty}</td>
+            <td class="p-2.5 text-center font-bold text-primary">${money(o.total_price)}</td>
+            <td class="p-2.5 text-center font-medium">${money(o.delivery_fee_amount)}</td>
+            <td class="p-2.5 text-center">${statusBadge(o.status)}</td>
+            <td class="p-2.5 text-center text-[11px] text-on-surface-variant whitespace-nowrap">${orderDate}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function closeOrdersModal() {
+      document.getElementById('ordersModal').classList.add('hidden');
+      document.getElementById('ordersModal').classList.remove('flex');
+    }
+
+    // Suspend Modal
+    function openSuspendModal(userId, type) {
+      pendingSuspendUserId = userId;
+      pendingSuspendType = type;
+      document.getElementById('suspendReasonInput').value = '';
+      document.getElementById('suspendModal').classList.remove('hidden');
+      document.getElementById('suspendModal').classList.add('flex');
+    }
+
+    function closeSuspendModal() {
+      document.getElementById('suspendModal').classList.add('hidden');
+      document.getElementById('suspendModal').classList.remove('flex');
+      pendingSuspendUserId = null;
+    }
+
+    async function submitSuspend() {
+      if (!pendingSuspendUserId) return;
+      const btn = document.getElementById('confirmSuspendBtn');
+      btn.disabled = true;
+      const reason = document.getElementById('suspendReasonInput').value.trim();
+
+      try {
+        const res = await DOQ.api(`/admin/api/v1/users/${pendingSuspendUserId}/suspend`, 'PATCH', { reason });
+        if (res.status === 'success') {
+          alert('✅ ' + (res.message || 'تم إيقاف الحساب بنجاح'));
+          closeSuspendModal();
+          loadKitchensReport();
+          loadDeliveryReport();
+        } else {
+          alert('❌ ' + (res.message || 'فشل إيقاف الحساب'));
+        }
+      } catch (err) {
+        alert('❌ خطأ: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function toggleUnsuspendUser(userId, type) {
+      if (!confirm('هل تريد تفعيل هذا الحساب وإلغاء الإيقاف؟')) return;
+      try {
+        const res = await DOQ.api(`/admin/api/v1/users/${userId}/unsuspend`, 'PATCH', {});
+        if (res.status === 'success') {
+          alert('✅ ' + (res.message || 'تم تفعيل الحساب بنجاح'));
+          loadKitchensReport();
+          loadDeliveryReport();
+        } else {
+          alert('❌ ' + (res.message || 'فشل تفعيل الحساب'));
+        }
+      } catch (err) {
+        alert('❌ خطأ: ' + err.message);
+      }
+    }
+
+    // Initial load
+    // Set default month to current month YYYY-MM
+    const today = new Date();
+    const currMonth = today.toISOString().slice(0, 7);
+    document.getElementById('monthFilter').value = currMonth;
+
+    loadKitchensReport();
+    loadDeliveryReport();
+  </script>
+</body>
+</html>

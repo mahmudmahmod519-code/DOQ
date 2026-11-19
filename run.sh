@@ -57,6 +57,23 @@ wait_for_health() {
     error "${service} did not become healthy in time"
 }
 
+# Caddy is a proxy without a compose healthcheck, so probe the public HTTPS URL instead.
+wait_for_https() {
+    local url="$1"
+    local max_attempts=60
+    local attempt=0
+    log "Waiting for ${url} to answer over HTTPS..."
+    while [[ $attempt -lt $max_attempts ]]; do
+        if curl -kfsS -o /dev/null --max-time 5 "$url"; then
+            success "${url} is responding"
+            return 0
+        fi
+        sleep 2
+        ((attempt++))
+    done
+    error "${url} did not respond in time (check: $COMPOSE_CMD logs caddy)"
+}
+
 # ============================================================
 # Main
 # ============================================================
@@ -74,9 +91,10 @@ echo -e "${NC}"
 # 1. Check prerequisites
 step "Checking prerequisites"
 check_cmd docker
-check_cmd docker compose
+docker compose version >/dev/null 2>&1 || error "docker compose plugin not found. Install it first."
 check_cmd jq
 check_cmd openssl
+check_cmd curl
 success "All commands available"
 
 # 2. Create .env.production.local if not exists
@@ -176,9 +194,9 @@ wait_for_health db
 step "Waiting for application"
 wait_for_health app
 
-# 8. Wait for caddy
+# 8. Wait for Caddy (HTTPS)
 step "Waiting for Caddy (HTTPS)"
-wait_for_health caddy
+wait_for_https "https://${DOMAIN}/health"
 
 # 9. Run migrations
 step "Running database migrations"

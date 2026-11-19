@@ -1,0 +1,39 @@
+<%- include('partials/top', { appbar: 'back', heading: '', tabbar: false }) %>
+  <div class="auth-hero">
+    <img src="/assests/doq_logo.png" alt="شعار دوق">
+    <h1>دوق</h1>
+    <p>أكل بيتي من مطابخ قريبة منك</p>
+  </div>
+  <section class="section">
+    <div class="segmented" role="tablist" id="auth-tabs">
+      <button type="button" role="tab" data-mode="login" class="<%= params.mode === 'login' ? 'active' : '' %>">تسجيل الدخول</button>
+      <button type="button" role="tab" data-mode="signup" class="<%= params.mode === 'signup' ? 'active' : '' %>">حساب جديد</button>
+    </div>
+  </section>
+  <section class="section">
+    <form class="stack" id="login-form" <%= params.mode === 'signup' ? 'hidden' : '' %> novalidate>
+      <div class="field"><label for="login-email">الإيميل</label><input class="input" id="login-email" name="email" type="email" autocomplete="email" dir="ltr" required></div>
+      <div class="field"><label for="login-password">كلمة المرور</label><input class="input" id="login-password" name="password" type="password" autocomplete="current-password" dir="ltr" required></div>
+      <div class="form-error" role="alert" data-error></div>
+      <button class="btn block" type="submit">دخول</button>
+      <a class="muted small" href="/auth/forgetpassword" style="text-align:center;display:block">نسيت كلمة المرور؟</a>
+    </form>
+
+    <form class="stack" id="signup-form" <%= params.mode === 'signup' ? '' : 'hidden' %> novalidate>
+      <div class="grid-2">
+        <div class="field"><label for="su-first">الاسم الأول</label><input class="input" id="su-first" name="firstname" autocomplete="given-name" required></div>
+        <div class="field"><label for="su-last">الاسم الأخير</label><input class="input" id="su-last" name="lastname" autocomplete="family-name" required></div>
+      </div>
+      <div class="field"><label for="su-phone">رقم الموبايل</label><input class="input" id="su-phone" name="phone_number" inputmode="tel" dir="ltr" maxlength="11" placeholder="01xxxxxxxxx" autocomplete="tel" required></div>
+      <div class="field"><label for="su-email">الإيميل</label><input class="input" id="su-email" name="email" type="email" dir="ltr" autocomplete="email" required></div>
+      <div class="field"><label for="su-city">المدينة</label><input class="input" id="su-city" name="city" autocomplete="address-level2"></div>
+      <div class="field"><label for="su-address">عنوان التوصيل</label><input class="input" id="su-address" name="address" autocomplete="street-address"></div>
+      <div class="field"><label for="su-pass">كلمة المرور</label><input class="input" id="su-pass" name="password" type="password" dir="ltr" autocomplete="new-password" required>
+        <span class="muted small">8 حروف على الأقل وفيها حرف كبير وصغير ورقم ورمز (@$!%*?&)</span></div>
+      <div class="field"><label for="su-pass2">تأكيد كلمة المرور</label><input class="input" id="su-pass2" name="password_confirmation" type="password" dir="ltr" autocomplete="new-password" required></div>
+      <div class="form-error" role="alert" data-error></div>
+      <button class="btn block" type="submit">إنشاء الحساب</button>
+      <p class="muted small" style="text-align:center;margin:0">صاحب مطبخ أو شركة توصيل؟ <a href="/auth" style="color:var(--primary);font-weight:700">سجّل من الموقع</a></p>
+    </form>
+  </section>
+<%- include('partials/bottom', { tabbar: false }) %>

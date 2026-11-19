@@ -10,6 +10,7 @@ const upload = require("../middlware/upload");
 const catchError = require("../utiles/catchError");
 const allRows = require("../middlware/allRows");
 const for_main = require("../middlware/for_main");
+const toMobile = require('../middlware/customerToMobile');
 
 const {
     createKitchen_controller,
@@ -37,13 +38,13 @@ router.use(auth.optional);
 // --- Page Routes ---
 
 // GET /kitchens - Public kitchens listing page
-router.get('/', catchError(kitchens_render));
+router.get('/', toMobile('/m/kitchens'), catchError(kitchens_render));
 
 // GET /kitchens/my - Chef's kitchen management page (chef only)
 router.get('/my', roles('chef'), for_main('kitchen', true, false), catchError(myKitchen_render));
 
 // GET /kitchens/:id - Kitchen profile page (public)
-router.get('/:id', getKitchenById_middleware, catchError(kitchenProfile_render));
+router.get('/:id', toMobile(req => '/m/kitchens/' + encodeURIComponent(req.params.id)), getKitchenById_middleware, catchError(kitchenProfile_render));
 
 // --- API Routes ---
 

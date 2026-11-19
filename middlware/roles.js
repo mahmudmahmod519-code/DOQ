@@ -12,5 +12,8 @@ module.exports = (...allowed) => (req, res, next) => {
   if (!req.user || !allowed.includes(req.user.roles)) {
     return res.status(403).json({status: 'error', message: 'مش مسموح لحسابك بالعملية دي'});
   }
+  if (req.user.account_status === 'suspended') {
+    return res.status(403).json({status: 'error', message: 'تم إيقاف حسابك من قبل الإدارة'});
+  }
   next();
 };

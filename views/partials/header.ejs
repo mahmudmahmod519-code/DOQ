@@ -51,7 +51,7 @@
                                 dashboardLabel = 'لوحة التوصيل';
                                 dashboardIcon = 'local_shipping';
                             } else if (role === 'customer') {
-                                dashboardHref = '/my-orders';
+                                dashboardHref = '/m';
                                 dashboardLabel = 'طلباتي';
                                 dashboardIcon = 'receipt_long';
                             }
@@ -59,12 +59,12 @@
                         
                         <% if (role === 'customer') { %>
                             <!-- Customer: My Orders button -->
-                            <a href="/my-orders" class="text-xs sm:text-sm font-bold text-primary hover:bg-surface-container-low px-2 sm:px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5">
+                            <a href="/m/orders" class="text-xs sm:text-sm font-bold text-primary hover:bg-surface-container-low px-2 sm:px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-[18px]">receipt_long</span>
                                 <span>طلباتي</span>
                             </a>
                             <!-- Customer: Back to menu button -->
-                            <a href="/dishes" class="text-xs sm:text-sm font-bold text-primary hover:bg-surface-container-low px-2 sm:px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5">
+                            <a href="/m" class="text-xs sm:text-sm font-bold text-primary hover:bg-surface-container-low px-2 sm:px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-[18px]">arrow_back</span>
                                 <span>العودة للمنيو</span>
                             </a>

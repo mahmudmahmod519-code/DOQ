@@ -63,7 +63,8 @@ test('delivery competition exposes one atomic accept and no reject path',()=>{
   const routes=read('routes/orders.js');
   assert.match(routes,/delivery\/.*\/accept/);
   assert.doesNotMatch(routes,/delivery\/.*\/reject/);
-  assert.match(controller,/status='pending' AND delivery_id IS NULL/);
+  // Admin can assign an open order before or after the kitchen accepted it
+  assert.match(controller,/status IN \('pending','chef_accepted'\) AND delivery_id IS NULL/);
   assert.match(controller,/FOR UPDATE/);
   assert.match(controller,/vehicle_id/);
   assert.match(controller,/CASE WHEN o\.delivery_id=\?/);
@@ -193,7 +194,7 @@ test('landing page renders one document with the correct dashboard for each role
   const ejs=require('ejs');
   const cases=[
     ['guest',null,'/auth'],
-    ['customer',{roles:'customer',first_name:'عميل'},'/my-orders'],
+    ['customer',{roles:'customer',first_name:'عميل'},'/m'],
     ['chef',{roles:'chef',first_name:'طباخ'},'/users/dashboard'],
     ['delivery',{roles:'delivery',first_name:'مندوب'},'/delivery'],
     ['admin',{roles:'admin',first_name:'مدير'},'/admin']

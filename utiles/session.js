@@ -85,7 +85,7 @@ function dashboard(role) {
   return role === 'admin' ? '/admin'
     : role === 'delivery' ? '/delivery'
     : role === 'chef' ? '/users/dashboard'
-    : '/my-orders';
+    : '/m';
 }
 
 module.exports = { issueSession, issueChallenge, seal, unseal, options, dashboard };

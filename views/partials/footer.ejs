@@ -31,8 +31,8 @@
         <h3>استكشف</h3>
         <ul>
           <li><a href="/">الرئيسية</a></li>
-          <li><a href="/kitchens">المطابخ</a></li>
-          <li><a href="/dishes">الأطباق</a></li>
+          <li><a href="/m/kitchens">المطابخ</a></li>
+          <li><a href="/m">الأطباق</a></li>
           <li><a href="/reviews">التقييمات</a></li>
         </ul>
       </nav>
@@ -40,7 +40,7 @@
         <h3>حسابك</h3>
         <ul>
           <% if (typeof login !== 'undefined' && login === true) { %>
-            <% const footerDashboard = { admin: '/admin', chef: '/users/dashboard', delivery: '/delivery', customer: '/my-orders' }[(typeof currentUser !== 'undefined' && currentUser && currentUser.roles) || '']; %>
+            <% const footerDashboard = { admin: '/admin', chef: '/users/dashboard', delivery: '/delivery', customer: '/m' }[(typeof currentUser !== 'undefined' && currentUser && currentUser.roles) || '']; %>
             <% if (footerDashboard) { %><li><a href="<%= footerDashboard %>">لوحتك</a></li><% } %>
             <li><a href="/users/profile">الملف الشخصي</a></li>
             <li><a href="/notifications">الإشعارات</a></li>

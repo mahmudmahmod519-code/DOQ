@@ -1,0 +1,31 @@
+<%- include('partials/top') %>
+  <section class="hero">
+    <p><%= user ? 'أهلاً يا ' + user.first_name : 'أهلاً بيك في دوق' %></p>
+    <h2>عايز تاكل إيه النهارده؟</h2>
+    <form class="search" role="search" id="search-form" action="/m" method="get">
+      <i data-icon="search"></i>
+      <label class="sr-only" for="q">ابحث عن طبق أو مطبخ</label>
+      <input id="q" name="q" type="search" placeholder="ابحث عن طبق أو مطبخ" autocomplete="off" enterkeyhint="search">
+    </form>
+  </section>
+
+  <section class="section">
+    <div class="chips" id="categories" aria-label="التصنيفات">
+      <span class="chip skeleton" style="width:80px"></span><span class="chip skeleton" style="width:96px"></span><span class="chip skeleton" style="width:70px"></span>
+    </div>
+  </section>
+
+  <section class="section" id="kitchens-block">
+    <div class="section-head"><h2>مطابخ جديدة</h2><a href="/m/kitchens">الكل</a></div>
+    <div class="h-scroll" id="kitchens-strip">
+      <div class="card kitchen-mini skeleton" style="height:150px"></div>
+      <div class="card kitchen-mini skeleton" style="height:150px"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2 id="dishes-title">كل الأطباق</h2></div>
+    <div class="grid-2" id="dishes" aria-live="polite"></div>
+    <div data-feed-status="dishes"></div>
+  </section>
+<%- include('partials/bottom') %>

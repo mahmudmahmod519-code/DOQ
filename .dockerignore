@@ -1,8 +1,35 @@
+# Dependencies and logs
 node_modules
-npm-debug.log
+npm-debug.log*
+
+# Secrets - injected at runtime by docker compose
 .env
+.env.*
+!.env.example
+!.env.development.example
+!.env.production.example
+
+# Version control and CI
 .git
 .gitignore
+.github
+
+# Development-only files (not needed to run the app in production)
+tests
+docs
+mobile
+*.md
+fresh_start.sh
+unrun.sh
+run.sh
+fly.toml
+Caddyfile
+Caddyfile.staging
+docker-compose.yml
+docker-compose.production.yml
+docker-compose.staging.yml
+
+# Local state
 backups
 verification
 tmp

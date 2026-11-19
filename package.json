@@ -8,7 +8,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "node --test tests/security.test.js tests/implementation.test.js tests/arabic-integrity.test.js tests/regression.test.js",
+    "test": "node --test tests/security.test.js tests/implementation.test.js tests/arabic-integrity.test.js tests/regression.test.js tests/mobile.test.js",
     "test:watch": "node --test --watch tests/",
     "test:report": "node --test tests/ 2>&1 | tail -20",
     "cron": "node tasks/cron.js",

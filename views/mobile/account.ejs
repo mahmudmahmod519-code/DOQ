@@ -1,0 +1,43 @@
+<%- include('partials/top') %>
+  <section class="section">
+    <div class="card pad row" id="profile-card">
+      <img class="avatar lg" src="/assests/avatar.jpeg" alt="">
+      <div class="grow">
+        <h2 style="margin:0;font-size:19px" id="profile-name"><span class="skeleton" style="display:inline-block;width:120px;height:20px"></span></h2>
+        <div class="muted small" id="profile-email"></div>
+      </div>
+    </div>
+    <div class="stats" id="profile-stats" style="margin-top:12px"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>بياناتي وعنوان التوصيل</h2></div>
+    <form class="card pad stack" id="profile-form" novalidate>
+      <div class="grid-2">
+        <div class="field"><label for="first_name">الاسم الأول</label><input class="input" id="first_name" name="first_name" maxlength="50" required></div>
+        <div class="field"><label for="last_name">الاسم الأخير</label><input class="input" id="last_name" name="last_name" maxlength="50" required></div>
+      </div>
+      <div class="field"><label for="phone_number">رقم الموبايل</label><input class="input" id="phone_number" name="phone_number" inputmode="tel" dir="ltr" maxlength="11" required></div>
+      <div class="field"><label for="city">المدينة</label><input class="input" id="city" name="city" maxlength="100"></div>
+      <div class="field"><label for="address">العنوان بالتفصيل</label><textarea class="input" id="address" name="address" maxlength="255" rows="2"></textarea></div>
+      <div class="form-error" id="profile-error" role="alert"></div>
+      <button class="btn block" type="submit">حفظ البيانات</button>
+    </form>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>تقييماتي</h2></div>
+    <div class="card pad"><div id="my-reviews"></div><div data-feed-status="my-reviews"></div></div>
+  </section>
+
+  <section class="section">
+    <div class="card list-menu">
+      <a href="/m/notifications"><i data-icon="bell"></i> الإشعارات <i class="chev" data-icon="chevron-left"></i></a>
+      <a href="/auth/resetpassword"><i data-icon="lock"></i> تغيير كلمة المرور <i class="chev" data-icon="chevron-left"></i></a>
+      <a href="/auth/2fa"><i data-icon="shield"></i> المصادقة الثنائية <i class="chev" data-icon="chevron-left"></i></a>
+      <a href="/police/privacy-policy"><i data-icon="file"></i> سياسة الخصوصية <i class="chev" data-icon="chevron-left"></i></a>
+      <a href="/police/terms-of-service"><i data-icon="file"></i> الشروط والأحكام <i class="chev" data-icon="chevron-left"></i></a>
+      <a href="/auth/logout?next=/m" style="color:var(--danger)"><i data-icon="logout"></i> تسجيل الخروج</a>
+    </div>
+  </section>
+<%- include('partials/bottom') %>

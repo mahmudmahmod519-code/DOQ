@@ -6,16 +6,23 @@ const router = require('express').Router();
 const auth = require('../middlware/auth');
 const roles = require('../middlware/roles');
 const catchError = require('../utiles/catchError');
+const toMobile = require('../middlware/customerToMobile');
 const c = require('../controller/platform');
 
 // GET /notifications - Notifications page (all authenticated roles)
-router.get('/', auth, roles('admin', 'chef', 'customer', 'delivery'), (req, res) => res.render('notifications', { currentUser: req.user, pageTitle: 'الإشعارات | دوق' }));
+router.get('/', auth, toMobile('/m/notifications'), roles('admin', 'chef', 'customer', 'delivery'), (req, res) => res.render('notifications', { currentUser: req.user, pageTitle: 'الإشعارات | دوق' }));
 
 // GET /notifications/api - List notifications (all authenticated roles)
 router.get('/api', auth, roles('admin', 'chef', 'customer', 'delivery'), catchError(c.listNotifications_controller));
 
 // GET /notifications/api/unread-count - Get unread notification count (all authenticated roles)
 router.get('/api/unread-count', auth, roles('admin', 'chef', 'customer', 'delivery'), catchError(c.unreadNotificationCount_controller));
+
+// GET /notifications/api/poll?after=<id> - New notifications since the last seen id (floating toasts)
+router.get('/api/poll', auth, roles('admin', 'chef', 'customer', 'delivery'), catchError(c.pollNotifications_controller));
+
+// PATCH /notifications/api/read-all - Mark all notifications as read
+router.patch('/api/read-all', auth, roles('admin', 'chef', 'customer', 'delivery'), catchError(c.readAllNotifications_controller));
 
 // PATCH /notifications/api/:id/read - Mark notification as read (all authenticated roles)
 router.patch('/api/:id/read', auth, roles('admin', 'chef', 'customer', 'delivery'), catchError(c.readNotification_controller));
