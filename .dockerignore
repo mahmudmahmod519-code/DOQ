@@ -1,12 +1,11 @@
-# Dependencies and logs
+# Dependencies and logs (installed inside the image)
 node_modules
 npm-debug.log*
 
-# Secrets - injected at runtime by docker compose
+# Secrets are injected at runtime by docker compose (env_file), never baked into the image
 .env
 .env.*
 !.env.example
-!.env.development.example
 !.env.production.example
 
 # Version control and CI
@@ -14,24 +13,28 @@ npm-debug.log*
 .gitignore
 .github
 
-# Development-only files (not needed to run the app in production)
+# Not needed to run the server
 tests
 docs
 mobile
+mobile_flutter
+deployment
 *.md
 fresh_start.sh
 unrun.sh
 run.sh
+deploy.sh
+update.sh
 fly.toml
 Caddyfile
 Caddyfile.staging
-docker-compose.yml
-docker-compose.production.yml
-docker-compose.staging.yml
+docker-compose*.yml
+to_delete
 
-# Local state
+# Runtime state (lives in volumes / host directories)
 backups
 verification
 tmp
 public/upload
+database/.cron.lock
 database/Untitled.pdf

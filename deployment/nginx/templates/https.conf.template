@@ -1,0 +1,42 @@
+# Phase 2 (certificate issued): HTTP -> HTTPS redirect + TLS reverse proxy.
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+    include /etc/nginx/snippets/acme.conf;
+    location / { return 444; }
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${DOQ_SERVER_NAMES};
+
+    include /etc/nginx/snippets/acme.conf;
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# Unknown hostnames on 443 are refused without presenting the certificate
+server {
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+    server_name _;
+    ssl_reject_handshake on;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${DOQ_SERVER_NAMES};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOQ_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOQ_DOMAIN}/privkey.pem;
+    include /etc/nginx/snippets/ssl.conf;
+    include /etc/nginx/snippets/security-headers.conf;
+
+    include /etc/nginx/snippets/app-locations.conf;
+}

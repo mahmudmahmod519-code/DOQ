@@ -1,0 +1,7 @@
+[Unit]
+Description=DOQ resource and container health monitor
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=__DOQ_DIR__/deployment/scripts/monitor.sh

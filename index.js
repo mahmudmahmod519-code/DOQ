@@ -91,11 +91,28 @@ app.use(notFound);
 app.use(error);
 
 if (require.main === module) {
-  app.listen(process.env.PORT || 3000, () => {
+  const server = app.listen(process.env.PORT || 3000, () => {
     console.log('Server is running...');
     console.log(`http://localhost:${process.env.PORT || 3000}/`);
     console.log(`Server is running on port ${process.env.PORT || 3000}`);
   });
+
+  // Graceful shutdown (docker stop / compose restart send SIGTERM):
+  // stop accepting connections, let in-flight requests finish, then close the DB pool.
+  let shuttingDown = false;
+  const shutdown = (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(JSON.stringify({ event: 'shutdown', signal }));
+    const force = setTimeout(() => process.exit(1), Number(process.env.SHUTDOWN_TIMEOUT_MS || 10000));
+    force.unref();
+    server.close(() => {
+      pool.end().catch(() => {}).finally(() => process.exit(0));
+    });
+    if (typeof server.closeIdleConnections === 'function') server.closeIdleConnections();
+  };
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 module.exports = app;

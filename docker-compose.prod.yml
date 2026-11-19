@@ -1,0 +1,175 @@
+# ============================================================
+# DOQ production stack (used by deploy.sh / update.sh)
+#   docker compose -p doq -f docker-compose.prod.yml --env-file .env.production <cmd>
+# docker-compose.yml stays the local development stack.
+#
+# Public ports: only nginx 80/443. MySQL and the app are reachable only on the
+# internal "backend" network. Data lives in named volumes (never removed by scripts).
+# ============================================================
+name: doq
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-app-env: &app-env
+  NODE_ENV: production
+  PORT: "3000"
+  DB_HOST: mysql
+  DB_PORT: "3306"
+  DB_NAME: ${DB_NAME:-DOQ}
+  DB_USER: ${DB_USER:-doq_user}
+  DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+  JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+  PUBLIC_URL: ${PUBLIC_URL:?PUBLIC_URL is required}
+  TRUST_PROXY: "1"
+  WAIT_FOR_DB: "true"
+  # Migrations run as an explicit step in deploy.sh / update.sh (after a backup), not on every start
+  RUN_MIGRATIONS: "false"
+
+services:
+  mysql:
+    image: ${MYSQL_IMAGE:-mysql:8.4}
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      MYSQL_DATABASE: ${DB_NAME:-DOQ}
+      MYSQL_USER: ${DB_USER:-doq_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      TZ: UTC
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # Runs only once, when the data volume is empty (first deployment)
+      - ./database/database.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+      - ./deployment/mysql/conf.d/doq.cnf:/etc/mysql/conf.d/doq.cnf:ro
+    networks: [backend]
+    healthcheck:
+      # TCP ping only succeeds once the real server is up (the init server has networking disabled)
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_ROOT_PASSWORD\" mysqladmin ping -h 127.0.0.1 -uroot --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    stop_grace_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: ${MYSQL_MEMORY_LIMIT:-2g}
+    logging: *logging
+
+  app:
+    image: doq-app:${DOQ_IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      <<: *app-env
+    volumes:
+      - uploads:/app/public/upload
+    networks: [backend]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/health/ready',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    stop_grace_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: ${APP_MEMORY_LIMIT:-1g}
+    logging: *logging
+
+  # Recurring jobs (daily report, settlements, reminders) from tasks/cron.js
+  cron:
+    image: doq-app:${DOQ_IMAGE_TAG:-latest}
+    init: true
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      <<: *app-env
+      CRON_ENABLED: ${CRON_ENABLED:-true}
+      CRON_INTERVAL_SECONDS: ${CRON_INTERVAL_SECONDS:-3600}
+      # Database backups are done on the host by deployment/backup/backup.sh (systemd timer)
+      BACKUP_ENABLED: "false"
+    command: ["sh", "-c", "trap 'exit 0' TERM INT; while true; do node tasks/cron.js; sleep \"$${CRON_INTERVAL_SECONDS:-3600}\" & wait $$!; done"]
+    networks: [backend]
+    # No HTTP server in this container: disable the image's /health check
+    healthcheck:
+      disable: true
+    depends_on:
+      app:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: ${CRON_MEMORY_LIMIT:-512m}
+    logging: *logging
+
+  nginx:
+    image: ${NGINX_IMAGE:-nginx:1.27-alpine}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOQ_DOMAIN: ${DOQ_DOMAIN:?DOQ_DOMAIN is required}
+      DOQ_SERVER_NAMES: ${DOQ_SERVER_NAMES:-${DOQ_DOMAIN}}
+      NGINX_ENVSUBST_FILTER: "^DOQ_"
+    volumes:
+      - ./deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deployment/nginx/snippets:/etc/nginx/snippets:ro
+      - ./deployment/nginx/generated:/etc/nginx/generated:ro
+      # deploy.sh copies http.conf.template (before SSL) or https.conf.template here
+      - ./deployment/nginx/active:/etc/nginx/templates:ro
+      - ./deployment/certbot/www:/var/www/certbot:ro
+      - ./deployment/certbot/conf:/etc/letsencrypt:ro
+    networks: [backend, frontend]
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/nginx-health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    logging: *logging
+
+  # One-off: issues / renews Let's Encrypt certificates (webroot). Never runs permanently:
+  #   docker compose ... run --rm certbot certonly ...   (deploy.sh)
+  #   docker compose ... run --rm certbot renew          (doq-certbot-renew.timer)
+  certbot:
+    image: ${CERTBOT_IMAGE:-certbot/certbot:v2.11.0}
+    profiles: ["certbot"]
+    volumes:
+      - ./deployment/certbot/www:/var/www/certbot
+      - ./deployment/certbot/conf:/etc/letsencrypt
+    networks: [frontend]
+    logging: *logging
+
+networks:
+  # app <-> mysql. Not "internal" because the app needs outbound internet (SMTP, Paymob).
+  backend:
+  frontend:
+
+volumes:
+  mysql_data:
+  uploads:

@@ -1,0 +1,11 @@
+[Unit]
+Description=DOQ daily backup (MySQL dump + uploads)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=__DOQ_DIR__/deployment/backup/backup.sh --reason daily
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
