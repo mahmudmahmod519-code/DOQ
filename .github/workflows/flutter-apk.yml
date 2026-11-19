@@ -1,0 +1,97 @@
+name: Build DOQ Customer APK (Flutter)
+
+# Builds the Flutter customer app in mobile_flutter/ into a ready-to-install APK.
+# Run it manually from: Actions -> "Build DOQ Customer APK (Flutter)" -> Run workflow
+# The APK is attached to the run as the artifact "doq-customer-apk".
+# Pushing a tag like mobile-v1.0.0 also publishes the APK on a GitHub Release.
+
+on:
+  workflow_dispatch:
+    inputs:
+      server_url:
+        description: 'Default server URL baked into the app (e.g. https://doq.example.com). Can still be changed inside the app.'
+        required: false
+        default: ''
+  push:
+    branches: [main]
+    paths:
+      - 'mobile_flutter/**'
+      - '.github/workflows/flutter-apk.yml'
+    tags:
+      - 'mobile-v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: flutter-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: mobile_flutter
+    env:
+      # Priority: manual input -> repository variable DOQ_API_URL -> empty (app asks on first launch)
+      DOQ_API_URL: ${{ github.event.inputs.server_url || vars.DOQ_API_URL || '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.24.5'
+          cache: true
+
+      - name: Generate Android platform files
+        run: |
+          flutter --version
+          flutter create --project-name doq_customer --org com.doq --platforms android .
+          python3 tool/patch_android.py
+
+      - name: Install packages
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Unit tests
+        run: flutter test
+
+      - name: Build release APK
+        run: |
+          VERSION_NAME="1.0.${{ github.run_number }}"
+          flutter build apk --release \
+            --build-name="$VERSION_NAME" \
+            --build-number="${{ github.run_number }}" \
+            --dart-define=DOQ_API_URL="$DOQ_API_URL"
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/doq-customer-$VERSION_NAME.apk"
+          ls -lh dist
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: doq-customer-apk
+          path: mobile_flutter/dist/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/mobile-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: mobile_flutter/dist/*.apk
+          generate_release_notes: true

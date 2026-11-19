@@ -1,0 +1,5 @@
+# Kept dependency-free (no flutter_lints) so CI does not need extra packages.
+analyzer:
+  exclude:
+    - build/**
+    - android/**
