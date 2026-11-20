@@ -24,8 +24,7 @@ test('Paymob stays reachable as a disabled contract and does not gate chef endpo
   }
   assert.match(source,/PAYMENTS_DISABLED/);
   assert.match(source,/if \(!paymentsEnabled\(\)\) return next\(\);/);
-  assert.match(read('.env.development.example'),/PAYMENTS_ENABLED=false/);
-  assert.match(read('.env.production.example'),/PAYMENTS_ENABLED=false/);
+  assert.match(read('deployment/env.production.example'),/^PAYMENTS_ENABLED=false$/m);
   assert.match(read('routes/payment.js'),/router\.post\("\/initiate"/);
   assert.match(read('routes/payment.js'),/router\.post\("\/webhook"/);
 });
