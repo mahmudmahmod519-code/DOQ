@@ -171,7 +171,8 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(actions: [
-        IconButton(
+        if (!Api.lockServer)
+          IconButton(
           tooltip: 'عنوان السيرفر',
           icon: const Icon(Icons.dns_outlined),
           onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ServerScreen())),

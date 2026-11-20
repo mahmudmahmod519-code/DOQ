@@ -14,13 +14,12 @@ docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'
 free -h | sed -n '1,2p'
 df -h / "$(env_get BACKUP_DIR || true)" 2>/dev/null | awk 'NR==1 || !seen[$0]++'
 step "Health"
-DOMAIN="$(env_get DOQ_DOMAIN)"; MODE="$(nginx_mode)"
+DOMAIN="$(env_get DOQ_DOMAIN)"
 for path in /health /health/ready /api/v1/health /m/api/v1/home; do
-  echo "  ${MODE}://${DOMAIN}${path} -> $(check_site "$DOMAIN" "$MODE" "$path")"
+  echo "  https://${DOMAIN}${path} -> $(check_site "$DOMAIN" "$path")"
 done
-if cert_exists; then
-  echo "  certificate expires: $(openssl x509 -enddate -noout -in "$DOQ_DIR/deployment/certbot/conf/live/${DOMAIN}/fullchain.pem" | cut -d= -f2)"
-fi
+EXP="$(cert_expiry "$DOMAIN")"
+echo "  certificate expires: ${EXP:-no certificate yet (see: logs caddy)}"
 step "Timers"
 systemctl list-timers --all 'doq-*' --no-pager || true
 step "Images (rollback candidates)"

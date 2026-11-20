@@ -258,3 +258,37 @@ test('every mobile page renders for guests and customers', async () => {
     }
   }
 });
+
+test('customer can delete own account (Play policy): password check, active-order guard, anonymisation', async () => {
+  const bcrypt = require('bcrypt');
+  const hash = await bcrypt.hash('Pass@1234', 4);
+  const user = { id: 7, roles: 'customer', account_status: 'approved' };
+  // wrong confirmation
+  let res = fakeRes();
+  await mobile.deleteAccount_controller({ user, body: { password: 'x' } }, res);
+  assert.equal(res.statusCode, 400);
+  // wrong password
+  responder = sql => (/SELECT id,password_hash/.test(sql) ? [[{ id: 7, password_hash: hash }]] : [[]]);
+  res = fakeRes();
+  await mobile.deleteAccount_controller({ user, body: { password: 'nope', confirm: 'DELETE' } }, res);
+  assert.equal(res.statusCode, 401);
+  // active order
+  responder = sql => (/SELECT id,password_hash/.test(sql) ? [[{ id: 7, password_hash: hash }]] : /COUNT\(\*\) AS n/.test(sql) ? [[{ n: 1 }]] : [[]]);
+  res = fakeRes();
+  await mobile.deleteAccount_controller({ user, body: { password: 'Pass@1234', confirm: 'DELETE' } }, res);
+  assert.equal(res.statusCode, 409);
+  // success
+  calls.length = 0;
+  responder = sql => (/SELECT id,password_hash/.test(sql) ? [[{ id: 7, password_hash: hash }]] : /COUNT\(\*\) AS n/.test(sql) ? [[{ n: 0 }]] : [{ affectedRows: 1 }]);
+  res = fakeRes();
+  res.clearCookie = () => res;
+  await mobile.deleteAccount_controller({ user, body: { password: 'Pass@1234', confirm: 'DELETE' } }, res);
+  assert.equal(res.body.status, 'success');
+  const update = calls.find(c => /UPDATE users SET first_name/.test(c.sql));
+  assert.ok(update, 'user row anonymised');
+  assert.equal(update.params[0], 'deleted-7@deleted.invalid');
+  assert.ok(update.params[1].length <= 15);
+  assert.ok(calls.some(c => /DELETE FROM favourite_dishes/.test(c.sql)));
+  assert.match(read('routes/mobile.js'), /router\.delete\('\/api\/v1\/me', requireCustomerApi/);
+  assert.match(read('routes/police.js'), /delete-account/);
+});

@@ -1,0 +1,67 @@
+# Move to: .github/workflows/ci.yml
+name: DOQ CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths-ignore:
+      - 'mobile_flutter/**'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+        env:
+          CI: true
+
+  production-config:
+    name: Docker image + production config
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shell scripts syntax
+        run: |
+          for f in server-bootstrap.sh deploy.sh update.sh deployment/scripts/*.sh deployment/backup/*.sh; do
+            bash -n "$f"
+          done
+
+      - name: Test environment file (dummy values, never real secrets)
+        run: |
+          cp deployment/env.production.example .env.production
+          sed -i \
+            -e 's/^DOQ_DOMAIN=.*/DOQ_DOMAIN=ci.example.org/' \
+            -e 's/^LETSENCRYPT_EMAIL=.*/LETSENCRYPT_EMAIL=ci@example.org/' \
+            -e 's/^PUBLIC_URL=.*/PUBLIC_URL=https:\/\/ci.example.org/' \
+            -e 's/^DOQ_SERVER_NAMES=.*/DOQ_SERVER_NAMES=ci.example.org/' \
+            -e "s/^DB_PASSWORD=.*/DB_PASSWORD=$(openssl rand -hex 16)/" \
+            -e "s/^MYSQL_ROOT_PASSWORD=.*/MYSQL_ROOT_PASSWORD=$(openssl rand -hex 16)/" \
+            -e "s/^JWT_SECRET=.*/JWT_SECRET=$(openssl rand -hex 32)/" \
+            .env.production
+
+      - name: Compose file
+        run: docker compose -p doq -f docker-compose.prod.yml --env-file .env.production config -q
+
+      - name: Caddyfile
+        run: docker compose -p doq -f docker-compose.prod.yml --env-file .env.production run --rm --no-deps -T caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
+      - name: Build the app image
+        run: docker build -t doq-app:ci .

@@ -1,4 +1,0 @@
-// Root Gradle build file for the DOQ mobile WebView wrapper.
-plugins {
-    id 'com.android.application' version '8.5.2' apply false
-}

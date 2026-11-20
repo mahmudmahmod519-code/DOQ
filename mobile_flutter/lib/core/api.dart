@@ -46,10 +46,14 @@ class Api {
   String baseUrl = '';
   String? _csrf;
 
+  /// Store builds bake the production URL in (--dart-define=DOQ_API_URL=...) and lock it
+  /// (--dart-define=DOQ_LOCK_SERVER=true) so customers never see a "server address" setting.
+  static const String buildServerUrl = String.fromEnvironment('DOQ_API_URL');
+  static const bool lockServer = bool.fromEnvironment('DOQ_LOCK_SERVER');
+
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
-    const fromBuild = String.fromEnvironment('DOQ_API_URL');
-    baseUrl = normalize(_prefs.getString('server_url') ?? fromBuild);
+    baseUrl = normalize(lockServer && buildServerUrl.isNotEmpty ? buildServerUrl : (_prefs.getString('server_url') ?? buildServerUrl));
     final saved = _prefs.getString('cookies');
     if (saved != null) {
       try {
@@ -204,7 +208,7 @@ class Api {
 
   Future<Map<String, dynamic>> patch(String path, [Object? body]) => _send('PATCH', path, body: body ?? <String, dynamic>{});
 
-  Future<Map<String, dynamic>> delete(String path) => _send('DELETE', path, body: <String, dynamic>{});
+  Future<Map<String, dynamic>> delete(String path, [Object? body]) => _send('DELETE', path, body: body ?? <String, dynamic>{});
 
   /// GET a cursor-paginated list from the mobile API.
   Future<ApiPage> page(String path, String? cursor, [Map<String, dynamic>? query]) async {

@@ -74,7 +74,9 @@ async function signIn_controller(req, res) {
     }
     if (user.account_status !== 'approved') {
         return res.status(403).json({
-            message: user.account_status === 'rejected'
+            message: user.account_status === 'deleted'
+                ? 'الحساب ده اتمسح بناءً على طلب صاحبه'
+                : user.account_status === 'rejected'
                 ? 'طلب الانضمام اترفض. تواصل مع الإدارة لو محتاج تفاصيل'
                 : user.account_status === 'suspended'
                     ? (user.suspend_reason ? `تم إيقاف حسابك من قبل الإدارة: ${user.suspend_reason}` : 'تم إيقاف حسابك من قبل الإدارة. لا يمكنك الدخول إلى الموقع')

@@ -17,7 +17,7 @@ MEM_AVAIL=$(( $(awk '/MemAvailable/ {print $2}' /proc/meminfo) / 1024 ))
 (( MEM_AVAIL > 300 )) || PROBLEMS+=("only ${MEM_AVAIL} MB RAM available")
 LOAD=$(awk '{print int($1)}' /proc/loadavg)
 (( LOAD <= $(nproc) * 2 )) || PROBLEMS+=("load average ${LOAD}")
-for svc in mysql app nginx; do
+for svc in mysql app caddy; do
   s="$(container_health "$svc")"
   [[ "$s" == "healthy" ]] || PROBLEMS+=("$svc is $s")
 done

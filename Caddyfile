@@ -1,4 +1,64 @@
-{$DOQ_DOMAIN} {
-    encode gzip
-    reverse_proxy app:3000
+# ============================================================================
+# DOQ: Caddy reverse proxy with automatic HTTPS (Let's Encrypt)
+#
+# The values come from .env.production through docker-compose.prod.yml:
+#   DOQ_SERVER_NAMES     "doq.example.com"  or  "doq.example.com www.doq.example.com"
+#   LETSENCRYPT_EMAIL    address for Let's Encrypt notices
+#   DOQ_ACME_CA          Let's Encrypt production (default) or staging directory
+#   DOQ_TRUSTED_PROXIES  Cloudflare IP ranges when CLOUDFLARE_PROXY=true, else private_ranges
+#
+# Caddy gets the certificate on its own as soon as the domain points to this server,
+# redirects HTTP -> HTTPS, and renews automatically. Certificates are kept in the
+# caddy_data volume, so they survive restarts and updates. No certbot or cron is needed.
+# ============================================================================
+{
+	email {$LETSENCRYPT_EMAIL}
+	acme_ca {$DOQ_ACME_CA}
+
+	servers {
+		# Real client IP: trusted only when the request comes from these proxies
+		trusted_proxies static {$DOQ_TRUSTED_PROXIES}
+		client_ip_headers CF-Connecting-IP X-Forwarded-For
+	}
+}
+
+{$DOQ_SERVER_NAMES} {
+	encode zstd gzip
+
+	# multer accepts images up to 5 MB (middlware/upload.js); headroom for multipart overhead
+	request_body {
+		max_size 10MB
+	}
+
+	# "defer" applies these after the app answers, so each header appears once
+	header {
+		defer
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+		-X-Powered-By
+	}
+
+	@uploads path /uploads/*
+	header @uploads {
+		defer
+		Cache-Control "public, max-age=604800"
+	}
+
+	reverse_proxy app:3000 {
+		# One clean value: the real client (the app runs with TRUST_PROXY=1)
+		header_up X-Forwarded-For {client_ip}
+		header_up X-Real-IP {client_ip}
+		# Hold requests up to 15s while the app container restarts during an update
+		lb_try_duration 15s
+		lb_try_interval 500ms
+	}
+
+	log {
+		output stdout
+		format console
+	}
 }

@@ -1,8 +1,0 @@
-[Unit]
-Description=Renew DOQ Let's Encrypt certificates and reload nginx
-After=docker.service
-Requires=docker.service
-
-[Service]
-Type=oneshot
-ExecStart=__DOQ_DIR__/deployment/certbot/renew.sh

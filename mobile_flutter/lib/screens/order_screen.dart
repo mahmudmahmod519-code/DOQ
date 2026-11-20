@@ -210,7 +210,7 @@ class _TimelineStep extends StatelessWidget {
               shape: BoxShape.circle,
               color: done ? DoqColors.ok : Colors.white,
               border: Border.all(color: color, width: 2),
-              boxShadow: current ? [BoxShadow(color: DoqColors.secondary.withOpacity(0.25), blurRadius: 0, spreadRadius: 5)] : null,
+              boxShadow: current ? [BoxShadow(color: DoqColors.secondary.withValues(alpha: 0.25), blurRadius: 0, spreadRadius: 5)] : null,
             ),
             child: done
                 ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)

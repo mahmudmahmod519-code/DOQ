@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../core/api.dart';
+import '../core/format.dart';
 import '../core/session.dart';
 import '../ui/cursor_list.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'notification_bell.dart';
+import 'order_screen.dart';
 import 'shell.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -25,16 +29,133 @@ class _HomeScreenState extends State<HomeScreen> {
   int? _categoryId;
   String _categoryName = '';
 
+  /// Customer-only sections: orders in progress + "اطلب تاني" from delivered orders.
+  List<Map<String, dynamic>> _activeOrders = [];
+  List<Map<String, dynamic>> _reorder = [];
+  StreamSubscription<Map<String, dynamic>>? _sub;
+
   @override
   void initState() {
     super.initState();
     _loadHome();
+    _loadMine();
+    // Order status changed / user signed in or out: refresh the personal sections
+    _sub = Notifications.instance.events.listen((_) => _loadMine());
+    Session.instance.me.addListener(_loadMine);
   }
 
   @override
   void dispose() {
+    _sub?.cancel();
+    Session.instance.me.removeListener(_loadMine);
     _search.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadMine() async {
+    if (!Session.instance.loggedIn) {
+      if (mounted) setState(() {
+        _activeOrders = [];
+        _reorder = [];
+      });
+      return;
+    }
+    try {
+      final results = await Future.wait([
+        Api.instance.page('/m/api/v1/orders', null, {'status': 'active', 'limit': 5}),
+        Api.instance.page('/m/api/v1/orders', null, {'status': 'done', 'limit': 20}),
+      ]);
+      final seen = <int>{};
+      final reorder = <Map<String, dynamic>>[];
+      for (final o in results[1].items) {
+        if (o['status'] == 'completed' && seen.add(asInt(o['dish_id']))) reorder.add(o);
+      }
+      if (!mounted) return;
+      setState(() {
+        _activeOrders = results[0].items;
+        _reorder = reorder.take(8).toList();
+      });
+    } catch (_) {}
+  }
+
+  Widget _activeOrdersCard() {
+    if (_filtering || _activeOrders.isEmpty) return const SizedBox.shrink();
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const SectionTitle('طلباتك الجارية'),
+      for (final o in _activeOrders)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          child: Material(
+            color: DoqColors.surface3,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () async {
+                await Navigator.of(context).push(MaterialPageRoute(builder: (_) => OrderScreen(publicId: asStr(o['public_id']))));
+                _loadMine();
+              },
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: DoqColors.secondary.withValues(alpha: 0.5)),
+                ),
+                child: Row(children: [
+                  const CircleAvatar(backgroundColor: DoqColors.secondary, child: Icon(Icons.delivery_dining_rounded, color: Colors.white)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${asStr(o['dish_name'])} × ${asInt(o['quantity'])}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
+                      Text(statusLabel(asStr(o['status'])), style: const TextStyle(color: DoqColors.primary, fontWeight: FontWeight.w700, fontSize: 13)),
+                    ]),
+                  ),
+                  const Text('تتبع', style: TextStyle(color: DoqColors.primary, fontWeight: FontWeight.w800)),
+                  const Icon(Icons.chevron_left_rounded, color: DoqColors.primary),
+                ]),
+              ),
+            ),
+          ),
+        ),
+    ]);
+  }
+
+  Widget _reorderStrip() {
+    if (_filtering || _reorder.isEmpty) return const SizedBox.shrink();
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const SectionTitle('اطلب تاني'),
+      SizedBox(
+        height: 150,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: _reorder.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 10),
+          itemBuilder: (context, i) {
+            final o = _reorder[i];
+            return SizedBox(
+              width: 130,
+              child: Card(
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => openDish(context, o['dish_id']),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    SizedBox(height: 84, child: netImage(o['dish_image'])),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+                      child: Text(asStr(o['dish_name']), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(asStr(o['kitchen_name']), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, color: DoqColors.muted)),
+                    ),
+                  ]),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    ]);
   }
 
   Future<void> _loadHome() async {
@@ -201,7 +322,9 @@ class _HomeScreenState extends State<HomeScreen> {
         empty: const EmptyState(icon: Icons.search_off_rounded, title: 'مفيش أطباق مطابقة', text: 'جرب كلمة تانية أو تصنيف مختلف'),
         headerSlivers: [
           SliverToBoxAdapter(child: _hero()),
+          SliverToBoxAdapter(child: _activeOrdersCard()),
           SliverToBoxAdapter(child: _categoryChips()),
+          SliverToBoxAdapter(child: _reorderStrip()),
           SliverToBoxAdapter(child: _kitchensStrip()),
           SliverToBoxAdapter(child: SectionTitle(title)),
         ],

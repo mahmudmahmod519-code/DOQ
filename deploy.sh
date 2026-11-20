@@ -7,7 +7,7 @@
 #
 # Idempotent: safe to run again at any time. It never deletes volumes, never
 # overwrites .env.production, never drops tables, and never prints secrets.
-# Stops with clear instructions when DNS / SSL prerequisites are missing.
+# HTTPS: Caddy gets and renews the Let's Encrypt certificate by itself.
 # ============================================================================
 set -Eeuo pipefail
 
@@ -47,7 +47,7 @@ esac
 ARCH="$(uname -m)"
 case "$ARCH" in
   x86_64|amd64) ok "CPU architecture: amd64" ;;
-  aarch64|arm64) ok "CPU architecture: arm64 (node, mysql, nginx and certbot images are multi-arch)" ;;
+  aarch64|arm64) ok "CPU architecture: arm64 (node, mysql and caddy images are multi-arch)" ;;
   *) die "Unsupported CPU architecture: $ARCH" ;;
 esac
 
@@ -144,6 +144,7 @@ SSH_PORTS="${SSH_PORTS:-22}"
 for port in $SSH_PORTS; do ufw allow "${port}/tcp" comment 'SSH' >/dev/null; done
 ufw allow 80/tcp comment 'HTTP (redirect + ACME)' >/dev/null
 ufw allow 443/tcp comment 'HTTPS' >/dev/null
+ufw allow 443/udp comment 'HTTP/3' >/dev/null
 ufw default deny incoming >/dev/null
 ufw default allow outgoing >/dev/null
 if ! ufw status | grep -q "Status: active"; then
@@ -172,17 +173,17 @@ step "5/12 Directories"
 # ----------------------------------------------------------------------------
 BACKUP_DIR="$(env_get BACKUP_DIR)"; BACKUP_DIR="${BACKUP_DIR:-/var/backups/doq}"
 install -d -m 700 "$BACKUP_DIR"
-install -d -m 755 "$DOQ_DIR/deployment/certbot/www" "$DOQ_DIR/deployment/nginx/active" "$DOQ_DIR/deployment/nginx/generated"
-install -d -m 700 "$DOQ_DIR/deployment/certbot/conf"
-render_realip
-ok "Backups: $BACKUP_DIR | certificates: deployment/certbot/conf | logs: $LOG_DIR"
+render_caddy_env
+ok "Backups: $BACKUP_DIR | certificates: docker volume doq_caddy_data | logs: $LOG_DIR"
 
 # ----------------------------------------------------------------------------
 step "6/12 Validate compose configuration"
 # ----------------------------------------------------------------------------
 dc config -q || die "docker-compose.prod.yml is invalid"
-dc --profile certbot config -q
 ok "docker-compose.prod.yml is valid"
+dc pull -q caddy || warn "Could not pull the Caddy image (using the local one if present)"
+caddy_validate || { RECOVERY_HINT="read the Caddy error above and fix Caddyfile or DOQ_SERVER_NAMES / LETSENCRYPT_EMAIL in $ENV_FILE"; die "Caddyfile is invalid"; }
+ok "Caddyfile is valid"
 
 # ----------------------------------------------------------------------------
 step "7/12 Build the application image"
@@ -226,95 +227,57 @@ wait_healthy app 240 || {
 }
 
 # ----------------------------------------------------------------------------
-step "10/12 Nginx + SSL"
+step "10/12 Caddy + HTTPS (Let's Encrypt)"
 # ----------------------------------------------------------------------------
-MODE="$(nginx_mode)"
-use_nginx_template "$MODE"
-dc up -d --force-recreate nginx
-wait_healthy nginx 90 || die "Nginx did not start (sudo docker compose -p doq -f docker-compose.prod.yml --env-file .env.production logs nginx)"
-dc exec -T nginx nginx -t >/dev/null 2>&1 || die "Nginx configuration test failed"
-ok "Nginx running in ${MODE} mode"
+retire_nginx
 
-STAGING_FLAG=()
-[[ "$(env_get LETSENCRYPT_STAGING)" == "true" ]] && STAGING_FLAG=(--staging)
-RENEWAL_CONF="$DOQ_DIR/deployment/certbot/conf/renewal/${DOMAIN}.conf"
-NEED_CERT=false
-if ! cert_exists; then
-  NEED_CERT=true
-elif [[ ${#STAGING_FLAG[@]} -eq 0 && -f "$RENEWAL_CONF" ]] && grep -q "acme-staging" "$RENEWAL_CONF"; then
-  log "A Let's Encrypt STAGING certificate is installed but LETSENCRYPT_STAGING=false: replacing it with a real one"
-  NEED_CERT=true
-fi
-
-if [[ "$NEED_CERT" == "true" ]]; then
-  # --- DNS validation before asking Let's Encrypt (avoids rate-limit lockouts) ---
-  read -r -a NAMES <<<"$(env_get DOQ_SERVER_NAMES)"
-  PUBLIC_IP4="$(curl -4 -fsS --max-time 10 https://api.ipify.org 2>/dev/null || curl -4 -fsS --max-time 10 https://ifconfig.me 2>/dev/null || true)"
-  PUBLIC_IP6="$(curl -6 -fsS --max-time 10 https://api64.ipify.org 2>/dev/null || true)"
-  IP_HINT="${PUBLIC_IP4:-the public IPv4 of this server}"
-  log "This server's public IP: ${PUBLIC_IP4:-unknown}${PUBLIC_IP6:+ / $PUBLIC_IP6}"
-
-  TOKEN="doq-dns-check-$(random_hex 8)"
-  CHALLENGE_DIR="$DOQ_DIR/deployment/certbot/www/.well-known/acme-challenge"
-  install -d -m 755 "$CHALLENGE_DIR"
-  echo "$TOKEN" > "$CHALLENGE_DIR/$TOKEN"
-  chmod 644 "$CHALLENGE_DIR/$TOKEN"
-
-  DNS_OK=true
-  for name in "${NAMES[@]}"; do
-    A_RECORDS="$(dig +short A "$name" @1.1.1.1 2>/dev/null | grep -E '^[0-9.]+$' | tr '\n' ' ' || true)"
-    AAAA_RECORDS="$(dig +short AAAA "$name" @1.1.1.1 2>/dev/null | grep -E ':' | tr '\n' ' ' || true)"
-    if [[ -z "$A_RECORDS$AAAA_RECORDS" ]]; then
-      warn "$name has no A/AAAA record yet"
-      DNS_OK=false; continue
-    fi
-    if [[ -n "$PUBLIC_IP4" && " $A_RECORDS " == *" $PUBLIC_IP4 "* ]]; then
-      ok "$name -> $PUBLIC_IP4 (points to this server)"
-      continue
-    fi
-    # Proxied DNS (e.g. Cloudflare orange cloud) resolves to the proxy: verify reachability over HTTP instead
-    BODY="$(curl -fsS --max-time 15 "http://${name}/.well-known/acme-challenge/${TOKEN}" 2>/dev/null || true)"
-    if [[ "$BODY" == "$TOKEN" ]]; then
-      ok "$name resolves to ${A_RECORDS:-$AAAA_RECORDS}(proxy) and reaches this server over HTTP"
-    else
-      warn "$name resolves to ${A_RECORDS}${AAAA_RECORDS}but does not reach this server (expected ${IP_HINT})"
-      DNS_OK=false
-    fi
-  done
-  rm -f "$CHALLENGE_DIR/$TOKEN"
-
-  if [[ "$DNS_OK" != "true" ]]; then
-    RECOVERY_HINT="create an A record for each name in DOQ_SERVER_NAMES pointing to ${IP_HINT} (if you use Cloudflare, set the record to 'DNS only' or set CLOUDFLARE_PROXY=true with SSL mode 'Full (strict)'), wait for DNS to propagate (check: dig +short ${DOMAIN}), then run sudo ./deploy.sh again. The site is already running on HTTP inside the server; nothing needs to be undone."
-    die "DNS is not pointing to this server yet, so no certificate was requested"
+# DNS check (information only: Caddy keeps retrying and gets the certificate as soon as DNS is right)
+read -r -a NAMES <<<"$(env_get DOQ_SERVER_NAMES)"
+PUBLIC_IP4="$(curl -4 -fsS --max-time 10 https://api.ipify.org 2>/dev/null || curl -4 -fsS --max-time 10 https://ifconfig.me 2>/dev/null || true)"
+IP_HINT="${PUBLIC_IP4:-the public IPv4 of this server}"
+DNS_OK=true
+for name in "${NAMES[@]}"; do
+  A_RECORDS="$(dig +short A "$name" @1.1.1.1 2>/dev/null | grep -E '^[0-9.]+$' | tr '\n' ' ' || true)"
+  if [[ -z "$A_RECORDS" ]]; then
+    warn "$name has no A record yet (it must point to ${IP_HINT})"; DNS_OK=false
+  elif [[ -n "$PUBLIC_IP4" && " $A_RECORDS " == *" $PUBLIC_IP4 "* ]]; then
+    ok "$name -> $PUBLIC_IP4 (this server)"
+  elif [[ "$(env_get CLOUDFLARE_PROXY)" == "true" ]]; then
+    ok "$name -> ${A_RECORDS% }(Cloudflare proxy)"
+  else
+    warn "$name -> ${A_RECORDS% }but this server is ${IP_HINT}"; DNS_OK=false
   fi
+done
 
-  CERT_ARGS=(certonly --webroot -w /var/www/certbot --cert-name "$DOMAIN" --email "$EMAIL" --agree-tos --no-eff-email --non-interactive "${STAGING_FLAG[@]}")
-  # Replacing a staging certificate needs --force-renewal; otherwise keep a valid one
-  if cert_exists; then CERT_ARGS+=(--force-renewal); else CERT_ARGS+=(--keep-until-expiring); fi
-  for name in "${NAMES[@]}"; do CERT_ARGS+=(-d "$name"); done
-  log "Requesting a Let's Encrypt certificate for: ${NAMES[*]}"
-  dc --profile certbot run --rm certbot "${CERT_ARGS[@]}" \
-    || { RECOVERY_HINT="read the certbot error above (DNS, port 80 blocked by a cloud firewall, or rate limit). Test with LETSENCRYPT_STAGING=true first if you retry many times."; die "Certificate request failed"; }
-  cert_exists || die "Certificate files were not created"
-  ok "Certificate issued"
-  use_nginx_template https
-  dc up -d --force-recreate nginx
-  wait_healthy nginx 90 || die "Nginx did not start with HTTPS"
-  dc exec -T nginx nginx -t >/dev/null 2>&1 || die "Nginx HTTPS configuration test failed"
-  MODE=https
+dc up -d caddy
+wait_healthy caddy 90 || die "Caddy did not start (sudo docker compose -p doq -f docker-compose.prod.yml --env-file .env.production logs caddy)"
+ok "Caddy is running"
+
+CERT_OK=false
+if [[ "$DNS_OK" == "true" ]]; then
+  log "Waiting for the Let's Encrypt certificate (usually under a minute)"
+  for _ in $(seq 1 40); do
+    if cert_trusted "$DOMAIN"; then CERT_OK=true; break; fi
+    if [[ "$(env_get LETSENCRYPT_STAGING)" == "true" && -n "$(cert_expiry "$DOMAIN")" ]]; then CERT_OK=true; break; fi
+    sleep 3
+  done
+fi
+if [[ "$CERT_OK" == "true" ]]; then
+  ok "HTTPS certificate is active"
 else
-  ok "Certificate already present (renewed automatically by doq-certbot-renew.timer)"
+  warn "No certificate yet. Caddy keeps trying on its own; nothing needs to be re-run once DNS is correct."
+  warn "Check: dig +short ${DOMAIN}  (must show ${IP_HINT}) and: sudo docker compose -p doq -f docker-compose.prod.yml --env-file .env.production logs caddy"
 fi
 
 # ----------------------------------------------------------------------------
-step "11/12 Scheduled jobs (backups, certificate renewal, monitoring) and log rotation"
+step "11/12 Scheduled jobs (backups, monitoring) and log rotation"
 # ----------------------------------------------------------------------------
 for unit in "$DOQ_DIR"/deployment/systemd/*.service "$DOQ_DIR"/deployment/systemd/*.timer; do
   sed "s#__DOQ_DIR__#${DOQ_DIR}#g" "$unit" > "/etc/systemd/system/$(basename "$unit")"
 done
-chmod +x "$DOQ_DIR"/deploy.sh "$DOQ_DIR"/update.sh "$DOQ_DIR"/deployment/backup/*.sh "$DOQ_DIR"/deployment/scripts/*.sh "$DOQ_DIR"/deployment/certbot/*.sh
+chmod +x "$DOQ_DIR"/deploy.sh "$DOQ_DIR"/update.sh "$DOQ_DIR"/deployment/backup/*.sh "$DOQ_DIR"/deployment/scripts/*.sh
 systemctl daemon-reload
-systemctl enable --now doq-backup.timer doq-certbot-renew.timer doq-monitor.timer >/dev/null
+systemctl enable --now doq-backup.timer doq-monitor.timer >/dev/null
 cat > /etc/logrotate.d/doq <<LR
 ${LOG_DIR}/*.log {
     weekly
@@ -333,22 +296,23 @@ ok "Docker container logs are capped at 5 x 10 MB per service"
 step "12/12 Verification"
 # ----------------------------------------------------------------------------
 FAILED=0
-for svc in mysql app cron nginx; do
+for svc in mysql app cron caddy; do
   status="$(container_health "$svc")"
   if [[ "$status" == "healthy" || ( "$svc" == "cron" && "$status" == "running" ) ]]; then ok "$svc: $status"; else warn "$svc: $status"; FAILED=1; fi
 done
 for path in /health /health/ready /api/v1/health /m/api/v1/home /; do
-  code="$(check_site "$DOMAIN" "$MODE" "$path")"
-  if [[ "$code" == "200" ]]; then ok "${MODE}://${DOMAIN}${path} -> $code"; else warn "${MODE}://${DOMAIN}${path} -> $code"; FAILED=1; fi
+  code="$(check_site "$DOMAIN" "$path")"
+  if [[ "$code" == "200" ]]; then ok "https://${DOMAIN}${path} -> $code"; else warn "https://${DOMAIN}${path} -> $code"; FAILED=1; fi
 done
-if [[ "$MODE" == "https" ]]; then
-  code="$(http_status -H "Host: ${DOMAIN}" "http://127.0.0.1/health")"
-  [[ "$code" == "301" ]] && ok "HTTP redirects to HTTPS" || { warn "HTTP -> HTTPS redirect returned $code"; FAILED=1; }
+code="$(http_status -H "Host: ${DOMAIN}" "http://127.0.0.1/health")"
+[[ "$code" == "308" || "$code" == "301" ]] && ok "HTTP redirects to HTTPS" || { warn "HTTP -> HTTPS redirect returned $code"; FAILED=1; }
+if [[ "$CERT_OK" == "true" ]]; then
   PUBLIC_CODE="$(http_status "https://${DOMAIN}/health")"
   [[ "$PUBLIC_CODE" == "200" ]] && ok "Public check https://${DOMAIN}/health -> 200" \
     || warn "Public check https://${DOMAIN}/health -> ${PUBLIC_CODE} (DNS cache or a provider firewall may still be in the way)"
-  EXPIRY="$(openssl x509 -enddate -noout -in "$DOQ_DIR/deployment/certbot/conf/live/${DOMAIN}/fullchain.pem" | cut -d= -f2)"
-  ok "Certificate valid until: $EXPIRY"
+  ok "Certificate valid until: $(cert_expiry "$DOMAIN") (renewed automatically by Caddy)"
+else
+  FAILED=1
 fi
 
 echo
@@ -358,11 +322,11 @@ else
   echo "${C_YLW}=========== DOQ deployed with warnings (see above) ===========${C_OFF}"
 fi
 cat <<SUMMARY
-  Website         : ${MODE}://${DOMAIN}/
-  Admin           : ${MODE}://${DOMAIN}/admin
-  Customer (web)  : ${MODE}://${DOMAIN}/m
-  Mobile API      : ${MODE}://${DOMAIN}/m/api/v1/home
-  Health          : ${MODE}://${DOMAIN}/api/v1/health
+  Website         : https://${DOMAIN}/
+  Admin           : https://${DOMAIN}/admin
+  Customer (web)  : https://${DOMAIN}/m
+  Mobile API      : https://${DOMAIN}/m/api/v1/home
+  Health          : https://${DOMAIN}/api/v1/health
   Backups         : ${BACKUP_DIR} (daily 03:15 UTC, doq-backup.timer)
   Status          : sudo ./deployment/scripts/status.sh
   Update          : sudo ./update.sh

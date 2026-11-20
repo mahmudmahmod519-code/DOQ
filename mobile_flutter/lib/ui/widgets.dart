@@ -190,7 +190,7 @@ class _FavouriteButtonState extends State<FavouriteButton> {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: widget.filled ? Colors.white.withOpacity(0.92) : DoqColors.surface2,
+      color: widget.filled ? Colors.white.withValues(alpha: 0.92) : DoqColors.surface2,
       shape: const CircleBorder(),
       child: IconButton(
         tooltip: _on ? 'شيل من المفضلة' : 'أضف للمفضلة',

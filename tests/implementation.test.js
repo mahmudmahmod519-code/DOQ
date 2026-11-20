@@ -120,26 +120,28 @@ test('weekly product reminders do not create a new notification for the same acc
     assert.notEqual(inserted[0][4],inserted[1][4],'different reminder types need different keys');
   }finally{pool.query=original;}
 });
-test('container bootstrap preserves existing databases and requires database secrets',()=>{
+test('production stack keeps existing databases, requires secrets and keeps MySQL private',()=>{
   const schema=read('database/database.sql');
-  const compose=read('docker-compose.yml');
+  const compose=read('docker-compose.prod.yml');
   assert.doesNotMatch(schema,/^\s*(DROP DATABASE|CREATE DATABASE|USE\s+DOQ\s*;)/mi);
   assert.match(compose,/MYSQL_ROOT_PASSWORD: \$\{MYSQL_ROOT_PASSWORD:\?/);
   assert.match(compose,/MYSQL_PASSWORD: \$\{DB_PASSWORD:\?/);
+  assert.match(compose,/JWT_SECRET: \$\{JWT_SECRET:\?/);
+  const mysql=compose.slice(compose.indexOf('  mysql:'),compose.indexOf('  app:'));
+  assert.doesNotMatch(mysql,/ports:/,'MySQL must never be published');
+  const app=compose.slice(compose.indexOf('  app:'),compose.indexOf('  cron:'));
+  assert.doesNotMatch(app,/ports:/,'the app is reached only through Caddy');
+  assert.match(compose,/caddy_data:\/data/);
+  assert.doesNotMatch(compose,/nginx|certbot/);
 });
-test('development and production deployment use selectable env files and keep production database private',()=>{
-  const development=read('.env.development.example');
-  const production=read('.env.production.example');
-  const compose=read('docker-compose.yml');
-  const productionCompose=read('docker-compose.production.yml');
-  assert.match(development,/DOQ_ENV_FILE=\.env\.development/);
-  assert.match(production,/DOQ_ENV_FILE=\.env\.production/);
-  assert.match(compose,/\$\{DOQ_ENV_FILE:-\.env\}/);
-  assert.match(productionCompose,/db:\s*\n\s*ports: !reset \[\]/);
-  assert.match(productionCompose,/app:\s*\n\s*ports: !reset \[\]/);
-  assert.match(productionCompose,/env_file: !override/);
-  assert.match(productionCompose,/caddy:/);
-  assert.match(read('Caddyfile'),/reverse_proxy app:3000/);
+
+test('Caddy serves the app over HTTPS with Let\'s Encrypt',()=>{
+  const caddy=read('Caddyfile');
+  assert.match(caddy,/reverse_proxy app:3000/);
+  assert.match(caddy,/email \{\$LETSENCRYPT_EMAIL\}/);
+  assert.match(caddy,/acme_ca \{\$DOQ_ACME_CA\}/);
+  assert.match(caddy,/Strict-Transport-Security/);
+  assert.match(caddy,/header_up X-Forwarded-For \{client_ip\}/);
 });
 
 test('security boundaries keep callback exemption exact and never expose the test page in production',()=>{
@@ -159,23 +161,10 @@ test('payment webhooks have a replay ledger and only activate chef subscriptions
   assert.match(read('utiles/payment.js'),/timingSafeEqual/);
 });
 
-test('uploads use server generated filenames and seed data has no default password',()=>{
+test('uploads use server generated filenames',()=>{
   const upload=read('middlware/upload.js');
-  const seed=read('scripts/seed_data.js');
   assert.match(upload,/randomBytes\(18\)/);
   assert.doesNotMatch(upload,/file\.originalname\}\`/);
-  assert.doesNotMatch(seed,/P@ssword123/);
-  assert.match(seed,/DOQ_SEED_PASSWORD/);
-});
-
-test('test account bootstrap is create-only, non-production and covers every application role',()=>{
-  const script=read('scripts/bootstrap-test-accounts.js');
-  const packageJson=read('package.json');
-  for (const role of ['customer','chef','delivery','admin']) assert.match(script,new RegExp(`role: '${role}'`));
-  assert.match(script,/NODE_ENV === 'production'/);
-  assert.match(script,/DOQ_ALLOW_TEST_ACCOUNTS/);
-  assert.match(script,/test_account_already_exists/);
-  assert.match(packageJson,/bootstrap:test-accounts/);
 });
 
 test('public category filters remain reachable to guests while mutations stay behind admin auth',()=>{

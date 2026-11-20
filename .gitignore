@@ -1,32 +1,30 @@
+# Secrets and local environment files (never commit)
 .env
 .env.*
-!.env.example
-!.env.development.example
-!.env.production.example
+
+# Dependencies, logs and runtime state
 node_modules/
+npm-debug.log*
 backups/
 verification/
 tmp/
 public/upload/
 database/.cron.lock
-npm-debug.log*
-fresh_start.sh
-*.md
-!docs/PAGES.md
-!mobile/README.md
-to_delete/
 
-# Docs that must be committed despite the *.md rule above
+# Notes and drafts stay out of the repository; only these docs are committed
+*.md
 !README.md
 !DEPLOYMENT.md
-!DEPLOYMENT_CHECKLIST.md
 !TROUBLESHOOTING.md
-!DEVELOPMENT_TRACKER.md
-!docs/MOBILE_APP_AR.md
 !mobile_flutter/README.md
+!mobile_flutter/PLAY_STORE.md
 
-# Production runtime state (generated on the server)
-deployment/certbot/conf/
-deployment/certbot/www/
-deployment/nginx/active/
-deployment/nginx/generated/
+# Old nginx/certbot runtime folders (servers deployed before the switch to Caddy)
+deployment/certbot/
+deployment/nginx/
+
+# Android signing material
+*.jks
+*.keystore
+key.properties
+*.base64.txt

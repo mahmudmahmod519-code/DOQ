@@ -46,9 +46,10 @@ fi
 
 step "2/7 Validate"
 validate_env
-render_realip
+render_caddy_env
 dc config -q || die "docker-compose.prod.yml is invalid"
-ok "Configuration valid"
+caddy_validate || die "Caddyfile is invalid — nothing was changed"
+ok "Configuration valid (compose + Caddyfile)"
 
 step "3/7 Build"
 STAMP="$(date +%Y%m%d%H%M%S)"
@@ -80,16 +81,14 @@ dc run --rm --no-deps -T app npm run migrate || rollback
 step "6/7 Restart"
 dc up -d --no-build --remove-orphans app cron
 wait_healthy app 240 || rollback
-use_nginx_template "$(nginx_mode)"
-# Recreate so a changed nginx template is re-rendered (about one second of interruption)
-dc up -d --force-recreate nginx
-wait_healthy nginx 90 || rollback
-dc exec -T nginx nginx -t >/dev/null 2>&1 || rollback
+# Reload a changed Caddyfile without downtime
+caddy_apply
+wait_healthy caddy 90 || rollback
 
 step "7/7 Verify"
-DOMAIN="$(env_get DOQ_DOMAIN)"; MODE="$(nginx_mode)"
+DOMAIN="$(env_get DOQ_DOMAIN)"
 for path in /health/ready /api/v1/health /m/api/v1/home /; do
-  code="$(check_site "$DOMAIN" "$MODE" "$path")"
+  code="$(check_site "$DOMAIN" "$path")"
   [[ "$code" == "200" ]] && ok "${path} -> 200" || { warn "${path} -> ${code}"; rollback; }
 done
 

@@ -80,6 +80,7 @@ router.get('/api/v1/kitchens/:id', catchError(c.getKitchen_controller));
 
 // --- Customer APIs ---
 router.get('/api/v1/me', requireCustomerApi, catchError(c.me_controller));
+router.delete('/api/v1/me', requireCustomerApi, catchError(c.deleteAccount_controller));
 router.get('/api/v1/orders', requireCustomerApi, catchError(c.listOrders_controller));
 router.get('/api/v1/orders/:publicId', requireCustomerApi, catchError(c.getOrder_controller));
 router.get('/api/v1/favourites', requireCustomerApi, catchError(c.listFavourites_controller));

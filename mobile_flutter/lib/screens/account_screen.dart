@@ -90,6 +90,45 @@ class _AccountScreenState extends State<AccountScreen> {
     if (mounted && widget.standalone) Navigator.of(context).pop();
   }
 
+  /// Google Play requires in-app account deletion for apps that let users create accounts.
+  Future<void> _deleteAccount() async {
+    final password = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('حذف الحساب'),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('هيتم مسح اسمك وإيميلك ورقمك وعنوانك والمفضلة والإشعارات نهائياً. الطلبات القديمة بتفضل من غير بياناتك للحسابات. مينفعش ترجّع الحساب بعد كده.'),
+          const SizedBox(height: 12),
+          TextField(
+            controller: password,
+            obscureText: true,
+            textDirection: TextDirection.ltr,
+            decoration: const InputDecoration(labelText: 'كلمة المرور للتأكيد'),
+          ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: DoqColors.danger),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('احذف حسابي'),
+          ),
+        ],
+      ),
+    );
+    final pass = password.text;
+    if (confirmed != true || !mounted) return;
+    try {
+      await Api.instance.delete('/m/api/v1/me', {'password': pass, 'confirm': 'DELETE'});
+      await Session.instance.logout();
+      Shell.tab.value = 0;
+      if (mounted) showMessage(context, 'تم حذف حسابك');
+    } on ApiException catch (e) {
+      if (mounted) showMessage(context, e.message, error: true);
+    }
+  }
+
   Widget _stat(String value, String label, VoidCallback? onTap) {
     return Expanded(
       child: Card(
@@ -123,7 +162,8 @@ class _AccountScreenState extends State<AccountScreen> {
         appBar: AppBar(title: const Text('حسابي')),
         body: ListView(children: [
           const LoginPrompt(icon: Icons.person_outline_rounded, title: 'سجل دخول عشان تدير حسابك'),
-          ListTile(
+          if (!Api.lockServer)
+            ListTile(
             leading: const Icon(Icons.dns_outlined),
             title: const Text('عنوان السيرفر'),
             subtitle: Text(Api.instance.baseUrl, textDirection: TextDirection.ltr),
@@ -211,12 +251,18 @@ class _AccountScreenState extends State<AccountScreen> {
                 trailing: const Icon(Icons.chevron_left_rounded),
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MyReviewsScreen())),
               ),
+              if (!Api.lockServer)
+                ListTile(
+                  leading: const Icon(Icons.dns_outlined),
+                  title: const Text('عنوان السيرفر'),
+                  subtitle: Text(Api.instance.baseUrl, textDirection: TextDirection.ltr),
+                  trailing: const Icon(Icons.chevron_left_rounded),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ServerScreen())),
+                ),
               ListTile(
-                leading: const Icon(Icons.dns_outlined),
-                title: const Text('عنوان السيرفر'),
-                subtitle: Text(Api.instance.baseUrl, textDirection: TextDirection.ltr),
-                trailing: const Icon(Icons.chevron_left_rounded),
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ServerScreen())),
+                leading: const Icon(Icons.privacy_tip_outlined),
+                title: const Text('سياسة الخصوصية'),
+                subtitle: Text('${Api.instance.baseUrl}/police/privacy-policy', textDirection: TextDirection.ltr, style: const TextStyle(fontSize: 11)),
               ),
               ListTile(
                 leading: const Icon(Icons.logout_rounded, color: DoqColors.danger),
@@ -224,6 +270,12 @@ class _AccountScreenState extends State<AccountScreen> {
                 onTap: _logout,
               ),
             ]),
+          ),
+          const SizedBox(height: 16),
+          TextButton.icon(
+            onPressed: _deleteAccount,
+            icon: const Icon(Icons.delete_forever_outlined, color: DoqColors.danger),
+            label: const Text('حذف الحساب نهائياً', style: TextStyle(color: DoqColors.danger, fontWeight: FontWeight.w700)),
           ),
         ],
       ]),

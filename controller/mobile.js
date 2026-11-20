@@ -10,7 +10,10 @@
  * - Kitchen / chef phone numbers are never returned to customers.
  * - Personal endpoints require an approved customer session (suspended users get nothing).
  */
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const pool = require('../database/pool');
+const transaction = require('../utiles/transaction');
 const { decodeCursor, parseLimit, buildPage } = require('../utiles/cursor');
 
 const PUBLIC_KITCHEN = "k.status='ACTIVE' AND chef.account_status='approved'";
@@ -470,8 +473,53 @@ async function me_controller(req, res) {
     });
 }
 
+
+/**
+ * DELETE /m/api/v1/me - Customer deletes their own account (Google Play account-deletion policy).
+ * Body: { password, confirm: "DELETE" }.
+ * Personal data is erased/anonymised; order rows are kept (financial records of kitchens and
+ * delivery companies) but their customer name/phone/address snapshots are wiped.
+ * Refused while the customer still has an order in progress.
+ */
+async function deleteAccount_controller(req, res) {
+    const password = String(req.body?.password || '');
+    if (String(req.body?.confirm || '') !== 'DELETE' || !password) {
+        return res.status(400).json({ status: 'error', message: 'اكتب كلمة المرور وأكد حذف الحساب' });
+    }
+    const [[user]] = await pool.query('SELECT id,password_hash FROM users WHERE id=? AND roles=\'customer\' LIMIT 1', [req.user.id]);
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+        return res.status(401).json({ status: 'error', message: 'كلمة المرور غلط' });
+    }
+    const [[active]] = await pool.query(
+        "SELECT COUNT(*) AS n FROM orders WHERE customer_id=? AND status IN ('pending','chef_accepted','accepted','out_for_delivery')",
+        [user.id]
+    );
+    if (Number(active.n) > 0) {
+        return res.status(409).json({ status: 'error', message: 'عندك طلب لسه شغال. استنى لما يتسلم أو الغيه الأول' });
+    }
+
+    await transaction(async db => {
+        const randomHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10);
+        await db.query(
+            `UPDATE users SET first_name='مستخدم', last_name='محذوف', email=?, phone_number=?, password_hash=?,
+                    city=NULL, address=NULL, image_url=NULL, portfolio_url=NULL,
+                    two_factor_secret=NULL, two_factor_enabled=0, two_factor_required=0,
+                    account_status='deleted', session_version=session_version+1
+             WHERE id=?`,
+            [`deleted-${user.id}@deleted.invalid`, `D${String(user.id).padStart(10, '0')}`.slice(0, 15), randomHash, user.id]
+        );
+        await db.query("UPDATE orders SET customer_name='عميل محذوف', customer_phone='-', customer_address=NULL WHERE customer_id=?", [user.id]);
+        await db.query('DELETE FROM favourite_dishes WHERE customer_id=?', [user.id]);
+        await db.query('DELETE FROM notifications WHERE user_id=?', [user.id]);
+    });
+
+    res.clearCookie('session_token', { path: '/' });
+    return res.json({ status: 'success', message: 'تم حذف حسابك وبياناتك الشخصية' });
+}
+
 module.exports = {
     home_controller,
+    deleteAccount_controller,
     listDishes_controller,
     getDish_controller,
     listDishReviews_controller,

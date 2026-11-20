@@ -1,9 +1,8 @@
 # ============================================================
 # DOQ production stack (used by deploy.sh / update.sh)
 #   docker compose -p doq -f docker-compose.prod.yml --env-file .env.production <cmd>
-# docker-compose.yml stays the local development stack.
 #
-# Public ports: only nginx 80/443. MySQL and the app are reachable only on the
+# Public ports: only caddy 80/443. MySQL and the app are reachable only on the
 # internal "backend" network. Data lives in named volumes (never removed by scripts).
 # ============================================================
 name: doq
@@ -120,56 +119,47 @@ services:
           memory: ${CRON_MEMORY_LIMIT:-512m}
     logging: *logging
 
-  nginx:
-    image: ${NGINX_IMAGE:-nginx:1.27-alpine}
+  # Reverse proxy + automatic HTTPS (Let's Encrypt). Configuration: ./Caddyfile
+  caddy:
+    image: ${CADDY_IMAGE:-caddy:2-alpine}
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
+      - "443:443/udp"   # HTTP/3
     environment:
-      DOQ_DOMAIN: ${DOQ_DOMAIN:?DOQ_DOMAIN is required}
-      DOQ_SERVER_NAMES: ${DOQ_SERVER_NAMES:-${DOQ_DOMAIN}}
-      NGINX_ENVSUBST_FILTER: "^DOQ_"
+      DOQ_SERVER_NAMES: ${DOQ_SERVER_NAMES:?DOQ_SERVER_NAMES is required}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:?LETSENCRYPT_EMAIL is required}
+      DOQ_ACME_CA: ${DOQ_ACME_CA:-https://acme-v02.api.letsencrypt.org/directory}
+      DOQ_TRUSTED_PROXIES: ${DOQ_TRUSTED_PROXIES:-private_ranges}
     volumes:
-      - ./deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./deployment/nginx/snippets:/etc/nginx/snippets:ro
-      - ./deployment/nginx/generated:/etc/nginx/generated:ro
-      # deploy.sh copies http.conf.template (before SSL) or https.conf.template here
-      - ./deployment/nginx/active:/etc/nginx/templates:ro
-      - ./deployment/certbot/www:/var/www/certbot:ro
-      - ./deployment/certbot/conf:/etc/letsencrypt:ro
-    networks: [backend, frontend]
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates and ACME account: never delete these volumes
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [backend]
     depends_on:
       app:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/nginx-health"]
+      # Caddy's admin API listens on localhost inside the container only
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2019/config/"]
       interval: 15s
       timeout: 5s
       retries: 5
+      start_period: 10s
     deploy:
       resources:
         limits:
           memory: 256m
     logging: *logging
 
-  # One-off: issues / renews Let's Encrypt certificates (webroot). Never runs permanently:
-  #   docker compose ... run --rm certbot certonly ...   (deploy.sh)
-  #   docker compose ... run --rm certbot renew          (doq-certbot-renew.timer)
-  certbot:
-    image: ${CERTBOT_IMAGE:-certbot/certbot:v2.11.0}
-    profiles: ["certbot"]
-    volumes:
-      - ./deployment/certbot/www:/var/www/certbot
-      - ./deployment/certbot/conf:/etc/letsencrypt
-    networks: [frontend]
-    logging: *logging
-
 networks:
-  # app <-> mysql. Not "internal" because the app needs outbound internet (SMTP, Paymob).
+  # caddy <-> app <-> mysql. Not "internal" because the app needs outbound internet (SMTP, Paymob).
   backend:
-  frontend:
 
 volumes:
   mysql_data:
   uploads:
+  caddy_data:
+  caddy_config:

@@ -12,7 +12,7 @@
 #   4. Clones (or updates) https://github.com/mahmudmahmod519-code/DOQ.git into /opt/doq
 #   5. Creates .env.production with the domain/email and freshly generated secrets
 #      (DB passwords, root password, JWT secret, backup encryption passphrase)
-#   6. Runs ./deploy.sh (MySQL, app, nginx, Let's Encrypt, backups, timers, checks)
+#   6. Runs ./deploy.sh (MySQL, app, Caddy with Let's Encrypt HTTPS, backups, timers, checks)
 #
 # Secrets are never printed. A copy of .env.production is saved to /root/doq-secrets/.
 # ============================================================================
@@ -186,10 +186,10 @@ else
   fi
 fi
 cd "$APP_DIR"
-for f in deploy.sh docker-compose.prod.yml deployment/env.production.example deployment/scripts/lib.sh; do
+for f in deploy.sh docker-compose.prod.yml Caddyfile deployment/env.production.example deployment/scripts/lib.sh; do
   [[ -f "$f" ]] || die "$f is missing in the repository. Push the deployment files (deploy.sh, deployment/, docker-compose.prod.yml) first."
 done
-chmod +x deploy.sh update.sh deployment/backup/*.sh deployment/scripts/*.sh deployment/certbot/*.sh 2>/dev/null || true
+chmod +x deploy.sh update.sh deployment/backup/*.sh deployment/scripts/*.sh 2>/dev/null || true
 
 # ----------------------------------------------------------------------------
 step "5/6 Production environment and generated secrets"
@@ -252,7 +252,7 @@ SERVER_IP="$(curl -4 -fsS --max-time 10 https://api.ipify.org 2>/dev/null || tru
 DNS_IP="$(dig +short A "$DOMAIN" @1.1.1.1 2>/dev/null | tail -n1 || true)"
 if [[ -n "$SERVER_IP" && "$DNS_IP" != "$SERVER_IP" ]]; then
   warn "$DOMAIN resolves to '${DNS_IP:-nothing}', this server is $SERVER_IP."
-  warn "Create an A record $DOMAIN -> $SERVER_IP (Cloudflare: 'DNS only'). deploy.sh will stop before SSL until it matches."
+  warn "Create an A record $DOMAIN -> $SERVER_IP (Cloudflare: 'DNS only'). Caddy issues the HTTPS certificate automatically once it matches."
 fi
 
 # ----------------------------------------------------------------------------

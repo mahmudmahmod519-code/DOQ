@@ -63,11 +63,11 @@ step "Safety backup of the current data"
 "$DOQ_DIR/deployment/backup/backup.sh" --reason pre-restore || die "Safety backup failed — restore aborted, nothing changed"
 
 step "Stopping app and cron"
-dc stop app cron nginx
+dc stop app cron caddy
 
 step "Importing database"
 if ! zcat "$WORK/db.sql.gz" | dc exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot --default-character-set=utf8mb4'; then
-  dc start app cron nginx || true
+  dc start app cron caddy || true
   die "Import failed. The pre-restore backup is in $(env_get BACKUP_DIR). Run this script with it to roll back."
 fi
 ok "Database imported"
@@ -81,6 +81,6 @@ fi
 
 step "Migrations + restart"
 dc run --rm --no-deps -T app npm run migrate
-dc up -d app cron nginx
+dc up -d app cron caddy
 wait_healthy app 240 || die "App is not healthy after restore"
 ok "Restore finished"

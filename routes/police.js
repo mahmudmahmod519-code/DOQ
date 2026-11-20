@@ -24,4 +24,9 @@ router.get('/refund-policy', (req, res) => {
     res.render('./police/refund');
 });
 
+// GET /police/delete-account - Account deletion instructions (Google Play requirement)
+router.get('/delete-account', (req, res) => {
+    res.render('./police/delete-account');
+});
+
 module.exports = router;

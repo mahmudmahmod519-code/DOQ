@@ -40,13 +40,13 @@ ThemeData buildTheme() {
       centerTitle: false,
       titleTextStyle: GoogleFonts.tajawal(fontSize: 19, fontWeight: FontWeight.w800, color: DoqColors.ink),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: DoqColors.line.withOpacity(0.5)),
+        side: BorderSide(color: DoqColors.line.withValues(alpha: 0.5)),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
