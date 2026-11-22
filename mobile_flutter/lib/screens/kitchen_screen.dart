@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../core/format.dart';
 import '../ui/cursor_list.dart';
+import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
@@ -105,13 +106,13 @@ class _KitchenScreenState extends State<KitchenScreen> {
       body: _error != null
           ? Center(child: EmptyState(icon: Icons.storefront_outlined, title: _error!, actionLabel: 'رجوع', onAction: () => Navigator.of(context).pop()))
           : k == null
-              ? const Center(child: CircularProgressIndicator(color: DoqColors.primary))
+              ? const LoadingView()
               : CursorList(
                   grid: true,
                   fetch: (cursor) => Api.instance.page('/m/api/v1/dishes', cursor, {'kitchen_id': widget.kitchenId}),
-                  itemBuilder: (context, dish, i) => DishCard(dish: dish),
+                  itemBuilder: (context, dish, i) => DishCard(dish: dish, heroScope: 'kitchen'),
                   empty: const EmptyState(icon: Icons.restaurant_menu_rounded, title: 'المطبخ لسه مضافش أطباق'),
-                  headerSlivers: [SliverToBoxAdapter(child: _header(k))],
+                  headerSlivers: [SliverToBoxAdapter(child: Reveal(child: _header(k)))],
                 ),
     );
   }

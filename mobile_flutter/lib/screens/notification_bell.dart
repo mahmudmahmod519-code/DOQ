@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/session.dart';
+import '../ui/motion.dart';
 import 'notifications_screen.dart';
 
 /// App bar bell with the unread count (only for signed-in customers).
@@ -18,7 +19,10 @@ class NotificationBell extends StatelessWidget {
           builder: (context, count, _) => IconButton(
             tooltip: 'الإشعارات',
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen())),
-            icon: Badge(isLabelVisible: count > 0, label: Text(count > 99 ? '99+' : '$count'), child: const Icon(Icons.notifications_none_rounded)),
+            icon: Wiggle(
+              trigger: count,
+              child: Badge(isLabelVisible: count > 0, label: Text(count > 99 ? '99+' : '$count'), child: const Icon(Icons.notifications_none_rounded)),
+            ),
           ),
         );
       },

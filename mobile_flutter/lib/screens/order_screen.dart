@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../core/format.dart';
 import '../core/session.dart';
+import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'dish_screen.dart';
@@ -101,12 +102,16 @@ class _OrderScreenState extends State<OrderScreen> {
     final current = _steps.indexWhere((s) => s[0] == status);
     return Column(children: [
       for (var i = 0; i < _steps.length; i++)
-        _TimelineStep(
-          title: _steps[i][2],
-          time: fullDate(o[_steps[i][1]]),
-          done: i < current || status == 'completed',
-          current: i == current && status != 'completed',
-          last: i == _steps.length - 1,
+        Reveal(
+          delay: staggerDelay(i, stepMs: 70),
+          offset: 14,
+          child: _TimelineStep(
+            title: _steps[i][2],
+            time: fullDate(o[_steps[i][1]]),
+            done: i < current || status == 'completed',
+            current: i == current && status != 'completed',
+            last: i == _steps.length - 1,
+          ),
         ),
     ]);
   }
@@ -119,7 +124,7 @@ class _OrderScreenState extends State<OrderScreen> {
       body: _error != null
           ? Center(child: EmptyState(icon: Icons.receipt_long_outlined, title: _error!))
           : o == null
-              ? const Center(child: CircularProgressIndicator(color: DoqColors.primary))
+              ? const LoadingView()
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(padding: const EdgeInsets.all(16), children: [
@@ -140,10 +145,21 @@ class _OrderScreenState extends State<OrderScreen> {
                                 Text('${asStr(o['dish_name'])} × ${asInt(o['quantity'])}', style: const TextStyle(fontWeight: FontWeight.w800)),
                                 Text(asStr(o['kitchen_name']), style: const TextStyle(color: DoqColors.muted, fontSize: 13)),
                                 const SizedBox(height: 4),
-                                StatusChip(asStr(o['status'])),
+                                AnimatedSwitcher(
+                                  duration: DoqMotion.quick,
+                                  transitionBuilder: (child, animation) => FadeTransition(
+                                    opacity: animation,
+                                    child: ScaleTransition(scale: Tween<double>(begin: 0.9, end: 1).animate(animation), child: child),
+                                  ),
+                                  child: StatusChip(asStr(o['status']), key: ValueKey(asStr(o['status']))),
+                                ),
                               ]),
                             ),
                           ]),
+                          if (o['status'] != 'cancelled') ...[
+                            const SizedBox(height: 16),
+                            OrderRoad(status: asStr(o['status'])),
+                          ],
                         ]),
                       ),
                     ),
@@ -203,7 +219,9 @@ class _TimelineStep extends StatelessWidget {
     return IntrinsicHeight(
       child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Column(children: [
-          Container(
+          AnimatedContainer(
+            duration: DoqMotion.page,
+            curve: DoqMotion.easeOut,
             width: 26,
             height: 26,
             decoration: BoxDecoration(
@@ -215,10 +233,13 @@ class _TimelineStep extends StatelessWidget {
             child: done
                 ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
                 : current
-                    ? Center(child: Container(width: 10, height: 10, decoration: const BoxDecoration(color: DoqColors.secondary, shape: BoxShape.circle)))
+                    ? const Center(child: PulseDot(size: 8))
                     : null,
           ),
-          if (!last) Expanded(child: Container(width: 2, color: done ? DoqColors.ok : DoqColors.line)),
+          if (!last)
+            Expanded(
+              child: AnimatedContainer(duration: DoqMotion.page, curve: DoqMotion.easeOut, width: 2, color: done ? DoqColors.ok : DoqColors.line),
+            ),
         ]),
         const SizedBox(width: 12),
         Expanded(

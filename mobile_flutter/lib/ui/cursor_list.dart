@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/api.dart';
+import 'motion.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -43,6 +44,12 @@ class CursorListState extends State<CursorList> {
   String? _error;
   int _generation = 0;
 
+  /// Items that already played their entrance (they appear instantly when scrolled back to).
+  final Set<int> _seen = <int>{};
+
+  /// Index of the first item of the last loaded page, for the entrance stagger.
+  int _batchStart = 0;
+
   @override
   void initState() {
     super.initState();
@@ -67,6 +74,8 @@ class CursorListState extends State<CursorList> {
     setState(() {
       _generation++;
       items.clear();
+      _seen.clear();
+      _batchStart = 0;
       _cursor = null;
       _hasMore = true;
       _loading = false;
@@ -90,6 +99,7 @@ class CursorListState extends State<CursorList> {
       final page = await widget.fetch(_cursor);
       if (!mounted || generation != _generation) return;
       setState(() {
+        _batchStart = items.length;
         items.addAll(page.items);
         _cursor = page.nextCursor;
         _hasMore = page.hasMore && page.nextCursor != null;
@@ -111,10 +121,11 @@ class CursorListState extends State<CursorList> {
     if (_error != null) {
       return EmptyState(icon: Icons.wifi_off_rounded, title: _error!, actionLabel: 'حاول تاني', onAction: _load);
     }
+    if (_loading && items.isEmpty) return _skeletons();
     if (_loading) {
       return const Padding(
         padding: EdgeInsets.all(24),
-        child: Center(child: CircularProgressIndicator(color: DoqColors.primary)),
+        child: Center(child: DoqLoader()),
       );
     }
     if (items.isEmpty) return widget.empty;
@@ -127,6 +138,38 @@ class CursorListState extends State<CursorList> {
     return const SizedBox(height: 16);
   }
 
+  /// First load: card-shaped placeholders instead of a spinner.
+  Widget _skeletons() {
+    if (widget.grid) {
+      return Padding(
+        padding: widget.padding,
+        child: GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: widget.gridAspectRatio,
+          children: List.generate(4, (_) => const CardSkeleton()),
+        ),
+      );
+    }
+    return Padding(
+      padding: widget.padding,
+      child: Column(children: List.generate(4, (_) => const Padding(padding: EdgeInsets.only(bottom: 10), child: CardSkeleton(grid: false)))),
+    );
+  }
+
+  /// Each item fades and rises in once, staggered inside its page.
+  Widget _item(BuildContext context, int i) {
+    final fresh = _seen.add(i);
+    return Reveal(
+      enabled: fresh,
+      delay: i >= _batchStart ? staggerDelay(i - _batchStart) : Duration.zero,
+      child: widget.itemBuilder(context, items[i], i),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Widget body = widget.grid
@@ -137,11 +180,11 @@ class CursorListState extends State<CursorList> {
               crossAxisSpacing: 12,
               childAspectRatio: widget.gridAspectRatio,
             ),
-            delegate: SliverChildBuilderDelegate((context, i) => widget.itemBuilder(context, items[i], i), childCount: items.length),
+            delegate: SliverChildBuilderDelegate((context, i) => _item(context, i), childCount: items.length),
           )
         : SliverList(
             delegate: SliverChildBuilderDelegate(
-              (context, i) => Padding(padding: const EdgeInsets.only(bottom: 10), child: widget.itemBuilder(context, items[i], i)),
+              (context, i) => Padding(padding: const EdgeInsets.only(bottom: 10), child: _item(context, i)),
               childCount: items.length,
             ),
           );
@@ -150,7 +193,8 @@ class CursorListState extends State<CursorList> {
       onRefresh: reset,
       child: CustomScrollView(
         controller: _controller,
-        physics: const AlwaysScrollableScrollPhysics(),
+        // Bouncing + always scrollable (pull to refresh on short lists) comes from DoqScrollBehavior.
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         slivers: [
           ...widget.headerSlivers,
           SliverPadding(padding: widget.padding, sliver: body),

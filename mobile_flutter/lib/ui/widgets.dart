@@ -6,6 +6,7 @@ import '../core/session.dart';
 import '../screens/auth_screen.dart';
 import '../screens/dish_screen.dart';
 import '../screens/kitchen_screen.dart';
+import 'motion.dart';
 import 'theme.dart';
 
 const dishFallback = 'assets/images/dish.jpg';
@@ -23,6 +24,11 @@ Widget netImage(dynamic path, {String fallback = dishFallback, BoxFit fit = BoxF
     width: width,
     height: height,
     errorBuilder: (context, error, stack) => placeholder,
+    // Photos fade in when they arrive instead of popping in.
+    frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+      if (wasSynchronouslyLoaded || DoqMotion.reduced(context)) return child;
+      return AnimatedOpacity(opacity: frame == null ? 0 : 1, duration: const Duration(milliseconds: 320), curve: DoqMotion.easeOut, child: child);
+    },
     loadingBuilder: (context, child, progress) => progress == null ? child : Container(width: width, height: height, color: DoqColors.surface2),
   );
 }
@@ -43,8 +49,9 @@ Future<bool> ensureLoggedIn(BuildContext context) async {
   return ok == true && Session.instance.loggedIn;
 }
 
-void openDish(BuildContext context, dynamic id) {
-  Navigator.of(context).push(MaterialPageRoute(builder: (_) => DishScreen(dishId: asInt(id))));
+/// [heroTag] + [image] let the dish photo fly from the card into the dish page.
+void openDish(BuildContext context, dynamic id, {String? heroTag, dynamic image}) {
+  Navigator.of(context).push(MaterialPageRoute(builder: (_) => DishScreen(dishId: asInt(id), heroTag: heroTag, initialImage: image)));
 }
 
 void openKitchen(BuildContext context, dynamic id) {
@@ -196,30 +203,42 @@ class _FavouriteButtonState extends State<FavouriteButton> {
         tooltip: _on ? 'شيل من المفضلة' : 'أضف للمفضلة',
         visualDensity: VisualDensity.compact,
         onPressed: _toggle,
-        icon: Icon(_on ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: DoqColors.primary, size: 22),
+        // The heart pops when it changes.
+        icon: AnimatedSwitcher(
+          duration: DoqMotion.reduced(context) ? Duration.zero : const Duration(milliseconds: 320),
+          transitionBuilder: (child, animation) => ScaleTransition(scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack), child: child),
+          child: Icon(_on ? Icons.favorite_rounded : Icons.favorite_border_rounded, key: ValueKey<bool>(_on), color: DoqColors.primary, size: 22),
+        ),
       ),
     );
   }
 }
 
 class DishCard extends StatelessWidget {
-  const DishCard({super.key, required this.dish, this.onFavouriteChanged});
+  const DishCard({super.key, required this.dish, this.onFavouriteChanged, this.heroScope});
 
   final Map<String, dynamic> dish;
   final ValueChanged<bool>? onFavouriteChanged;
 
+  /// Unique per screen (e.g. 'home', 'fav'): the photo flies into the dish page.
+  /// Tabs stay mounted together, so two tabs must never share a scope.
+  final String? heroScope;
+
   @override
   Widget build(BuildContext context) {
     final available = dish['available'] != false;
-    return Card(
+    final heroTag = heroScope == null ? null : '$heroScope-dish-${asInt(dish['id'])}';
+    final image = netImage(dish['image_url']);
+    return Pressable(
+      child: Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => openDish(context, dish['id']),
+        onTap: () => openDish(context, dish['id'], heroTag: heroTag, image: dish['image_url']),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           AspectRatio(
             aspectRatio: 4 / 3,
             child: Stack(fit: StackFit.expand, children: [
-              netImage(dish['image_url']),
+              heroTag == null ? image : Hero(tag: heroTag, child: image),
               PositionedDirectional(
                 top: 6,
                 end: 6,
@@ -249,6 +268,7 @@ class DishCard extends StatelessWidget {
           ),
         ]),
       ),
+      ),
     );
   }
 }
@@ -261,7 +281,8 @@ class KitchenTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final city = asStr(kitchen['city']);
-    return Card(
+    return Pressable(
+      child: Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => openKitchen(context, kitchen['id']),
@@ -293,6 +314,7 @@ class KitchenTile extends StatelessWidget {
             const Icon(Icons.chevron_left_rounded, color: DoqColors.line),
           ]),
         ),
+      ),
       ),
     );
   }

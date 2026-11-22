@@ -5,15 +5,22 @@ import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../core/format.dart';
 import '../core/session.dart';
+import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'account_screen.dart';
 import 'order_screen.dart';
 
 class DishScreen extends StatefulWidget {
-  const DishScreen({super.key, required this.dishId});
+  const DishScreen({super.key, required this.dishId, this.heroTag, this.initialImage});
 
   final int dishId;
+
+  /// Set when opened from a dish card: the card photo flies into the header.
+  final String? heroTag;
+
+  /// Photo shown in the header while the dish loads.
+  final dynamic initialImage;
 
   @override
   State<DishScreen> createState() => _DishScreenState();
@@ -115,6 +122,21 @@ class _DishScreenState extends State<DishScreen> {
     );
   }
 
+  Widget _headerImage(dynamic path) {
+    final image = netImage(path);
+    return widget.heroTag == null ? image : Hero(tag: widget.heroTag!, child: image);
+  }
+
+  PreferredSizeWidget _floatingBar() {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      leading: Padding(
+        padding: const EdgeInsets.all(6),
+        child: CircleAvatar(backgroundColor: Colors.black38, child: BackButton(color: Colors.white, onPressed: () => Navigator.of(context).pop())),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dish = _dish;
@@ -125,22 +147,26 @@ class _DishScreenState extends State<DishScreen> {
       );
     }
     if (dish == null) {
-      return Scaffold(appBar: AppBar(), body: const Center(child: CircularProgressIndicator(color: DoqColors.primary)));
+      // Same layout as the loaded page, so the photo is in place for the hero flight.
+      return Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: _floatingBar(),
+        body: ListView(padding: EdgeInsets.zero, children: [
+          AspectRatio(aspectRatio: 4 / 3, child: _headerImage(widget.initialImage)),
+          const Padding(padding: EdgeInsets.all(40), child: LoadingView()),
+        ]),
+      );
     }
     final ingredients = asList(dish['ingredients']).map((e) => '$e').where((e) => e.isNotEmpty).toList();
     final fee = asNum(dish['delivery_fee']);
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        leading: Padding(
-          padding: const EdgeInsets.all(6),
-          child: CircleAvatar(backgroundColor: Colors.black38, child: BackButton(color: Colors.white, onPressed: () => Navigator.of(context).pop())),
-        ),
-      ),
+      appBar: _floatingBar(),
       body: ListView(padding: EdgeInsets.zero, children: [
-        AspectRatio(aspectRatio: 4 / 3, child: netImage(dish['image_url'])),
-        Container(
+        AspectRatio(aspectRatio: 4 / 3, child: _headerImage(dish['image_url'])),
+        Reveal(
+          offset: 40,
+          child: Container(
           transform: Matrix4.translationValues(0, -22, 0),
           decoration: const BoxDecoration(color: DoqColors.background, borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
@@ -205,7 +231,7 @@ class _DishScreenState extends State<DishScreen> {
                   child: Column(children: [
                     for (var i = 0; i < _reviews.length; i++) _ReviewTile(review: _reviews[i], last: i == _reviews.length - 1 && !_reviewsMore),
                     if (_reviewsLoading)
-                      const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: DoqColors.primary))
+                      const Padding(padding: EdgeInsets.all(16), child: DoqLoader(size: 8))
                     else if (_reviewsMore)
                       TextButton(onPressed: _loadReviews, child: const Text('عرض المزيد', style: TextStyle(fontWeight: FontWeight.w800))),
                   ]),
@@ -214,8 +240,11 @@ class _DishScreenState extends State<DishScreen> {
             const SizedBox(height: 100),
           ]),
         ),
+        ),
       ]),
-      bottomNavigationBar: SafeArea(
+      bottomNavigationBar: Reveal(
+        delay: const Duration(milliseconds: 160),
+        child: SafeArea(
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
           decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: DoqColors.line))),
@@ -226,9 +255,10 @@ class _DishScreenState extends State<DishScreen> {
                 Text(money(dish['price']), style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: DoqColors.primary)),
               ]),
             ),
-            FilledButton.icon(onPressed: _openOrderSheet, icon: const Icon(Icons.shopping_bag_outlined), label: const Text('اطلب دلوقتي')),
+            Pressable(child: FilledButton.icon(onPressed: _openOrderSheet, icon: const Icon(Icons.shopping_bag_outlined), label: const Text('اطلب دلوقتي'))),
           ]),
         ),
+      ),
       ),
     );
   }

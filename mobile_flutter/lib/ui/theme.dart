@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'motion.dart';
+
 /// DOQ identity (same as the website): Tajawal, burgundy #9e2016, orange #fc7127, cream surfaces.
 class DoqColors {
   static const primary = Color(0xFF9E2016);
@@ -32,6 +34,10 @@ ThemeData buildTheme() {
   final text = GoogleFonts.tajawalTextTheme(base.textTheme).apply(bodyColor: DoqColors.ink, displayColor: DoqColors.ink);
   return base.copyWith(
     textTheme: text,
+    pageTransitionsTheme: const PageTransitionsTheme(builders: {
+      TargetPlatform.android: DoqPageTransitionsBuilder(),
+      TargetPlatform.iOS: DoqPageTransitionsBuilder(),
+    }),
     appBarTheme: AppBarTheme(
       backgroundColor: DoqColors.background,
       foregroundColor: DoqColors.ink,

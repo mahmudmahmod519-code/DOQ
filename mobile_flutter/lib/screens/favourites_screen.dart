@@ -47,6 +47,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
         fetch: (cursor) => Api.instance.page('/m/api/v1/favourites', cursor),
         itemBuilder: (context, dish, i) => DishCard(
           dish: dish,
+          heroScope: 'fav',
           onFavouriteChanged: (on) {
             if (!on) _listKey.currentState?.removeWhere((d) => d['id'] == dish['id']);
           },

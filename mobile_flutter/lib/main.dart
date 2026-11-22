@@ -6,6 +6,7 @@ import 'core/api.dart';
 import 'core/session.dart';
 import 'screens/server_screen.dart';
 import 'screens/shell.dart';
+import 'ui/motion.dart';
 import 'ui/theme.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -68,6 +69,7 @@ class _DoqAppState extends State<DoqApp> with WidgetsBindingObserver {
       navigatorKey: navigatorKey,
       scaffoldMessengerKey: messengerKey,
       theme: buildTheme(),
+      scrollBehavior: const DoqScrollBehavior(),
       locale: const Locale('ar', 'EG'),
       supportedLocales: const [Locale('ar', 'EG'), Locale('en')],
       localizationsDelegates: const [
@@ -75,7 +77,7 @@ class _DoqAppState extends State<DoqApp> with WidgetsBindingObserver {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: Api.instance.hasServer ? const Shell() : const ServerScreen(firstRun: true),
+      home: LaunchCurtain(child: Api.instance.hasServer ? const Shell() : const ServerScreen(firstRun: true)),
     );
   }
 }

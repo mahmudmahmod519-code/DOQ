@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/session.dart';
+import '../ui/motion.dart';
 import '../ui/theme.dart';
 import 'account_screen.dart';
 import 'favourites_screen.dart';
@@ -45,17 +46,22 @@ class ShellState extends State<Shell> {
     return ValueListenableBuilder<Map<String, dynamic>?>(
       valueListenable: Session.instance.me,
       builder: (context, me, _) {
+        final tabs = <Widget>[
+          const HomeScreen(),
+          const KitchensScreen(),
+          OrdersScreen(key: ValueKey('orders-${me != null}')),
+          FavouritesScreen(key: ValueKey('fav-${me != null}')),
+          AccountScreen(key: ValueKey('acc-${me != null}')),
+        ];
+        // All tabs stay mounted (state is kept, like IndexedStack); the active one fades and rises in.
         return Scaffold(
-          body: IndexedStack(index: index, children: [
-            const HomeScreen(),
-            const KitchensScreen(),
-            OrdersScreen(key: ValueKey('orders-${me != null}')),
-            FavouritesScreen(key: ValueKey('fav-${me != null}')),
-            AccountScreen(key: ValueKey('acc-${me != null}')),
+          body: Stack(children: [
+            for (var i = 0; i < tabs.length; i++) Positioned.fill(child: _TabLayer(active: i == index, child: tabs[i])),
           ]),
           bottomNavigationBar: ValueListenableBuilder<int>(
             valueListenable: Notifications.instance.activeOrders,
             builder: (context, active, _) => NavigationBar(
+              animationDuration: const Duration(milliseconds: 450),
               selectedIndex: index,
               onDestinationSelected: select,
               destinations: [
@@ -73,6 +79,36 @@ class ShellState extends State<Shell> {
           ),
         );
       },
+    );
+  }
+}
+
+class _TabLayer extends StatelessWidget {
+  const _TabLayer({required this.active, required this.child});
+
+  final bool active;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final duration = DoqMotion.reduced(context) ? Duration.zero : DoqMotion.quick;
+    return IgnorePointer(
+      ignoring: !active,
+      child: ExcludeSemantics(
+        excluding: !active,
+        child: AnimatedOpacity(
+          opacity: active ? 1 : 0,
+          duration: duration,
+          curve: DoqMotion.easeOut,
+          child: AnimatedSlide(
+            offset: active ? Offset.zero : const Offset(0, 0.02),
+            duration: duration,
+            curve: DoqMotion.easeOut,
+            // Hidden tabs stop their own animations (loaders, pulses) to save battery.
+            child: TickerMode(enabled: active, child: child),
+          ),
+        ),
+      ),
     );
   }
 }

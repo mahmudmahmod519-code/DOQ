@@ -6,6 +6,7 @@ import '../core/api.dart';
 import '../core/format.dart';
 import '../core/session.dart';
 import '../ui/cursor_list.dart';
+import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'notification_bell.dart';
@@ -82,8 +83,18 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_filtering || _activeOrders.isEmpty) return const SizedBox.shrink();
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       const SectionTitle('طلباتك الجارية'),
-      for (final o in _activeOrders)
-        Padding(
+      for (var i = 0; i < _activeOrders.length; i++)
+        Reveal(
+          key: ValueKey('active-${asStr(_activeOrders[i]['public_id'])}'),
+          delay: staggerDelay(i),
+          child: _activeOrderTile(_activeOrders[i]),
+        ),
+    ]);
+  }
+
+  Widget _activeOrderTile(Map<String, dynamic> o) {
+    return Pressable(
+      child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
           child: Material(
             color: DoqColors.surface3,
@@ -100,23 +111,42 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: DoqColors.secondary.withValues(alpha: 0.5)),
                 ),
-                child: Row(children: [
-                  const CircleAvatar(backgroundColor: DoqColors.secondary, child: Icon(Icons.delivery_dining_rounded, color: Colors.white)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('${asStr(o['dish_name'])} × ${asInt(o['quantity'])}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
-                      Text(statusLabel(asStr(o['status'])), style: const TextStyle(color: DoqColors.primary, fontWeight: FontWeight.w700, fontSize: 13)),
-                    ]),
-                  ),
-                  const Text('تتبع', style: TextStyle(color: DoqColors.primary, fontWeight: FontWeight.w800)),
-                  const Icon(Icons.chevron_left_rounded, color: DoqColors.primary),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Row(children: [
+                    const CircleAvatar(backgroundColor: DoqColors.secondary, child: Icon(Icons.delivery_dining_rounded, color: Colors.white)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('${asStr(o['dish_name'])} × ${asInt(o['quantity'])}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
+                        Row(children: [
+                          const PulseDot(size: 7),
+                          const SizedBox(width: 2),
+                          Flexible(
+                            child: AnimatedSwitcher(
+                              duration: DoqMotion.quick,
+                              child: Text(
+                                statusLabel(asStr(o['status'])),
+                                key: ValueKey(asStr(o['status'])),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: DoqColors.primary, fontWeight: FontWeight.w700, fontSize: 13),
+                              ),
+                            ),
+                          ),
+                        ]),
+                      ]),
+                    ),
+                    const Text('تتبع', style: TextStyle(color: DoqColors.primary, fontWeight: FontWeight.w800)),
+                    const Icon(Icons.chevron_left_rounded, color: DoqColors.primary),
+                  ]),
+                  const SizedBox(height: 10),
+                  OrderRoad(status: asStr(o['status']), height: 30),
                 ]),
               ),
             ),
           ),
         ),
-    ]);
+    );
   }
 
   Widget _reorderStrip() {
@@ -132,7 +162,10 @@ class _HomeScreenState extends State<HomeScreen> {
           separatorBuilder: (_, __) => const SizedBox(width: 10),
           itemBuilder: (context, i) {
             final o = _reorder[i];
-            return SizedBox(
+            return Reveal(
+              delay: staggerDelay(i),
+              child: Pressable(
+                child: SizedBox(
               width: 130,
               child: Card(
                 clipBehavior: Clip.antiAlias,
@@ -150,6 +183,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ]),
                 ),
+              ),
+            ),
               ),
             );
           },
@@ -189,21 +224,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _hero() {
     final name = asStr(Session.instance.me.value?['first_name']);
-    return Container(
+    return Reveal(
+      child: LiveGradient(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: const LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [DoqColors.primary, DoqColors.primaryDark, Color(0xFF4A0D08)],
-        ),
-      ),
+      colors: const [DoqColors.primary, DoqColors.primaryDark, Color(0xFF4A0D08)],
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(name.isEmpty ? 'أهلاً بيك في دوق' : 'أهلاً يا $name', style: const TextStyle(color: Colors.white70, fontSize: 13)),
         const SizedBox(height: 4),
-        const Text('عايز تاكل إيه النهارده؟', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+        const Reveal(
+          delay: Duration(milliseconds: 120),
+          offset: 12,
+          child: Text('عايز تاكل إيه النهارده؟', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+        ),
         const SizedBox(height: 14),
         TextField(
           controller: _search,
@@ -226,6 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ]),
+      ),
     );
   }
 
@@ -268,7 +302,10 @@ class _HomeScreenState extends State<HomeScreen> {
           separatorBuilder: (_, __) => const SizedBox(width: 12),
           itemBuilder: (context, i) {
             final k = _kitchens[i];
-            return SizedBox(
+            return Reveal(
+              delay: staggerDelay(i),
+              child: Pressable(
+                child: SizedBox(
               width: 260,
               child: Card(
                 clipBehavior: Clip.antiAlias,
@@ -295,6 +332,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ]),
                 ),
               ),
+            ),
+              ),
             );
           },
         ),
@@ -318,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
         key: _listKey,
         grid: true,
         fetch: (cursor) => Api.instance.page('/m/api/v1/dishes', cursor, {'q': _q, 'category_id': _categoryId}),
-        itemBuilder: (context, dish, i) => DishCard(dish: dish),
+        itemBuilder: (context, dish, i) => DishCard(dish: dish, heroScope: 'home'),
         empty: const EmptyState(icon: Icons.search_off_rounded, title: 'مفيش أطباق مطابقة', text: 'جرب كلمة تانية أو تصنيف مختلف'),
         headerSlivers: [
           SliverToBoxAdapter(child: _hero()),
