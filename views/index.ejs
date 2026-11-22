@@ -3,11 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#9e2016">
+  <meta name="theme-color" content="#261816">
   <title>دوق | اطلب أكلك من مطبخك المفضل</title>
+  <meta name="description" content="دوق بيجمعلك المطابخ البيتي اللي حواليك: شوف المنيو والتقييمات، اطلب طبقك وتابعه من المطبخ لحد باب بيتك.">
+  <script>
+    // Hide animated elements before first paint only when JS runs; landing.js removes
+    // the class if the animation library is missing so content never stays hidden.
+    document.documentElement.classList.add('lp-js');
+    try {
+      if (!sessionStorage.getItem('doq-intro') && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        sessionStorage.setItem('doq-intro', '1');
+        document.documentElement.classList.add('lp-intro');
+      }
+    } catch (e) {}
+    setTimeout(function () { if (!document.documentElement.classList.contains('lp-ready')) document.documentElement.classList.remove('lp-js'); }, 3500);
+  </script>
   <script src="/app-client.js"></script>
   <link rel="manifest" href="/manifest.webmanifest">
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;500;600;700;800;900&family=Reem+Kufi:wght@500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -30,26 +45,17 @@
             secondary: '#fc7127',
             line: '#e1bfb9'
           },
-          fontFamily: { cairo: ['Cairo', 'sans-serif'] },
-          boxShadow: {
-            card: '0 12px 30px rgba(38, 24, 22, .08)',
-            soft: '0 5px 20px rgba(158, 32, 22, .12)'
-          }
+          fontFamily: { cairo: ['Cairo', 'sans-serif'] }
         }
       }
     }
   </script>
-  <style>
-    :root { color-scheme: light; }
-    body { font-family: Cairo, sans-serif; background: #fff8f6; color: #261816; }
-    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-    .hero-pattern { background: radial-gradient(circle at 12% 15%, rgba(252,113,39,.18), transparent 30%), radial-gradient(circle at 88% 75%, rgba(158,32,22,.28), transparent 34%); }
-    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  </style>
+  <link rel="stylesheet" href="/landing/landing.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/motion@12.38.0/dist/motion.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/lenis@1/dist/lenis.min.js"></script>
+  <script defer src="/landing/landing.js"></script>
 </head>
-<body class="min-h-screen bg-surface text-ink antialiased">
-  <%- include('./partials/header.ejs') %>
-
+<body class="lp-body">
   <%
     const role = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.roles : 'guest';
     const name = (typeof currentUser !== 'undefined' && currentUser && currentUser.first_name) ? currentUser.first_name : 'ضيفنا';
@@ -60,138 +66,242 @@
       customer: { href: '/m', label: 'افتح تطبيق دوق', icon: 'smartphone' }
     };
     const dashboard = dashboards[role];
+    const cats = (typeof categories !== 'undefined' && categories) ? categories : [];
+    const kits = ((typeof kitchens !== 'undefined' && kitchens) ? kitchens : []).slice(0, 6);
+    const tags = cats.length ? cats.slice(0, 6).map(c => c.name) : ['محشي', 'ملوخية', 'طواجن', 'مكرونة بشاميل', 'فطير'];
+    const stops = [
+      { at: 0.06, icon: 'storefront', title: 'اختار مطبخك', text: 'تصفح المطابخ اللي حواليك، المنيو والتقييمات قدامك قبل ما تطلب.' },
+      { at: 0.35, icon: 'skillet', title: 'الشيف بيجهز', text: 'المطبخ بيقبل طلبك ويبدأ يطبخ طازة، وانت بتتابع الحالة لحظة بلحظة.' },
+      { at: 0.64, icon: 'two_wheeler', title: 'الطيار استلم', text: 'مندوب التوصيل بيستلم الطلب من المطبخ وبيتحرك على عنوانك.' },
+      { at: 0.95, icon: 'home', title: 'عند باب بيتك', text: 'تستلم طبقك سخن، وتقيّم التجربة عشان غيرك يعرف يختار.' }
+    ];
+    // Road for wide screens (right to left) and for phones (top to bottom). Points are % of the map box.
+    const roadLayouts = [
+      { key: 'h', vb: [1200, 520], d: 'M1150 90 C 1010 90, 980 250, 840 250 S 650 110, 520 170 S 330 420, 220 360 S 60 300, 50 440',
+        start: [95.83, 17.31], pts: [[89.39, 20.97], [61.21, 42.65], [33.37, 51.63], [5.04, 71.9]] },
+      { key: 'v', vb: [400, 640], d: 'M320 24 C 320 140, 80 110, 80 230 S 320 330, 320 440 S 90 520, 90 616',
+        start: [80, 3.75], pts: [[74.19, 12.01], [20.08, 37.12], [76.28, 62.18], [27.88, 89.58]] }
+    ];
   %>
 
-  <main class="pt-16 sm:pt-20">
-    <section class="relative overflow-hidden bg-ink text-white">
-      <div class="hero-pattern absolute inset-0"></div>
-      <div class="absolute inset-y-0 left-0 hidden w-1/2 bg-cover bg-center opacity-35 lg:block" style="background-image:url('/assests/hero.jpeg')"></div>
-      <div class="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 md:py-20 lg:grid-cols-[1.1fr_.9fr] lg:px-8 lg:py-24">
-        <div class="max-w-2xl">
-          <span class="inline-flex items-center gap-2 rounded-full border border-secondary/40 bg-secondary/10 px-4 py-2 text-sm font-bold text-orange-100">
-            <span class="material-symbols-outlined text-secondary">restaurant_menu</span>
-            أكل بيتي بطعم تحبه
-          </span>
-          <h1 class="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">اطلب طبقك من المطبخ اللي يناسبك</h1>
-          <p class="mt-5 max-w-xl text-base leading-8 text-white/75 sm:text-lg">شوف الأطباق والمطابخ المتاحة واختار طلبك بوضوح. كل مطبخ له منيوه وتفاصيله وتقييماته.</p>
-          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a href="/m/kitchens" class="inline-flex items-center justify-center gap-2 rounded-xl bg-secondary px-6 py-3.5 font-extrabold text-white shadow-soft transition hover:bg-orange-500 focus:outline-none focus:ring-2 focus:ring-white">
-              <span class="material-symbols-outlined">search</span>
-              استكشف المطابخ
-            </a>
-            <% if (dashboard) { %>
-              <a href="<%= dashboard.href %>" class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3.5 font-bold text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white">
-                <span class="material-symbols-outlined"><%= dashboard.icon %></span>
-                <%= dashboard.label %>
-              </a>
-            <% } else { %>
-              <a href="/auth" class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3.5 font-bold text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white">
-                <span class="material-symbols-outlined">person_add</span>
-                اعمل حساب
-              </a>
-            <% } %>
-          </div>
-          <p class="mt-5 text-sm text-white/55"><%= role === 'guest' ? 'تقدر تتصفح المنيو كضيف وتسجل وقت ما تكون جاهز' : 'أهلاً يا ' + name + '، تقدر تتابع طلباتك من زر لوحتك' %></p>
+  <!-- Intro curtain (first visit of the session) -->
+  <div class="lp-curtain" aria-hidden="true">
+    <div class="lp-curtain__inner">
+      <img src="/assests/doq_logo.png" alt="" class="lp-curtain__logo" width="88" height="88">
+      <p class="lp-curtain__kicker">من مطبخ البيت</p>
+      <p class="lp-curtain__title"><span>دوق</span></p>
+    </div>
+  </div>
+
+  <%- include('./partials/header.ejs') %>
+
+  <main class="lp-main">
+    <!-- 1. Hero: trace line + split image (inspired by traced.life) -->
+    <section class="lp-hero" data-hero>
+      <div class="lp-hero__media" data-hero-media>
+        <img src="/assests/background_kitchen.jpeg" alt="" class="lp-hero__img" fetchpriority="high">
+        <div class="lp-hero__soft"></div>
+      </div>
+
+      <div class="lp-hero__trace" aria-hidden="true">
+        <span style="--w:7%"></span><span style="--w:3%"></span><span style="--w:11%"></span><span style="--w:5%" class="is-gap"></span>
+        <span style="--w:14%"></span><span style="--w:4%"></span><span style="--w:9%"></span><span style="--w:6%" class="is-gap"></span>
+        <span style="--w:12%"></span><span style="--w:2%"></span><span style="--w:8%"></span><span style="--w:5%"></span>
+        <div class="lp-hero__tag" data-tags='<%= JSON.stringify(tags) %>'>
+          <span class="lp-dot"></span><span data-tag-text><%= tags[0] %></span>
         </div>
-        <div class="relative hidden lg:block">
-          <div class="absolute -inset-4 rounded-[2rem] border border-secondary/25"></div>
-          <img src="/assests/high_end_collage_of_delicious_homemade_middle_eastern_meals_warm_lighting_cozy.png" alt="أطباق متنوعة من مطابخ دوق" class="relative h-[390px] w-full rounded-[2rem] object-cover shadow-2xl" loading="eager">
-          <div class="absolute -bottom-5 right-6 rounded-2xl bg-white px-5 py-4 text-ink shadow-card">
-            <p class="text-xs font-bold text-muted">ابدأ من هنا</p>
-            <p class="mt-1 font-extrabold text-primary">اختار مطبخك ثم طبقك</p>
+      </div>
+
+      <div class="lp-hero__content" data-hero-content>
+        <h1 class="lp-hero__title">
+          <span class="lp-line"><span>طعم البيت بيسيب أثر.</span></span>
+          <span class="lp-line"><span>ودلوقتي يوصلك لحد بابك.</span></span>
+        </h1>
+        <p class="lp-hero__sub lp-fade">شوف المطابخ البيتي اللي حواليك، اختار طبقك، وتابعه من المطبخ لحد ما يوصلك.</p>
+        <div class="lp-hero__cta lp-fade">
+          <a href="/m/kitchens" class="lp-btn lp-btn--light">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>استكشف المطابخ
+          </a>
+          <% if (dashboard) { %>
+            <a href="<%= dashboard.href %>" class="lp-btn lp-btn--ghost">
+              <span class="material-symbols-outlined" aria-hidden="true"><%= dashboard.icon %></span><%= dashboard.label %>
+            </a>
+          <% } else { %>
+            <a href="/auth" class="lp-btn lp-btn--ghost">
+              <span class="material-symbols-outlined" aria-hidden="true">person_add</span>اعمل حساب
+            </a>
+          <% } %>
+        </div>
+        <p class="lp-hero__hello lp-fade"><%= role === 'guest' ? 'تقدر تتصفح المنيو كضيف وتسجل وقت ما تكون جاهز' : 'أهلاً يا ' + name + '، لوحتك من الزرار اللي فوق' %></p>
+      </div>
+
+      <div class="lp-hero__foot">
+        <ul class="lp-hero__facts lp-fade">
+          <li><strong>مطابخ بيتي</strong><span>كل مطبخ بيتراجع قبل ما يستقبل طلبات</span></li>
+          <li><strong>تتبع لحظي</strong><span>من قبول الطلب لحد الباب</span></li>
+          <li><strong>تقييمات حقيقية</strong><span>من ناس طلبت فعلاً</span></li>
+        </ul>
+        <a href="/m" class="lp-hero__card lp-fade">
+          <img src="/assests/doq_logo.png" alt="" width="44" height="44">
+          <span><strong>تطبيق دوق</strong><small>اطلب من موبايلك</small></span>
+          <span class="lp-hero__card-go material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 2. Pinned word-by-word reveal (inspired by traced.life) -->
+    <section class="lp-story" data-story aria-labelledby="lp-story-title">
+      <div class="lp-story__stick">
+        <div class="lp-story__bg" data-story-bg><img src="/assests/background_kitchen2.jpeg" alt="" loading="lazy"></div>
+        <div class="lp-story__wrap">
+          <span class="lp-pill" id="lp-story-title">ليه دوق</span>
+          <div class="lp-story__body">
+            <span class="lp-story__bar" aria-hidden="true"><i data-story-bar></i></span>
+            <p class="lp-story__text" data-words>إيه اللي في طبقك النهارده؟ أكل مطاعم شبه بعضه، ولا أكل معمول في بيت بإيد حد بيحب اللي بيعمله؟ دوق بيجمعلك المطابخ البيتي اللي حواليك في مكان واحد. تشوف المنيو والتقييمات، تطلب طبقك، وتتابعه من المطبخ لحد باب بيتك.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="border-b border-line/60 bg-white">
-      <div class="mx-auto flex max-w-7xl items-center gap-4 overflow-x-auto px-4 py-6 sm:px-6 lg:px-8">
-        <div class="shrink-0 pl-2 text-sm font-extrabold text-muted">اتفرج على التصنيفات</div>
-        <% if (categories && categories.length) { %>
-          <% categories.slice(0, 8).forEach(category => { %>
-            <a href="/m?q=<%= encodeURIComponent(category.name) %>" class="group flex shrink-0 items-center gap-2 rounded-full border border-line/70 bg-surface px-3 py-2 transition hover:border-secondary hover:bg-surface-low">
-              <img src="<%= category.image || '/assests/category.jpeg' %>" alt="<%= category.name %>" class="h-9 w-9 rounded-full object-cover" loading="lazy">
-              <span class="text-sm font-bold text-ink group-hover:text-primary"><%= category.name %></span>
-            </a>
-          <% }) %>
-        <% } else { %>
-          <span class="text-sm text-muted">التصنيفات هتظهر هنا أول ما تتوفر</span>
-        <% } %>
-      </div>
-    </section>
+    <!-- 3. The order road trip (inspired by Expedia Route 66) -->
+    <section class="lp-route" data-route aria-labelledby="lp-route-title">
+      <div class="lp-route__stick">
+        <header class="lp-route__head lp-up">
+          <div>
+            <span class="lp-kicker">الطريقة بسيطة</span>
+            <h2 class="lp-display" id="lp-route-title">رحلة طبقك</h2>
+          </div>
+          <p class="lp-route__count" aria-hidden="true"><span data-route-count>01</span> / 04</p>
+        </header>
 
-    <section class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
-      <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <p class="text-sm font-extrabold text-secondary">اختيارات قريبة منك</p>
-          <h2 class="mt-2 text-3xl font-black text-primary sm:text-4xl">مطابخ تقدر تبدأ منها</h2>
-          <p class="mt-2 text-sm text-muted">افتح صفحة المطبخ وشوف المنيو والتقييمات والعنوان قبل ما تطلب</p>
-        </div>
-        <a href="/m/kitchens" class="inline-flex items-center gap-1 font-bold text-primary hover:text-secondary">كل المطابخ <span class="material-symbols-outlined text-lg">arrow_back</span></a>
-      </div>
-      <div class="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        <% if (kitchens && kitchens.length) { %>
-          <% kitchens.slice(0, 6).forEach(kitchen => { %>
-            <article class="group overflow-hidden rounded-2xl border border-line/50 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-card">
-              <a href="/m/kitchens/<%= kitchen.id %>" class="block">
-                <div class="relative h-52 overflow-hidden bg-surface-high">
-                  <img src="<%= kitchen.image || kitchen.portfolio_url || '/assests/profile_kitchen.jpeg' %>" alt="<%= kitchen.title %>" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" onerror="this.src='/assests/profile_kitchen.jpeg'">
-                  <span class="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-white/95 px-3 py-1 text-xs font-extrabold text-ink shadow-sm"><span class="material-symbols-outlined text-sm text-amber-500">star</span><%= kitchen.avg_rating || kitchen.rating || 'جديد' %></span>
-                </div>
-                <div class="p-5">
-                  <h3 class="text-xl font-extrabold text-ink group-hover:text-primary"><%= kitchen.title %></h3>
-                  <p class="mt-2 text-sm text-muted"><span class="material-symbols-outlined ml-1 text-base text-secondary">person</span><%= kitchen.chef_name || 'مطبخ دوق' %></p>
-                  <div class="mt-5 flex items-center justify-between border-t border-line/50 pt-4 text-sm font-bold text-muted">
-                    <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-base text-secondary">location_on</span><%= kitchen.city || 'مصر' %></span>
-                    <span class="text-primary">شوف المنيو <span class="material-symbols-outlined align-middle text-base">arrow_back</span></span>
-                  </div>
-                </div>
-              </a>
+        <% roadLayouts.forEach(layout => { %>
+          <div class="lp-route__map lp-route__map--<%= layout.key %>" data-map data-vb="<%= layout.vb.join(' ') %>">
+            <svg class="lp-route__svg" viewBox="0 0 <%= layout.vb.join(' ') %>" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+              <path d="<%= layout.d %>" class="lp-road lp-road--base" data-geo />
+              <path d="<%= layout.d %>" class="lp-road lp-road--dash" />
+              <path d="<%= layout.d %>" class="lp-road lp-road--done" pathLength="1" data-road />
+            </svg>
+            <div class="lp-scooter" data-scooter aria-hidden="true" style="--x:<%= layout.start[0] %>%;--y:<%= layout.start[1] %>%"><span class="material-symbols-outlined">two_wheeler</span></div>
+            <ol class="lp-route__stops">
+              <% stops.forEach((stop, i) => { const pt = layout.pts[i]; %>
+                <li class="lp-stop<%= i === 0 ? ' is-on' : '' %><%= pt[0] < 50 ? ' to-right' : '' %>" data-stop="<%= i %>" data-at="<%= stop.at %>" style="--x:<%= pt[0] %>%;--y:<%= pt[1] %>%">
+                  <span class="lp-shield"><span><%= String(i + 1).padStart(2, '0') %></span></span>
+                  <span class="lp-stop__label"><%= stop.title %></span>
+                </li>
+              <% }) %>
+            </ol>
+          </div>
+        <% }) %>
+
+        <div class="lp-route__cards">
+          <% stops.forEach((stop, i) => { %>
+            <article class="lp-route__card<%= i === 0 ? ' is-active' : '' %>" data-card="<%= i %>">
+              <span class="lp-route__icon material-symbols-outlined" aria-hidden="true"><%= stop.icon %></span>
+              <div>
+                <h3><%= stop.title %></h3>
+                <p><%= stop.text %></p>
+              </div>
             </article>
           <% }) %>
-        <% } else { %>
-          <div class="rounded-2xl border border-dashed border-line bg-white p-10 text-center md:col-span-2 lg:col-span-3">
-            <span class="material-symbols-outlined text-5xl text-line">storefront</span>
-            <p class="mt-3 font-bold text-muted">لسه مفيش مطابخ متاحة للعرض</p>
-          </div>
-        <% } %>
-      </div>
-    </section>
-
-    <section class="bg-surface-low">
-      <div class="mx-auto grid max-w-7xl gap-5 px-4 py-14 sm:px-6 md:grid-cols-3 lg:px-8">
-        <div class="md:col-span-3">
-          <p class="text-sm font-extrabold text-secondary">الطريقة بسيطة</p>
-          <h2 class="mt-2 text-3xl font-black text-primary">من أول التصفح لحد تأكيد الطلب</h2>
         </div>
-        <% const steps = [
-          { icon: 'storefront', title: 'اختار المطبخ', text: 'قارن المطابخ حسب المدينة والتقييم والمنيو' },
-          { icon: 'restaurant_menu', title: 'اختار الطبق', text: 'افتح تفاصيل الطبق وحدد الكمية واسم الطلب' },
-          { icon: 'local_shipping', title: 'تابع الطلب', text: 'المطبخ والتوصيل يحدثوا الحالة لحد ما يكتمل الطلب' }
-        ]; %>
-        <% steps.forEach((step, index) => { %>
-          <article class="rounded-2xl border border-line/50 bg-white p-6 shadow-sm">
-            <div class="flex items-center gap-3"><span class="flex h-11 w-11 items-center justify-center rounded-xl bg-surface-high text-primary"><span class="material-symbols-outlined"><%= step.icon %></span></span><span class="text-sm font-black text-secondary">0<%= index + 1 %></span></div>
-            <h3 class="mt-5 text-xl font-extrabold text-ink"><%= step.title %></h3>
-            <p class="mt-2 text-sm leading-7 text-muted"><%= step.text %></p>
-          </article>
-        <% }) %>
       </div>
     </section>
 
-    <% if (role === 'guest' || role === 'customer') { %>
-      <section class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div class="relative overflow-hidden rounded-3xl bg-primary px-6 py-10 text-white shadow-card sm:px-10 lg:flex lg:items-center lg:justify-between">
-          <div class="relative max-w-2xl">
-            <span class="text-sm font-bold text-orange-200">عندك أكل بتحبه وعايز تعرضه؟</span>
-            <h2 class="mt-3 text-3xl font-black sm:text-4xl">خلّي مطبخك يوصل لناس أكتر</h2>
-            <p class="mt-3 max-w-xl leading-8 text-white/75">سجل كطاهٍ. بعد التسجيل الحساب بيتراجع من الإدارة قبل ما يبدأ استقبال الطلبات</p>
-            <a href="/auth" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-secondary px-6 py-3 font-extrabold text-white transition hover:bg-orange-500"><span class="material-symbols-outlined">restaurant</span>سجل كمطبخ</a>
-          </div>
-          <img src="/assests/chef_landing.jpeg" alt="طاهٍ يجهز الطعام" class="relative mt-8 hidden h-44 w-44 rounded-full border-4 border-white/20 object-cover lg:mt-0 lg:block" loading="lazy">
+    <!-- 4. Categories marquee -->
+    <% if (cats.length) { %>
+      <section class="lp-marquee" aria-label="التصنيفات">
+        <div class="lp-marquee__track" data-marquee>
+          <% for (let pass = 0; pass < 2; pass++) { %>
+            <ul class="lp-marquee__list" <%- pass ? 'aria-hidden="true"' : '' %>>
+              <% cats.slice(0, 10).forEach(category => { %>
+                <li>
+                  <a href="/m?q=<%= encodeURIComponent(category.name) %>" <%- pass ? 'tabindex="-1"' : '' %>>
+                    <img src="<%= category.image || '/assests/category.jpeg' %>" alt="" loading="lazy">
+                    <span><%= category.name %></span>
+                  </a>
+                </li>
+              <% }) %>
+            </ul>
+          <% } %>
         </div>
       </section>
     <% } %>
+
+    <!-- 5. Kitchens, editorial two-column grid with parallax (inspired by spykercars.com) -->
+    <section class="lp-kitchens" aria-labelledby="lp-kitchens-title">
+      <header class="lp-kitchens__head lp-up">
+        <div>
+          <span class="lp-kicker">اختيارات قريبة منك</span>
+          <h2 class="lp-display" id="lp-kitchens-title">مطابخ تستاهل تدوقها</h2>
+          <p>افتح صفحة المطبخ وشوف المنيو والتقييمات والعنوان قبل ما تطلب.</p>
+        </div>
+        <a href="/m/kitchens" class="lp-link">كل المطابخ <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span></a>
+      </header>
+
+      <% if (kits.length) { %>
+        <div class="lp-kitchens__grid">
+          <% [0, 1].forEach(col => { %>
+            <div class="lp-kitchens__col" <%- col ? 'data-parallax="-0.18"' : '' %>>
+              <% kits.forEach((kitchen, i) => { if (i % 2 !== col) return; %>
+                <a href="/m/kitchens/<%= kitchen.id %>" class="lp-kcard<%= (i % 3 === 1) ? ' is-tall' : '' %>">
+                  <figure class="lp-kcard__media" data-reveal>
+                    <img src="<%= kitchen.image || kitchen.portfolio_url || '/assests/profile_kitchen.jpeg' %>" alt="<%= kitchen.title %>" loading="lazy" onerror="this.src='/assests/profile_kitchen.jpeg'">
+                    <span class="lp-kcard__rate"><span class="material-symbols-outlined" aria-hidden="true">star</span><%= kitchen.avg_rating || kitchen.rating || 'جديد' %></span>
+                  </figure>
+                  <div class="lp-kcard__cap">
+                    <h3><%= kitchen.title %></h3>
+                    <p><%= kitchen.chef_name || 'مطبخ دوق' %> · <%= kitchen.city || 'مصر' %></p>
+                    <span class="lp-kcard__go">شوف المنيو <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span></span>
+                  </div>
+                </a>
+              <% }) %>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="lp-empty">
+          <span class="material-symbols-outlined" aria-hidden="true">storefront</span>
+          <p>لسه مفيش مطابخ متاحة للعرض</p>
+        </div>
+      <% } %>
+    </section>
+
+    <!-- 6. Motto + expanding frame (inspired by spykercars.com) -->
+    <section class="lp-motto" data-motto aria-labelledby="lp-motto-title">
+      <h2 class="lp-motto__title" id="lp-motto-title">
+        <span class="lp-line"><span>من مطبخ البيت</span></span>
+        <span class="lp-line"><span>لحد باب بيتك</span></span>
+      </h2>
+      <p class="lp-motto__sub lp-fade">مفيش طريق بعيد على طبق معمول بحب.</p>
+      <div class="lp-motto__frame" data-motto-frame>
+        <img src="/assests/hero.jpeg" alt="عربية أكل في سوق مصري بالليل" loading="lazy">
+        <a href="/m" class="lp-motto__play"><span class="material-symbols-outlined" aria-hidden="true">restaurant</span>اطلب دلوقتي</a>
+      </div>
+    </section>
+
+    <!-- 7. Floating collage + call to action (inspired by spykercars.com heritage) -->
+    <section class="lp-collage" aria-labelledby="lp-collage-title">
+      <img class="lp-collage__p p1" data-parallax="0.35" src="/assests/chef_landing.jpeg" alt="" loading="lazy">
+      <img class="lp-collage__p p2" data-parallax="-0.25" src="/assests/high_end_collage_of_delicious_homemade_middle_eastern_meals_warm_lighting_cozy.png" alt="" loading="lazy">
+      <img class="lp-collage__p p3" data-parallax="0.18" src="/assests/dish_avatar.jpeg" alt="" loading="lazy">
+      <img class="lp-collage__p p4" data-parallax="-0.4" src="/assests/background_kitchen2.jpeg" alt="" loading="lazy">
+      <img class="lp-collage__p p5" data-parallax="0.28" src="/assests/category.jpeg" alt="" loading="lazy">
+      <img class="lp-collage__p p6" data-parallax="-0.15" src="/assests/chef_avatar.jpeg" alt="" loading="lazy">
+
+      <div class="lp-collage__center lp-up">
+        <% if (!dashboard || role === 'customer') { %>
+          <span class="lp-kicker">عندك أكل بتحبه؟</span>
+          <h2 class="lp-display" id="lp-collage-title">لكل طبق حكاية</h2>
+          <p>سجل مطبخك ووصل أكلك لناس أكتر. بعد التسجيل الحساب بيتراجع من الإدارة قبل ما يبدأ استقبال الطلبات.</p>
+          <a href="/auth" class="lp-btn lp-btn--primary"><span class="material-symbols-outlined" aria-hidden="true">restaurant</span>سجل كمطبخ</a>
+        <% } else { %>
+          <span class="lp-kicker">أهلاً يا <%= name %></span>
+          <h2 class="lp-display" id="lp-collage-title">لكل طبق حكاية</h2>
+          <p>كل طلب بيعدي من مطبخ لطيار لحد باب العميل. تابع شغلك من لوحتك.</p>
+          <a href="<%= dashboard.href %>" class="lp-btn lp-btn--primary"><span class="material-symbols-outlined" aria-hidden="true"><%= dashboard.icon %></span><%= dashboard.label %></a>
+        <% } %>
+      </div>
+    </section>
   </main>
 
   <%- include('./partials/footer.ejs') %>

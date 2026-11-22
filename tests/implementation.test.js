@@ -195,3 +195,16 @@ test('landing page renders one document with the correct dashboard for each role
     assert.doesNotMatch(html,/\/users\/dachboard|\/dishes\/my|href="https:\/\/(?:instagram|facebook)\.com"/);
   }
 });
+
+test('landing page animations degrade to a readable static page',()=>{
+  const view=read('views/index.ejs');
+  const js=read('public/landing/landing.js');
+  const css=read('public/landing/landing.css');
+  assert.match(view,/cdn\.jsdelivr\.net\/npm\/motion@[\d.]+\/dist\/motion\.js/);
+  assert.match(view,/\/landing\/landing\.js/);
+  assert.match(view,/classList\.remove\('lp-js'\)/,'safety timer must reveal content if scripts never load');
+  assert.match(js,/!M \|\| !M\.animate/);
+  assert.match(js,/prefers-reduced-motion: reduce/);
+  assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(css,/html:not\(\.lp-js\) \.lp-route__card/);
+});
