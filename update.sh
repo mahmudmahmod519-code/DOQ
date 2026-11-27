@@ -46,10 +46,16 @@ fi
 
 step "2/7 Validate"
 validate_env
-render_caddy_env
 dc config -q || die "docker-compose.prod.yml is invalid"
-caddy_validate || die "Caddyfile is invalid — nothing was changed"
-ok "Configuration valid (compose + Caddyfile)"
+if [[ "$(edge_mode)" == "tunnel" ]]; then
+  [[ -n "$(env_get TUNNEL_TOKEN)" ]] || die "EDGE_MODE=tunnel but TUNNEL_TOKEN is empty — run sudo ./deployment/cloudflare/setup.sh"
+  ok "Configuration valid (compose, Cloudflare Tunnel)"
+else
+  render_caddy_env
+  caddy_validate || die "Caddyfile is invalid — nothing was changed"
+  ok "Configuration valid (compose + Caddyfile)"
+fi
+r2_configured && write_rclone_config
 
 step "3/7 Build"
 STAMP="$(date +%Y%m%d%H%M%S)"
@@ -81,9 +87,9 @@ dc run --rm --no-deps -T app npm run migrate || rollback
 step "6/7 Restart"
 dc up -d --no-build --remove-orphans app cron
 wait_healthy app 240 || rollback
-# Reload a changed Caddyfile without downtime
+# Caddy: reload a changed Caddyfile without downtime. Tunnel: (re)start cloudflared.
 caddy_apply
-wait_healthy caddy 90 || rollback
+wait_edge 90 || rollback
 
 step "7/7 Verify"
 DOMAIN="$(env_get DOQ_DOMAIN)"

@@ -30,6 +30,7 @@ EMAIL="${LETSENCRYPT_EMAIL:-}"
 INCLUDE_WWW="${INCLUDE_WWW:-}"
 NODE_MAJOR=22
 SKIP_DEPLOY=false
+USE_CLOUDFLARE=false
 DEPLOY_KEY="/root/.ssh/doq_github_ed25519"
 
 usage() {
@@ -40,6 +41,8 @@ Usage: sudo bash $0 --domain <domain> --email <letsencrypt-email> [options]
   --www                also serve www.DOMAIN
   --branch NAME        git branch to deploy (default: repository default branch)
   --dir PATH           install directory (default: /opt/doq)
+  --cloudflare         put the site behind Cloudflare Tunnel (free): no open web ports,
+                       SSL + firewall + rate limit by Cloudflare. Asks for a Cloudflare API token.
   --no-deploy          prepare everything but do not run deploy.sh
 USAGE
 }
@@ -52,6 +55,7 @@ while [[ $# -gt 0 ]]; do
     --branch) BRANCH="$2"; shift 2 ;;
     --dir) APP_DIR="$2"; shift 2 ;;
     --no-deploy) SKIP_DEPLOY=true; shift ;;
+    --cloudflare) USE_CLOUDFLARE=true; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1"; usage; exit 1 ;;
   esac
@@ -189,7 +193,7 @@ cd "$APP_DIR"
 for f in deploy.sh docker-compose.prod.yml Caddyfile deployment/env.production.example deployment/scripts/lib.sh; do
   [[ -f "$f" ]] || die "$f is missing in the repository. Push the deployment files (deploy.sh, deployment/, docker-compose.prod.yml) first."
 done
-chmod +x deploy.sh update.sh deployment/backup/*.sh deployment/scripts/*.sh 2>/dev/null || true
+chmod +x deploy.sh update.sh deployment/backup/*.sh deployment/scripts/*.sh deployment/cloudflare/*.sh 2>/dev/null || true
 
 # ----------------------------------------------------------------------------
 step "5/6 Production environment and generated secrets"
@@ -247,13 +251,21 @@ cp "$ENV_FILE" "/root/doq-secrets/env.production.$(date +%Y%m%d-%H%M%S)"
 chmod 600 /root/doq-secrets/*
 ok "Secrets saved (not printed): $ENV_FILE and a copy in /root/doq-secrets/"
 
-# DNS hint before deploy.sh does the strict check
+if [[ "$USE_CLOUDFLARE" == "true" ]]; then
+  step "Cloudflare (tunnel, DNS, SSL, firewall, rate limit, R2)"
+  [[ -t 0 ]] || die "--cloudflare needs an interactive terminal (it asks for the API token)"
+  ./deployment/cloudflare/setup.sh
+fi
+
+# DNS hint before deploy.sh does the strict check (Caddy mode only)
+[[ "$USE_CLOUDFLARE" == "true" ]] || {
 SERVER_IP="$(curl -4 -fsS --max-time 10 https://api.ipify.org 2>/dev/null || true)"
 DNS_IP="$(dig +short A "$DOMAIN" @1.1.1.1 2>/dev/null | tail -n1 || true)"
 if [[ -n "$SERVER_IP" && "$DNS_IP" != "$SERVER_IP" ]]; then
   warn "$DOMAIN resolves to '${DNS_IP:-nothing}', this server is $SERVER_IP."
   warn "Create an A record $DOMAIN -> $SERVER_IP (Cloudflare: 'DNS only'). Caddy issues the HTTPS certificate automatically once it matches."
 fi
+}
 
 # ----------------------------------------------------------------------------
 step "6/6 Production deployment"

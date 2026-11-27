@@ -31,6 +31,29 @@ app.use(cookieParser());
 app.disable('x-powered-by');
 
 app.use(securityHeaders);
+
+// Static files first: no cookies, CSRF or rate-limit work for images/CSS/JS, and no Set-Cookie
+// on them, so Cloudflare (or any cache) can keep them.
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: process.env.NODE_ENV === 'production' ? 3600000 : 0,
+  immutable: false,
+  etag: true,
+  lastModified: true
+}));
+app.use('/uploads', express.static('public/upload', { maxAge: process.env.NODE_ENV === 'production' ? '30d' : 0, immutable: true }));
+
+// Cloudflare Tunnel mode only (TRUST_CF_CONNECTING_IP=true, set by deploy.sh): the app has no public
+// port, every request comes through Cloudflare, so its client IP header is the real visitor IP.
+// Never enable this when the app is reachable directly (the header could be forged).
+if (process.env.TRUST_CF_CONNECTING_IP === 'true') {
+  const net = require('net');
+  app.use((req, res, next) => {
+    const ip = String(req.get('cf-connecting-ip') || '').trim();
+    if (net.isIP(ip)) Object.defineProperty(req, 'ip', { value: ip, configurable: true, enumerable: true });
+    next();
+  });
+}
+
 app.use(issueCsrfCookie);
 app.use(requestRateLimit);
 
@@ -48,15 +71,6 @@ app.get('/security/csrf', (req, res) => res.json({ token: req.csrfToken() }));
 
 // Enforce CSRF on state-changing methods; safe methods (GET/HEAD/OPTIONS) pass through.
 app.use(csrfProtection);
-
-app.use(express.static(path.join(__dirname, 'public'), {
-  maxAge: process.env.NODE_ENV === 'production' ? 3600000 : 0,
-  immutable: false,
-  etag: true,
-  lastModified: true
-}));
-
-app.use('/uploads', express.static('public/upload'));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

@@ -18,8 +18,12 @@ DOMAIN="$(env_get DOQ_DOMAIN)"
 for path in /health /health/ready /api/v1/health /m/api/v1/home; do
   echo "  https://${DOMAIN}${path} -> $(check_site "$DOMAIN" "$path")"
 done
-EXP="$(cert_expiry "$DOMAIN")"
-echo "  certificate expires: ${EXP:-no certificate yet (see: logs caddy)}"
+if [[ "$(edge_mode)" == "tunnel" ]]; then
+  echo "  edge: Cloudflare Tunnel (cloudflared $(container_health cloudflared)); public: https://${DOMAIN}/health -> $(http_status "https://${DOMAIN}/health")"
+else
+  EXP="$(cert_expiry "$DOMAIN")"
+  echo "  certificate expires: ${EXP:-no certificate yet (see: logs caddy)}"
+fi
 step "Timers"
 systemctl list-timers --all 'doq-*' --no-pager || true
 step "Images (rollback candidates)"

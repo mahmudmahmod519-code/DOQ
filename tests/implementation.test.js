@@ -208,3 +208,18 @@ test('landing page animations degrade to a readable static page',()=>{
   assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css,/html:not\(\.lp-js\) \.lp-route__card/);
 });
+
+test('Cloudflare Tunnel mode opens no ports and trusts the Cloudflare IP header only when enabled',()=>{
+  const compose=read('docker-compose.prod.yml');
+  const tunnel=compose.slice(compose.indexOf('  cloudflared:'),compose.indexOf('\nnetworks:'));
+  assert.match(tunnel,/profiles: \["tunnel"\]/);
+  assert.doesNotMatch(tunnel,/ports:/,'cloudflared connects outbound only');
+  assert.match(compose,/profiles: \["caddy"\]/);
+  const app=read('index.js');
+  assert.match(app,/if \(process\.env\.TRUST_CF_CONNECTING_IP === 'true'\)/);
+  assert.ok(app.indexOf('express.static(path.join') < app.indexOf('app.use(issueCsrfCookie)'),'static files are served before cookies are set');
+  const setup=read('deployment/cloudflare/setup.sh');
+  assert.match(setup,/-H @"\$HDR"/,'API token is passed through a root-only header file, not the command line');
+  assert.doesNotMatch(setup,/env_set CF_API_TOKEN/);
+  assert.match(setup,/"period":10,"requests_per_period":20,"mitigation_timeout":10/);
+});

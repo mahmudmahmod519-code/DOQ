@@ -27,9 +27,21 @@ die()  {
 
 require_root() { [[ $EUID -eq 0 ]] || die "Run as root: sudo $0"; }
 
-# docker compose for the production stack
+# Where public traffic enters (EDGE_MODE in .env.production):
+#   caddy  (default) Caddy on ports 80/443 with Let's Encrypt
+#   tunnel           Cloudflare Tunnel (cloudflared), no public web ports
+edge_mode() {
+  local m=""
+  [[ -f "$ENV_FILE" ]] && m="$(grep -E '^[[:space:]]*EDGE_MODE=' "$ENV_FILE" | tail -n 1 | cut -d= -f2- | tr -d '"\r ' || true)"
+  [[ "$m" == "tunnel" ]] && echo tunnel || echo caddy
+}
+
+# Container that receives public traffic in the current mode
+edge_service() { [[ "$(edge_mode)" == "tunnel" ]] && echo cloudflared || echo caddy; }
+
+# docker compose for the production stack (with the profile of the current edge mode)
 dc() {
-  docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" --env-file "$ENV_FILE" "$@"
+  docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" --env-file "$ENV_FILE" --profile "$(edge_mode)" "$@"
 }
 
 # Read KEY from .env.production without sourcing it (values may contain spaces/quotes)
@@ -172,8 +184,15 @@ retire_nginx() {
   return 0
 }
 
-# Apply a changed Caddyfile without downtime (falls back to a restart)
+# Start / refresh the edge container of the current mode, and stop the other one
 caddy_apply() {
+  if [[ "$(edge_mode)" == "tunnel" ]]; then
+    [[ -n "$(env_get TUNNEL_TOKEN)" ]] || die "EDGE_MODE=tunnel but TUNNEL_TOKEN is empty: run sudo ./deployment/cloudflare/setup.sh first"
+    retire_caddy
+    dc up -d cloudflared
+    return 0
+  fi
+  docker rm -f $(docker ps -aq --filter "label=com.docker.compose.project=${COMPOSE_PROJECT}" --filter label=com.docker.compose.service=cloudflared) >/dev/null 2>&1 || true
   if [[ "$(container_health caddy)" == "healthy" ]]; then
     dc exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1 \
       || dc up -d --force-recreate caddy
@@ -183,11 +202,70 @@ caddy_apply() {
   dc up -d caddy
 }
 
-# Local end-to-end check through Caddy over HTTPS (independent from public DNS).
-# -k: also works while Caddy still uses its temporary certificate.
+# Tunnel mode: remove the Caddy container (its certificate volume is kept)
+retire_caddy() {
+  local old
+  old="$(docker ps -aq --filter "label=com.docker.compose.project=${COMPOSE_PROJECT}" --filter label=com.docker.compose.service=caddy)"
+  if [[ -n "$old" ]]; then
+    docker rm -f $old >/dev/null
+    log "Stopped Caddy (Cloudflare Tunnel serves the site now; the doq_caddy_data volume is kept)"
+  fi
+  return 0
+}
+
+# True when the edge container is up (cloudflared has no healthcheck: "running" is enough)
+edge_ready() {
+  local s; s="$(container_health "$(edge_service)")"
+  [[ "$s" == "healthy" || ( "$(edge_mode)" == "tunnel" && "$s" == "running" ) ]]
+}
+
+# Wait for the edge container of the current mode
+wait_edge() {
+  local timeout="${1:-90}" waited=0
+  while (( waited < timeout )); do
+    edge_ready && { ok "$(edge_service) is up"; return 0; }
+    sleep 3; waited=$((waited + 3))
+  done
+  warn "$(edge_service) is not up. Last log lines:"
+  dc logs --tail 40 "$(edge_service)" >&2 || true
+  return 1
+}
+
+# Local end-to-end check (independent from public DNS).
+#   caddy:  through Caddy over HTTPS (-k: also while Caddy still uses its temporary certificate)
+#   tunnel: straight to the app container, with the public Host header
 check_site() {
   local domain="$1" path="$2"
+  if [[ "$(edge_mode)" == "tunnel" ]]; then
+    dc exec -T app node -e "require('http').get({host:'127.0.0.1',port:3000,path:process.argv[1],headers:{host:process.argv[2],'x-forwarded-proto':'https'}},r=>{console.log(r.statusCode);process.exit(0)}).on('error',()=>{console.log('000');process.exit(0)})" "$path" "$domain" 2>/dev/null || echo "000"
+    return 0
+  fi
   http_status -k --resolve "${domain}:443:127.0.0.1" "https://${domain}${path}"
+}
+
+# Cloudflare R2 (S3 API) as the rclone remote "r2" for backups and the uploads copy.
+# Written from R2_* values in .env.production to a root-only file; never printed.
+RCLONE_CONFIG_FILE="/etc/doq/rclone.conf"
+[[ -f "$RCLONE_CONFIG_FILE" ]] && export RCLONE_CONFIG="$RCLONE_CONFIG_FILE"
+r2_configured() {
+  [[ -n "$(env_get R2_ACCOUNT_ID)" && -n "$(env_get R2_ACCESS_KEY_ID)" && -n "$(env_get R2_SECRET_ACCESS_KEY)" && -n "$(env_get R2_BUCKET)" ]]
+}
+write_rclone_config() {
+  r2_configured || return 1
+  install -d -m 700 /etc/doq
+  : > "$RCLONE_CONFIG_FILE" && chmod 600 "$RCLONE_CONFIG_FILE"
+  cat > "$RCLONE_CONFIG_FILE" <<RCLONE
+[r2]
+type = s3
+provider = Cloudflare
+access_key_id = $(env_get R2_ACCESS_KEY_ID)
+secret_access_key = $(env_get R2_SECRET_ACCESS_KEY)
+endpoint = https://$(env_get R2_ACCOUNT_ID).r2.cloudflarestorage.com
+acl = private
+no_check_bucket = true
+RCLONE
+  chmod 600 "$RCLONE_CONFIG_FILE"
+  export RCLONE_CONFIG="$RCLONE_CONFIG_FILE"
 }
 
 # Expiry date of the certificate Caddy serves for the domain (empty if none yet)

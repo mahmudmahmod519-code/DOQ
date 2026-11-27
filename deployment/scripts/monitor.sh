@@ -17,10 +17,11 @@ MEM_AVAIL=$(( $(awk '/MemAvailable/ {print $2}' /proc/meminfo) / 1024 ))
 (( MEM_AVAIL > 300 )) || PROBLEMS+=("only ${MEM_AVAIL} MB RAM available")
 LOAD=$(awk '{print int($1)}' /proc/loadavg)
 (( LOAD <= $(nproc) * 2 )) || PROBLEMS+=("load average ${LOAD}")
-for svc in mysql app caddy; do
+for svc in mysql app; do
   s="$(container_health "$svc")"
   [[ "$s" == "healthy" ]] || PROBLEMS+=("$svc is $s")
 done
+edge_ready || PROBLEMS+=("$(edge_service) is $(container_health "$(edge_service)")")
 [[ "$(container_health cron)" == "running" ]] || PROBLEMS+=("cron is $(container_health cron)")
 
 if (( ${#PROBLEMS[@]} )); then

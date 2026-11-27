@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'config.dart';
+
 /// Error returned by the DOQ server (or a network failure when [status] is 0).
 class ApiException implements Exception {
   ApiException(this.status, this.message);
@@ -48,8 +50,9 @@ class Api {
 
   /// Store builds bake the production URL in (--dart-define=DOQ_API_URL=...) and lock it
   /// (--dart-define=DOQ_LOCK_SERVER=true) so customers never see a "server address" setting.
-  static const String buildServerUrl = String.fromEnvironment('DOQ_API_URL');
-  static const bool lockServer = bool.fromEnvironment('DOQ_LOCK_SERVER');
+  /// Production URL and lock come from core/config.dart (one place to change).
+  static const String buildServerUrl = kServerUrl;
+  static const bool lockServer = kLockServer;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();

@@ -15,6 +15,7 @@ database/.cron.lock
 *.md
 !README.md
 !DEPLOYMENT.md
+!CLOUDFLARE.md
 !TROUBLESHOOTING.md
 !mobile_flutter/README.md
 !mobile_flutter/PLAY_STORE.md

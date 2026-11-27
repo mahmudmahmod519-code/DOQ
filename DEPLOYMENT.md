@@ -19,6 +19,8 @@ Internet ──80/443──► caddy ──► app:3000 (Express + EJS, /m mobil
 | `deployment/backup/` | `backup.sh`, `restore.sh`, `database-health.sh` |
 | `deployment/scripts/` | `status.sh`, `rollback.sh`, `monitor.sh`, `bootstrap-admin.sh`, `ssh-hardening-check.sh` |
 
+> **Free hosting behind Cloudflare** (no open web ports, SSL/firewall/rate limit by Cloudflare, R2 backups): see [CLOUDFLARE.md](CLOUDFLARE.md) and add `--cloudflare` to the bootstrap command.
+
 ## 1. Before you start
 - VPS with **Ubuntu 24.04**, ≥ 2 GB RAM (4 GB+ recommended), amd64 or arm64, SSH key added.
 - Provider/cloud firewall allows inbound **22, 80, 443** (TCP) and **443/UDP** (HTTP/3, optional).

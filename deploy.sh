@@ -134,6 +134,21 @@ if is_placeholder "$JWT" || (( ${#JWT} < 32 )); then
   ok "Generated JWT_SECRET"
 fi
 unset JWT
+
+# Edge: Cloudflare Tunnel (no public web ports) or Caddy (ports 80/443)
+EDGE="$(edge_mode)"
+if [[ "$EDGE" == "tunnel" ]]; then
+  if [[ -z "$(env_get TUNNEL_TOKEN)" ]]; then
+    RECOVERY_HINT="run: sudo ./deployment/cloudflare/setup.sh  (creates the tunnel, DNS, firewall and rate-limit rules, and writes TUNNEL_TOKEN), then run sudo ./deploy.sh again"
+    die "EDGE_MODE=tunnel but TUNNEL_TOKEN is empty"
+  fi
+  env_set TRUST_CF_CONNECTING_IP true
+  env_set CLOUDFLARE_PROXY true
+  ok "Edge: Cloudflare Tunnel (no public web ports)"
+else
+  env_set TRUST_CF_CONNECTING_IP false
+  ok "Edge: Caddy on ports 80/443 (Let's Encrypt)"
+fi
 validate_env
 
 # ----------------------------------------------------------------------------
@@ -142,9 +157,14 @@ step "4/12 Firewall and SSH protection"
 SSH_PORTS="$(sshd -T 2>/dev/null | awk '/^port / {print $2}' | sort -u | tr '\n' ' ')"
 SSH_PORTS="${SSH_PORTS:-22}"
 for port in $SSH_PORTS; do ufw allow "${port}/tcp" comment 'SSH' >/dev/null; done
-ufw allow 80/tcp comment 'HTTP (redirect + ACME)' >/dev/null
-ufw allow 443/tcp comment 'HTTPS' >/dev/null
-ufw allow 443/udp comment 'HTTP/3' >/dev/null
+if [[ "$EDGE" == "tunnel" ]]; then
+  # Cloudflare Tunnel is outbound only: web ports stay closed
+  for rule in 80/tcp 443/tcp 443/udp; do ufw delete allow "$rule" >/dev/null 2>&1 || true; done
+else
+  ufw allow 80/tcp comment 'HTTP (redirect + ACME)' >/dev/null
+  ufw allow 443/tcp comment 'HTTPS' >/dev/null
+  ufw allow 443/udp comment 'HTTP/3' >/dev/null
+fi
 ufw default deny incoming >/dev/null
 ufw default allow outgoing >/dev/null
 if ! ufw status | grep -q "Status: active"; then
@@ -181,8 +201,12 @@ step "6/12 Validate compose configuration"
 # ----------------------------------------------------------------------------
 dc config -q || die "docker-compose.prod.yml is invalid"
 ok "docker-compose.prod.yml is valid"
-dc pull -q caddy || warn "Could not pull the Caddy image (using the local one if present)"
-caddy_validate || { RECOVERY_HINT="read the Caddy error above and fix Caddyfile or DOQ_SERVER_NAMES / LETSENCRYPT_EMAIL in $ENV_FILE"; die "Caddyfile is invalid"; }
+if [[ "$EDGE" == "tunnel" ]]; then
+  dc pull -q cloudflared || warn "Could not pull the cloudflared image (using the local one if present)"
+else
+  dc pull -q caddy || warn "Could not pull the Caddy image (using the local one if present)"
+  caddy_validate || { RECOVERY_HINT="read the Caddy error above and fix Caddyfile or DOQ_SERVER_NAMES / LETSENCRYPT_EMAIL in $ENV_FILE"; die "Caddyfile is invalid"; }
+fi
 ok "Caddyfile is valid"
 
 # ----------------------------------------------------------------------------
@@ -225,10 +249,25 @@ wait_healthy app 240 || {
   RECOVERY_HINT="see the logs above. To go back to the previous image: sudo ./deployment/scripts/rollback.sh"
   die "The application did not become healthy"
 }
-
 # ----------------------------------------------------------------------------
-step "10/12 Caddy + HTTPS (Let's Encrypt)"
+step "10/12 Edge: $( [[ "$EDGE" == "tunnel" ]] && echo "Cloudflare Tunnel" || echo "Caddy + HTTPS (Let's Encrypt)" )"
 # ----------------------------------------------------------------------------
+CERT_OK=false
+if [[ "$EDGE" == "tunnel" ]]; then
+  retire_nginx
+  caddy_apply
+  wait_edge 60 || die "cloudflared did not start (check TUNNEL_TOKEN; logs: sudo docker compose -p doq -f docker-compose.prod.yml --env-file .env.production --profile tunnel logs cloudflared)"
+  log "Waiting for the site through Cloudflare"
+  for _ in $(seq 1 20); do
+    [[ "$(http_status "https://${DOMAIN}/health")" == "200" ]] && { CERT_OK=true; break; }
+    sleep 3
+  done
+  if [[ "$CERT_OK" == "true" ]]; then
+    ok "https://${DOMAIN} answers through Cloudflare (SSL by Cloudflare)"
+  else
+    warn "https://${DOMAIN} does not answer yet. Check the domain's nameservers point to Cloudflare and re-run sudo ./deployment/cloudflare/setup.sh"
+  fi
+else
 retire_nginx
 
 # DNS check (information only: Caddy keeps retrying and gets the certificate as soon as DNS is right)
@@ -253,7 +292,6 @@ dc up -d caddy
 wait_healthy caddy 90 || die "Caddy did not start (sudo docker compose -p doq -f docker-compose.prod.yml --env-file .env.production logs caddy)"
 ok "Caddy is running"
 
-CERT_OK=false
 if [[ "$DNS_OK" == "true" ]]; then
   log "Waiting for the Let's Encrypt certificate (usually under a minute)"
   for _ in $(seq 1 40); do
@@ -268,6 +306,8 @@ else
   warn "No certificate yet. Caddy keeps trying on its own; nothing needs to be re-run once DNS is correct."
   warn "Check: dig +short ${DOMAIN}  (must show ${IP_HINT}) and: sudo docker compose -p doq -f docker-compose.prod.yml --env-file .env.production logs caddy"
 fi
+fi
+
 
 # ----------------------------------------------------------------------------
 step "11/12 Scheduled jobs (backups, monitoring) and log rotation"
@@ -275,9 +315,23 @@ step "11/12 Scheduled jobs (backups, monitoring) and log rotation"
 for unit in "$DOQ_DIR"/deployment/systemd/*.service "$DOQ_DIR"/deployment/systemd/*.timer; do
   sed "s#__DOQ_DIR__#${DOQ_DIR}#g" "$unit" > "/etc/systemd/system/$(basename "$unit")"
 done
-chmod +x "$DOQ_DIR"/deploy.sh "$DOQ_DIR"/update.sh "$DOQ_DIR"/deployment/backup/*.sh "$DOQ_DIR"/deployment/scripts/*.sh
+chmod +x "$DOQ_DIR"/deploy.sh "$DOQ_DIR"/update.sh "$DOQ_DIR"/deployment/backup/*.sh "$DOQ_DIR"/deployment/scripts/*.sh "$DOQ_DIR"/deployment/cloudflare/*.sh
 systemctl daemon-reload
 systemctl enable --now doq-backup.timer doq-monitor.timer >/dev/null
+# Cloudflare R2: rclone remote "r2" for encrypted off-server backups and a copy of uploaded images
+if r2_configured; then
+  command -v rclone >/dev/null || apt-get install -y -qq rclone >/dev/null
+  write_rclone_config
+  if [[ -z "$(env_get BACKUP_ENCRYPTION_PASSPHRASE)" ]]; then
+    env_set BACKUP_ENCRYPTION_PASSPHRASE "$(random_hex 32)"
+    warn "Generated BACKUP_ENCRYPTION_PASSPHRASE (backups in R2 are encrypted with it). Copy .env.production to a safe place: without it the R2 backups cannot be opened."
+  fi
+  [[ -n "$(env_get BACKUP_RCLONE_REMOTE)" ]] || env_set BACKUP_RCLONE_REMOTE "r2:$(env_get R2_BUCKET)/backups"
+  systemctl enable --now doq-r2-sync.timer >/dev/null
+  ok "Cloudflare R2: backups -> r2:$(env_get R2_BUCKET)/backups, images -> r2:$(env_get R2_BUCKET)/uploads (every 15 min)"
+else
+  systemctl disable --now doq-r2-sync.timer >/dev/null 2>&1 || true
+fi
 cat > /etc/logrotate.d/doq <<LR
 ${LOG_DIR}/*.log {
     weekly
@@ -296,17 +350,21 @@ ok "Docker container logs are capped at 5 x 10 MB per service"
 step "12/12 Verification"
 # ----------------------------------------------------------------------------
 FAILED=0
-for svc in mysql app cron caddy; do
+for svc in mysql app cron "$(edge_service)"; do
   status="$(container_health "$svc")"
-  if [[ "$status" == "healthy" || ( "$svc" == "cron" && "$status" == "running" ) ]]; then ok "$svc: $status"; else warn "$svc: $status"; FAILED=1; fi
+  if [[ "$status" == "healthy" || ( ( "$svc" == "cron" || "$svc" == "cloudflared" ) && "$status" == "running" ) ]]; then ok "$svc: $status"; else warn "$svc: $status"; FAILED=1; fi
 done
 for path in /health /health/ready /api/v1/health /m/api/v1/home /; do
   code="$(check_site "$DOMAIN" "$path")"
   if [[ "$code" == "200" ]]; then ok "https://${DOMAIN}${path} -> $code"; else warn "https://${DOMAIN}${path} -> $code"; FAILED=1; fi
 done
-code="$(http_status -H "Host: ${DOMAIN}" "http://127.0.0.1/health")"
-[[ "$code" == "308" || "$code" == "301" ]] && ok "HTTP redirects to HTTPS" || { warn "HTTP -> HTTPS redirect returned $code"; FAILED=1; }
-if [[ "$CERT_OK" == "true" ]]; then
+if [[ "$EDGE" == "caddy" ]]; then
+  code="$(http_status -H "Host: ${DOMAIN}" "http://127.0.0.1/health")"
+  [[ "$code" == "308" || "$code" == "301" ]] && ok "HTTP redirects to HTTPS" || { warn "HTTP -> HTTPS redirect returned $code"; FAILED=1; }
+fi
+if [[ "$CERT_OK" == "true" && "$EDGE" == "tunnel" ]]; then
+  ok "Public check https://${DOMAIN}/health -> 200 (through Cloudflare)"
+elif [[ "$CERT_OK" == "true" ]]; then
   PUBLIC_CODE="$(http_status "https://${DOMAIN}/health")"
   [[ "$PUBLIC_CODE" == "200" ]] && ok "Public check https://${DOMAIN}/health -> 200" \
     || warn "Public check https://${DOMAIN}/health -> ${PUBLIC_CODE} (DNS cache or a provider firewall may still be in the way)"

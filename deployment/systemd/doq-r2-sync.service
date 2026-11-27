@@ -1,0 +1,9 @@
+[Unit]
+Description=DOQ copy of uploaded images to Cloudflare R2
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=__DOQ_DIR__/deployment/cloudflare/r2-sync.sh
+Nice=10

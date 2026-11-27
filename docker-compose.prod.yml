@@ -2,8 +2,11 @@
 # DOQ production stack (used by deploy.sh / update.sh)
 #   docker compose -p doq -f docker-compose.prod.yml --env-file .env.production <cmd>
 #
-# Public ports: only caddy 80/443. MySQL and the app are reachable only on the
-# internal "backend" network. Data lives in named volumes (never removed by scripts).
+# Edge (EDGE_MODE in .env.production):
+#   caddy  -> caddy publishes 80/443 and gets Let's Encrypt certificates itself
+#   tunnel -> cloudflared connects out to Cloudflare; NO public port is opened at all
+# MySQL and the app are reachable only on the internal "backend" network.
+# Data lives in named volumes (never removed by scripts).
 # ============================================================
 name: doq
 
@@ -24,6 +27,8 @@ x-app-env: &app-env
   JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
   PUBLIC_URL: ${PUBLIC_URL:?PUBLIC_URL is required}
   TRUST_PROXY: "1"
+  # Tunnel mode only: the app has no public port, so Cloudflare's client IP header can be trusted
+  TRUST_CF_CONNECTING_IP: ${TRUST_CF_CONNECTING_IP:-false}
   WAIT_FOR_DB: "true"
   # Migrations run as an explicit step in deploy.sh / update.sh (after a backup), not on every start
   RUN_MIGRATIONS: "false"
@@ -122,6 +127,7 @@ services:
   # Reverse proxy + automatic HTTPS (Let's Encrypt). Configuration: ./Caddyfile
   caddy:
     image: ${CADDY_IMAGE:-caddy:2-alpine}
+    profiles: ["caddy"]
     restart: unless-stopped
     ports:
       - "80:80"
@@ -154,8 +160,29 @@ services:
           memory: 256m
     logging: *logging
 
+  # Cloudflare Tunnel (EDGE_MODE=tunnel). Token comes from deployment/cloudflare/setup.sh.
+  # Outbound only: Cloudflare -> tunnel -> app:3000. The server needs no open web ports.
+  cloudflared:
+    image: ${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:latest}
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "--metrics", "0.0.0.0:2000", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    networks: [backend]
+    depends_on:
+      app:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    logging: *logging
+
 networks:
-  # caddy <-> app <-> mysql. Not "internal" because the app needs outbound internet (SMTP, Paymob).
+  # caddy/cloudflared <-> app <-> mysql. Not "internal" because the app needs outbound internet (SMTP, Paymob).
   backend:
 
 volumes:
